@@ -6,7 +6,7 @@ const FORBIDDEN = [
   /call_service/,
   /callWS/,
   /callApi/,
-  /sendMessage/,
+  /sendMessage(?!Promise)/,
   /fireEvent\(/,
   /hass-call-service/,
   /\.unlock\b/,
@@ -21,5 +21,17 @@ describe('safety', () => {
   it.each(files)('%s does not call Home Assistant services', (file) => {
     const source = readFileSync(new URL(file, dir), 'utf8');
     for (const pattern of FORBIDDEN) expect(source).not.toMatch(pattern);
+  });
+
+  it('only sends the read-only history query besides subscribe_events', () => {
+    for (const file of files) {
+      const source = readFileSync(new URL(file, dir), 'utf8');
+      if (file !== 'history.ts') expect(source, file).not.toMatch(/sendMessagePromise\(/);
+    }
+    const history = readFileSync(new URL('history.ts', dir), 'utf8');
+    expect(history.match(/sendMessagePromise/g)).toHaveLength(1);
+    expect([...history.matchAll(/(?<![\w_])type: '([^']+)'/g)].map((m) => m[1])).toEqual([
+      'history/history_during_period',
+    ]);
   });
 });

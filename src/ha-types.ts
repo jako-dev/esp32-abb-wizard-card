@@ -26,11 +26,14 @@ export type Unsubscribe = () => Promise<void> | void;
 
 export interface HassConnection {
   subscribeEvents<T>(callback: (event: HassEvent<T>) => void, eventType?: string): Promise<Unsubscribe>;
+  sendMessagePromise<T>(message: Record<string, unknown>): Promise<T>;
 }
 
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
   connection: HassConnection;
+  /** False while the websocket connection to Home Assistant is down. */
+  connected?: boolean;
   user?: { is_admin: boolean; name?: string };
 }
 

@@ -14,9 +14,15 @@ import { EDITOR_TAG } from './editor';
 import { DEFAULT_DOORS, doorIcon, doorsFromConfig, MAX_DOORS, newDoor, openStepId } from './doors';
 import type { CardConfig, HassEvent, HomeAssistant, StateChangedData, Unsubscribe } from './ha-types';
 import { parseFrame } from './parser';
+import { fetchHistoryLines } from './history';
 import {
+  applyHistory,
   captureFinished,
   captureLine,
+  COMMIT_DELAY_MS,
+  historyWindow,
+  markMissed,
+  markReconnected,
   lineFromEvent,
   parseAddressInput,
   startCapture,
@@ -37,7 +43,15 @@ import {
   setSkipped,
 } from './session';
 import { buildSteps, OPEN_DEFAULT_PAUSE_MINUTES, type StepDefinition } from './steps';
-import { clearStoredSession, copyText, downloadText, loadStoredSession, storeSession } from './storage';
+import {
+  clearStoredSession,
+  copyText,
+  downloadText,
+  loadActiveCapture,
+  loadStoredSession,
+  storeActiveCapture,
+  storeSession,
+} from './storage';
 import { cardStyles } from './styles';
 import type {
   DialSettings,
@@ -53,9 +67,11 @@ import type {
 import { generateYaml, lockTargets, ringTargets } from './yaml-export';
 
 const CARD_TAG = 'abb-welcome-wizard-card';
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
+/** A capture interrupted by a reload is resumed only if it is younger than this. */
+const RESUME_LIMIT_MS = 15 * 60 * 1000;
 
 const SEVERITY_ICON: Record<Severity, string> = {
   info: 'mdi:information-outline',
@@ -92,6 +108,17 @@ export class AbbWelcomeWizardCard extends LitElement {
   private unsubscribe?: Promise<Unsubscribe | undefined>;
   private timer?: number;
   private toastTimer?: number;
+  private syncing = false;
+  private lastSyncAt = 0;
+  private syncFailed = false;
+  private readonly onVisibilityChange = () => {
+    if (!this.capture) return;
+    // Mobile browsers pause pages in the background; events received meanwhile may be lost.
+    this.capture =
+      document.visibilityState === 'hidden'
+        ? markMissed(this.capture)
+        : markReconnected(this.capture, Date.now());
+  };
   private analysisCache?: { session: Session; indoor?: number; result: WizardResult };
   private stepsCache?: { doors: Door[]; steps: StepDefinition[] };
 
@@ -135,6 +162,7 @@ export class AbbWelcomeWizardCard extends LitElement {
           : '';
       this.live = [];
       this.capture = null;
+      this.resumeCapture(config.entity);
     }
   }
 
@@ -144,7 +172,11 @@ export class AbbWelcomeWizardCard extends LitElement {
 
   public set hass(hass: HomeAssistant) {
     const first = !this._hass;
+    const wasConnected = this.online;
     this._hass = hass;
+    if (this.capture && wasConnected !== this.online) {
+      this.capture = this.online ? markReconnected(this.capture, Date.now()) : markMissed(this.capture);
+    }
     if (first) this.subscribe();
     this.requestUpdate();
   }
@@ -153,13 +185,19 @@ export class AbbWelcomeWizardCard extends LitElement {
     return this._hass;
   }
 
+  private get online(): boolean {
+    return this._hass?.connected !== false;
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.subscribe();
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.unsubscribeEvents();
     this.stopTimer();
   }
@@ -175,6 +213,7 @@ export class AbbWelcomeWizardCard extends LitElement {
     if (changed.has('capture')) {
       if (this.capture) this.startTimer();
       else this.stopTimer();
+      if (this.config) storeActiveCapture(this.config.entity, this.capture);
     }
   }
 
@@ -223,7 +262,9 @@ export class AbbWelcomeWizardCard extends LitElement {
     if (this.timer !== undefined) return;
     this.timer = window.setInterval(() => {
       this.now = Date.now();
-      if (this.capture && captureFinished(this.capture, this.now)) this.finishCapture();
+      if (!this.capture) return;
+      if (this.capture.missed) this.syncFromHistory();
+      else if (captureFinished(this.capture, this.now)) this.finishCapture();
     }, 250);
   }
 
@@ -233,19 +274,73 @@ export class AbbWelcomeWizardCard extends LitElement {
   }
 
   private beginCapture(waitForFrame: boolean): void {
+    const step = this.currentStep;
+    if (!step) return;
     this.now = Date.now();
-    this.capture = startCapture(this.captureSeconds, waitForFrame, this.now);
+    this.syncFailed = false;
+    this.capture = startCapture(step.id, this.captureSeconds, waitForFrame, this.now);
+  }
+
+  /** Fill in frames missed while offline from the recorder history (read-only). */
+  private async syncFromHistory(): Promise<void> {
+    const capture = this.capture;
+    const now = Date.now();
+    if (
+      !capture?.missed ||
+      capture.syncAfter === undefined ||
+      !this.online ||
+      !this._hass?.connection ||
+      !this.config ||
+      this.syncing ||
+      now - this.lastSyncAt < 2000
+    ) {
+      return;
+    }
+    this.syncing = true;
+    this.lastSyncAt = now;
+    try {
+      const { start, end } = historyWindow(capture, now);
+      const lines = await fetchHistoryLines(this._hass.connection, this.config.entity, start, end);
+      // The capture may have been cancelled or replaced while waiting.
+      if (this.capture?.armedAt === capture.armedAt) {
+        this.capture = applyHistory(this.capture, lines, this.captureSeconds, Date.now());
+      }
+    } catch (err) {
+      console.warn(`${CARD_TAG}: reading history failed`, err);
+      if (this.capture?.armedAt === capture.armedAt && !this.syncFailed) {
+        this.syncFailed = true;
+        // Without history (e.g. sensor excluded from the recorder) keep what was received live.
+        this.capture = { ...this.capture, missed: false, syncAfter: undefined };
+        this.showToast('Verpasste Frames konnten nicht aus dem Verlauf geladen werden.');
+      }
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  /** Continue a capture that was interrupted by reloading the page or app. */
+  private resumeCapture(entity: string): void {
+    const stored = loadActiveCapture(entity);
+    if (!stored) return;
+    const stepIndex = this.steps.findIndex((s) => s.id === stored.step);
+    if (stepIndex < 0 || Date.now() - stored.armedAt > RESUME_LIMIT_MS) {
+      storeActiveCapture(entity, null);
+      return;
+    }
+    this.page = stepIndex + 1;
+    this.capture = { ...stored, missed: true, syncAfter: Date.now() + COMMIT_DELAY_MS };
+    this.showToast('Unterbrochene Aufnahme wird fortgesetzt.');
   }
 
   private finishCapture(): void {
     const capture = this.capture;
-    const step = this.currentStep;
     this.capture = null;
-    if (!capture || capture.phase !== 'recording' || !step) return;
+    if (!capture || capture.phase !== 'recording') return;
+    const ended = Math.min(Date.now(), capture.endsAt ?? Date.now());
     this.updateSession(
-      addCapture(this.session, step.id, {
+      addCapture(this.session, capture.step, {
         startedAt: capture.startedAt ?? new Date().toISOString(),
-        endedAt: new Date().toISOString(),
+        endedAt: new Date(ended).toISOString(),
         lines: capture.lines,
       }),
     );
@@ -458,6 +553,7 @@ export class AbbWelcomeWizardCard extends LitElement {
         ${this.renderStepper()}
         <div class="progress"><div style="width:${(this.page / this.resultPage) * 100}%"></div></div>
         <div class="content">
+          ${this.capture ? nothing : this.renderConnectionStatus()}
           ${
             this.page === 0
               ? this.renderStart()
@@ -934,42 +1030,68 @@ export class AbbWelcomeWizardCard extends LitElement {
     </span>`;
   }
 
+  private renderConnectionStatus(): TemplateResult | typeof nothing {
+    if (!this.online) {
+      return html`<div class="callout warning" role="status">
+        <ha-icon icon="mdi:wifi-off"></ha-icon>
+        <span
+          >Keine Verbindung zu Home
+          Assistant.${
+            this.capture
+              ? ' Mach einfach weiter – Home Assistant zeichnet die Frames trotzdem auf. Sobald die Verbindung zurück ist, holt die Karte sie aus dem Verlauf nach.'
+              : ' Live-Frames sind pausiert.'
+          }</span
+        >
+      </div>`;
+    }
+    if (this.capture?.missed) {
+      return html`<div class="callout info" role="status">
+        <ha-icon icon="mdi:history"></ha-icon>
+        <span>Verbindung wieder da – verpasste Frames werden aus dem Verlauf nachgeladen …</span>
+      </div>`;
+    }
+    return nothing;
+  }
+
   private renderActiveCapture(): TemplateResult {
     const capture = this.capture!;
     if (capture.phase === 'armed') {
-      return html`<div class="capture">
-        <div class="pulse"><ha-icon icon="mdi:bell-ring-outline"></ha-icon></div>
-        <div style="flex:1">
-          <b>Bereit – jetzt klingeln bzw. Taste drücken.</b>
-          <p class="muted small">Die Aufnahme startet automatisch mit dem ersten Frame.</p>
-        </div>
-        <button class="btn text" @click=${this.cancelCapture}>Abbrechen</button>
-      </div>`;
+      return html`${this.renderConnectionStatus()}
+        <div class="capture">
+          <div class="pulse"><ha-icon icon="mdi:bell-ring-outline"></ha-icon></div>
+          <div style="flex:1">
+            <b>Bereit – jetzt klingeln bzw. Taste drücken.</b>
+            <p class="muted small">Die Aufnahme startet automatisch mit dem ersten Frame.</p>
+          </div>
+          <button class="btn text" @click=${this.cancelCapture}>Abbrechen</button>
+        </div>`;
     }
     const total = this.captureSeconds * 1000;
     const left = Math.max(0, (capture.endsAt ?? this.now) - this.now);
     const circumference = 2 * Math.PI * 32;
-    return html`<div class="capture">
-      <div class="ring" role="timer" aria-label="Verbleibende Sekunden">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle class="track" cx="36" cy="36" r="32"></circle>
-          <circle
-            class="bar"
-            cx="36"
-            cy="36"
-            r="32"
-            stroke-dasharray=${circumference}
-            stroke-dashoffset=${circumference * (1 - left / total)}
-          ></circle>
-        </svg>
-        <div class="value">${Math.ceil(left / 1000)}</div>
-      </div>
-      <div style="flex:1">
-        <b>Aufnahme läuft …</b>
-        <p class="muted small">${capture.lines.length} Frame(s) empfangen</p>
-      </div>
-      <button class="btn" @click=${this.finishCapture}>Jetzt beenden</button>
-    </div>`;
+    const completing = left === 0 && capture.missed;
+    return html`${this.renderConnectionStatus()}
+      <div class="capture">
+        <div class="ring" role="timer" aria-label="Verbleibende Sekunden">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="track" cx="36" cy="36" r="32"></circle>
+            <circle
+              class="bar"
+              cx="36"
+              cy="36"
+              r="32"
+              stroke-dasharray=${circumference}
+              stroke-dashoffset=${circumference * (1 - left / total)}
+            ></circle>
+          </svg>
+          <div class="value">${Math.ceil(left / 1000)}</div>
+        </div>
+        <div style="flex:1">
+          <b>${completing ? 'Aufnahme wird vervollständigt …' : 'Aufnahme läuft …'}</b>
+          <p class="muted small">${capture.lines.length} Frame(s) empfangen</p>
+        </div>
+        <button class="btn" @click=${this.finishCapture}>Jetzt beenden</button>
+      </div>`;
   }
 
   private renderCaptures(step: StepDefinition): TemplateResult {

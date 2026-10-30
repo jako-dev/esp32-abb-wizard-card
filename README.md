@@ -31,7 +31,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.2.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.3.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -138,6 +138,22 @@ Die Daten der Öffnen-Frames sind der **Türcode** deiner Anlage. Er bleibt in d
 du selbst exportierst. Die Karte überträgt ihn nirgendwohin. In der Ergebnisansicht ist er standardmäßig verdeckt.
 Teile die exportierte Sitzung oder die YAML nicht öffentlich; für Forenbeiträge die Option **Türcode maskieren**
 verwenden.
+
+## Verbindungsabbrüche (z. B. im Fahrstuhl)
+
+Die Karte kommt mit Funklöchern zurecht – du kannst einfach weitermachen:
+
+- Fertige Aufnahmen und die Sitzung liegen im Browser und überstehen auch einen Neustart der App.
+- Bricht die Verbindung **während** einer Aufnahme ab (auch wenn die App im Hintergrund war oder neu geladen
+  wurde), zeichnet Home Assistant die Frames trotzdem auf. Sobald die Verbindung zurück ist, holt die Karte die
+  verpassten Frames aus dem **Verlauf** (Recorder) nach und schließt die Aufnahme dann ab. Das dauert nach der
+  Wiederverbindung einige Sekunden, weil der Recorder Zustände nur alle paar Sekunden speichert.
+- Bei „Erst mit dem ersten Frame starten“ funktioniert das auch, wenn du unten klingelst, während das Handy noch
+  kein Netz hat: Der Beginn der Aufnahme wird aus dem Verlauf bestimmt.
+- Eine unterbrochene Aufnahme wird nach dem Neuladen bis zu 15 Minuten lang fortgesetzt.
+
+Voraussetzung: Der Debug-Sensor ist nicht vom Recorder ausgeschlossen (Standard). Die Karte liest dafür nur den
+Verlauf, sie sendet nichts.
 
 ## Bekannte Einschränkungen
 

@@ -14,6 +14,11 @@ function fakeHass() {
       listeners.splice(listeners.indexOf(cb), 1);
     };
   });
+  const history: { s: string; lu: number }[] = [];
+  const sendMessagePromise = vi.fn(async (msg: { type: string; entity_ids: string[] }) => {
+    expect(msg.type).toBe('history/history_during_period');
+    return { [msg.entity_ids[0]]: history };
+  });
   // Any other property access (e.g. callService) would be undefined and throw if used.
   const hass = {
     states: {
@@ -25,7 +30,8 @@ function fakeHass() {
         attributes: { friendly_name: 'Doorbell Intercom' },
       },
     },
-    connection: { subscribeEvents },
+    connection: { subscribeEvents, sendMessagePromise },
+    connected: true,
   } as unknown as HomeAssistant;
   const emit = (state: string, entity_id = 'sensor.doorbell_intercom') =>
     listeners.forEach((l) =>
@@ -39,11 +45,12 @@ function fakeHass() {
         },
       }),
     );
-  return { hass, emit, listeners, subscribeEvents };
+  return { hass, emit, listeners, subscribeEvents, sendMessagePromise, history };
 }
 
 async function mount() {
   localStorage.clear();
+  document.body.replaceChildren();
   const card = document.createElement('abb-welcome-wizard-card') as AbbWelcomeWizardCard;
   card.setConfig({ type: 'custom:abb-welcome-wizard-card', entity: 'sensor.doorbell_intercom' });
   const fake = fakeHass();
@@ -162,6 +169,62 @@ describe('abb-welcome-wizard-card', () => {
     expect(() =>
       card.setConfig({ type: 'x', entity: 'sensor.other', doors: [{ name: 'A', type: 'nope' }] }),
     ).toThrow('outdoor');
+  });
+
+  it('fills in frames missed during a connection loss from the history', async () => {
+    const { card, hass, history, sendMessagePromise } = await mount();
+    type Internals = {
+      page: number;
+      capture: {
+        phase: string;
+        armedAt: number;
+        missed?: boolean;
+        syncAfter?: number;
+        lines: unknown[];
+      } | null;
+      beginCapture(wait: boolean): void;
+      syncFromHistory(): Promise<void>;
+      session: { steps: Record<string, { captures: { lines: { line: string }[] }[] }> };
+    };
+    const internals = card as unknown as Internals;
+    internals.page = 3; // ring:haustuer
+    internals.beginCapture(true);
+    await card.updateComplete;
+
+    // Elevator: connection lost while armed, the doorbell rings meanwhile.
+    card.hass = { ...hass, connected: false };
+    await card.updateComplete;
+    expect(text(card)).toContain('Keine Verbindung zu Home Assistant');
+    expect(internals.capture?.missed).toBe(true);
+
+    const now = Date.now();
+    internals.capture = { ...internals.capture!, armedAt: now - 60_000 };
+    history.push(
+      { s: '[2002 > 1010] Type: 01', lu: (now - 40_000) / 1000 },
+      { s: '[1010 > 2002] Type: 81', lu: (now - 39_000) / 1000 },
+    );
+
+    card.hass = { ...hass, connected: true };
+    await card.updateComplete;
+    expect(text(card)).toContain('verpasste Frames werden aus dem Verlauf nachgeladen');
+    internals.capture = { ...internals.capture!, syncAfter: Date.now() - 1 };
+    await internals.syncFromHistory();
+    expect(sendMessagePromise).toHaveBeenCalledTimes(1);
+    expect(internals.capture).toMatchObject({ phase: 'recording', missed: false });
+    expect(internals.capture!.lines).toHaveLength(2);
+  });
+
+  it('resumes a capture after the page was reloaded', async () => {
+    localStorage.clear();
+    localStorage.setItem(
+      'abb-welcome-wizard-card:capture:sensor.doorbell_intercom',
+      JSON.stringify({ step: 'ring:wohnung', phase: 'armed', armedAt: Date.now() - 5000, lines: [] }),
+    );
+    const card = document.createElement('abb-welcome-wizard-card') as AbbWelcomeWizardCard;
+    card.setConfig({ type: 'custom:abb-welcome-wizard-card', entity: 'sensor.doorbell_intercom' });
+    const internals = card as unknown as { page: number; capture: { step: string; missed: boolean } | null };
+    expect(internals.page).toBe(4);
+    expect(internals.capture).toMatchObject({ step: 'ring:wohnung', missed: true });
   });
 
   it('unsubscribes when removed', async () => {

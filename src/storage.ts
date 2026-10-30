@@ -1,3 +1,4 @@
+import type { ActiveCapture } from './recorder';
 import { parseSession, serializeSession } from './session';
 import type { Session } from './types';
 
@@ -27,6 +28,36 @@ export function clearStoredSession(entity: string): void {
   } catch {
     // ignore
   }
+}
+
+const captureKey = (entity: string) => `abb-welcome-wizard-card:capture:${entity}`;
+
+/** Keep a running capture so it survives a reload of the page or app. */
+export function storeActiveCapture(entity: string, capture: ActiveCapture | null): void {
+  try {
+    if (capture) window.localStorage.setItem(captureKey(entity), JSON.stringify(capture));
+    else window.localStorage.removeItem(captureKey(entity));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadActiveCapture(entity: string): ActiveCapture | undefined {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(captureKey(entity)) ?? 'null');
+    if (
+      raw &&
+      typeof raw.step === 'string' &&
+      (raw.phase === 'armed' || raw.phase === 'recording') &&
+      typeof raw.armedAt === 'number' &&
+      Array.isArray(raw.lines)
+    ) {
+      return raw as ActiveCapture;
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
 }
 
 /** Offer text as a file download. */
