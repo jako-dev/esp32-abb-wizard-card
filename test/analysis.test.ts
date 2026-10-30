@@ -60,7 +60,7 @@ describe('analyzeSession – Mat931 example system', () => {
       data: [0xab, 0xcd, 0xef],
       occurrences: 2,
       score: 1,
-      confirmation: { source: 0x4001, messageType: 0x8d, occurrences: 2 },
+      confirmation: { source: 0x4001, messageType: 0x8d, occurrences: 2, destination: 0x100c },
     });
     expect(result.opens.open_house).toBeNull();
   });

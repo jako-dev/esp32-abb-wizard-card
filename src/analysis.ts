@@ -361,10 +361,12 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
   };
 
   const confirmType = frame.type | REPLY_FLAG;
+  const replies = [...best.in].map((index) => captures[index].filter((f) => f.type === confirmType));
+  // Replies addressed to our own indoor station rule out confirmations of a neighbour's door opener.
+  const toIndoor = replies.some((frames) => frames.some((f) => f.dst === ctx.indoor));
   const sources = new Map<number, number>();
-  for (const index of best.in) {
-    const inCapture = new Set<number>();
-    for (const f of captures[index]) if (f.type === confirmType) inCapture.add(f.src);
+  for (const frames of replies) {
+    const inCapture = new Set(frames.filter((f) => !toIndoor || f.dst === ctx.indoor).map((f) => f.src));
     for (const src of inCapture) increment(sources, src);
   }
   // Prefer the device that was addressed by the open frame, otherwise the most frequent responder.
@@ -372,7 +374,12 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
     ? ([frame.dst, sources.get(frame.dst)!] as [number, number])
     : mostFrequent(sources, (a, b) => a - b);
   if (confirm) {
-    result.confirmation = { source: confirm[0], messageType: confirmType, occurrences: confirm[1] };
+    result.confirmation = {
+      source: confirm[0],
+      messageType: confirmType,
+      occurrences: confirm[1],
+      ...(toIndoor ? { destination: ctx.indoor } : {}),
+    };
   } else {
     ctx.warnings.push({
       code: 'no_confirmation',

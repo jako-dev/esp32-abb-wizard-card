@@ -109,6 +109,8 @@ export interface OpenConfirmation {
   source: number;
   messageType: number;
   occurrences: number;
+  /** Set if the confirmation was addressed to our indoor station. */
+  destination?: number;
 }
 
 export interface OpenResult {

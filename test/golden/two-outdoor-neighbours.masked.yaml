@@ -1,0 +1,167 @@
+# ABB-Welcome Wizard – generierte ESPHome-Konfiguration
+# Innenstation: 0x1010, Wohnung 16
+# Adresslänge: 2 Byte
+#
+# Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
+# esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.
+# Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von
+# remote_receiver, text_sensor ...) unverändert lassen.
+#
+# Voraussetzung (in der Demo-Firmware bereits gesetzt):
+# esp32:
+#   framework:
+#     type: esp-idf
+#
+# Türcodes sind durch Platzhalter ersetzt – vor dem Flashen die echten Werte eintragen!
+
+esphome:
+  on_boot:
+    - binary_sensor.template.publish:
+        id: klingel_tor
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_haustuer
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_wohnung
+        state: OFF
+    - lock.template.publish:
+        id: tor
+        state: LOCKED
+    - lock.template.publish:
+        id: haustuer
+        state: LOCKED
+
+remote_receiver:
+  # pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration
+  on_abbwelcome:
+    then:
+      # Debug-Textsensor (id ggf. an eure Firmware anpassen)
+      - lambda: 'char buf[192]; x.format_to(buf, 192); id(doorbell_intercom).publish_state(buf);'
+      # Klingel Tor – Außenstation #1 (0x2001)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #1 (0x2001) > Innenstation #16 (0x1010) (3/3 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x1010);'
+              # Typ 0A: Außenstation #1 (0x2001) > Gateway (0x3001), Data: 01 10 10 (3/3 Aufnahmen)
+              - lambda: 'std::vector<uint8_t> d = {0x01, 0x10, 0x10}; return (x.get_message_type() == 0x0a) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x3001) && (x.get_data() == d);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: OFF
+      # Klingel Haustür – Außenstation #2 (0x2002)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #2 (0x2002) > Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2002) && (x.get_destination_address() == 0x1010);'
+              # Typ 81: Innenstation #16 (0x1010) > Außenstation #2 (0x2002) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1010) && (x.get_destination_address() == 0x2002);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: OFF
+      # Klingel Wohnungstür
+      - if:
+          condition:
+            or:
+              # Typ 11, Quelle: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x11) && (x.get_source_address() == 0x1010);'
+              # Typ 91, Ziel: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1010);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_wohnung
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_wohnung
+                state: OFF
+      # Tor geöffnet (Bestätigung Typ 8D)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8d);'
+              - lambda: 'return (x.get_source_address() == 0x2001);'
+              - lambda: 'return (x.get_destination_address() == 0x1010);'
+          then:
+            - lock.template.publish:
+                id: tor
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: tor
+                state: LOCKED
+      # Haustür geöffnet (Bestätigung Typ 8D)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8d);'
+              - lambda: 'return (x.get_source_address() == 0x4001);'
+              - lambda: 'return (x.get_destination_address() == 0x1010);'
+          then:
+            - lock.template.publish:
+                id: haustuer
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: haustuer
+                state: LOCKED
+
+binary_sensor:
+  - platform: template
+    name: "Klingel Tor"
+    id: klingel_tor
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Haustür"
+    id: klingel_haustuer
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Wohnungstür"
+    id: klingel_wohnung
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+
+lock:
+  - platform: template
+    name: "Tor"
+    id: tor
+    icon: mdi:gate
+    lock_action:
+      - lock.template.publish:
+          id: tor
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x1010 # Innenstation
+          destination_address: 0x2001 # Außenstation #1 (0x2001)
+          three_byte_address: false
+          message_type: 0x0d # Türöffner
+          data: [0x00, 0x00, 0x00] # PLATZHALTER: 3 Byte TÜRCODE – nicht öffentlich teilen!
+  - platform: template
+    name: "Haustür"
+    id: haustuer
+    icon: mdi:door
+    lock_action:
+      - lock.template.publish:
+          id: haustuer
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x1010 # Innenstation
+          destination_address: 0x4001 # Türsteuergerät (0x4001)
+          three_byte_address: false
+          message_type: 0x0d # Türöffner
+          data: [0x00, 0x00, 0x00] # PLATZHALTER: 3 Byte TÜRCODE – nicht öffentlich teilen!

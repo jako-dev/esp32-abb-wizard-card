@@ -1,0 +1,85 @@
+# ABB-Welcome Wizard – generierte ESPHome-Konfiguration
+# Innenstation: 0x000110, Wohnung 16
+# Adresslänge: 3 Byte (three_byte_address: true)
+#
+# Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
+# esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.
+# Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von
+# remote_receiver, text_sensor ...) unverändert lassen.
+#
+# Voraussetzung (in der Demo-Firmware bereits gesetzt):
+# esp32:
+#   framework:
+#     type: esp-idf
+#
+# ACHTUNG: "data" der Öffnen-Befehle ist euer TÜRCODE – nicht öffentlich teilen!
+
+esphome:
+  on_boot:
+    - binary_sensor.template.publish:
+        id: klingel_tor
+        state: OFF
+    - lock.template.publish:
+        id: haustuer
+        state: LOCKED
+
+remote_receiver:
+  # pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration
+  on_abbwelcome:
+    then:
+      # Klingel Tor – Außenstation #1 (0x000201)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #1 (0x000201) > Innenstation #16 (0x000110) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x000201) && (x.get_destination_address() == 0x000110);'
+              # Typ 81: Innenstation #16 (0x000110) > Außenstation #1 (0x000201) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x000110) && (x.get_destination_address() == 0x000201);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: OFF
+      # Haustür geöffnet (Bestätigung Typ 8E)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8e);'
+              - lambda: 'return (x.get_source_address() == 0x000401);'
+              - lambda: 'return (x.get_destination_address() == 0x000110);'
+          then:
+            - lock.template.publish:
+                id: haustuer
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: haustuer
+                state: LOCKED
+      # Nicht ermittelt: Klingel Haustür, Klingel Wohnungstür, Öffnen Tor
+
+binary_sensor:
+  - platform: template
+    name: "Klingel Tor"
+    id: klingel_tor
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+
+lock:
+  - platform: template
+    name: "Haustür"
+    id: haustuer
+    icon: mdi:door
+    lock_action:
+      - lock.template.publish:
+          id: haustuer
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x000110 # Innenstation
+          destination_address: 0x000401 # Türsteuergerät (0x000401)
+          three_byte_address: true
+          message_type: 0x0e # Schiebetür
+          data: [0x01, 0x02, 0x03] # TÜRCODE – nicht öffentlich teilen!
