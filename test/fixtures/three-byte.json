@@ -1,0 +1,95 @@
+{
+  "format": "abb-welcome-wizard-session",
+  "version": 1,
+  "entity": "sensor.doorbell_intercom",
+  "createdAt": "2026-10-30T10:00:00.000Z",
+  "updatedAt": "2026-10-30T10:25:20.000Z",
+  "dials": {
+    "x10": 1,
+    "x1": 6
+  },
+  "steps": {
+    "baseline": {
+      "skipped": true,
+      "captures": []
+    },
+    "ring_gate": {
+      "skipped": false,
+      "captures": [
+        {
+          "startedAt": "2026-10-30T10:22:00.000Z",
+          "endedAt": "2026-10-30T10:22:10.000Z",
+          "lines": [
+            {
+              "time": "2026-10-30T10:22:00.500Z",
+              "line": "55.FF.40.01.00.01.10.00.02.01.6E.39 [000201 > 000110] Type: 01"
+            },
+            {
+              "time": "2026-10-30T10:22:00.620Z",
+              "line": "55.FF.40.81.00.02.01.00.01.10.F1.DA [000110 > 000201] Type: 81"
+            }
+          ]
+        },
+        {
+          "startedAt": "2026-10-30T10:23:00.000Z",
+          "endedAt": "2026-10-30T10:23:10.000Z",
+          "lines": [
+            {
+              "time": "2026-10-30T10:23:00.500Z",
+              "line": "[000201 > 000110] Type: 01"
+            },
+            {
+              "time": "2026-10-30T10:23:00.620Z",
+              "line": "[000110 > 000201] Type: 81"
+            }
+          ]
+        }
+      ]
+    },
+    "ring_house": {
+      "skipped": true,
+      "captures": []
+    },
+    "ring_apartment": {
+      "skipped": true,
+      "captures": []
+    },
+    "open_gate": {
+      "skipped": true,
+      "captures": []
+    },
+    "open_house": {
+      "skipped": false,
+      "captures": [
+        {
+          "startedAt": "2026-10-30T10:24:00.000Z",
+          "endedAt": "2026-10-30T10:24:10.000Z",
+          "lines": [
+            {
+              "time": "2026-10-30T10:24:00.500Z",
+              "line": "55.FF.43.0E.00.04.01.00.01.10.82.01.02.03.7B [000110 > 000401] Type: 0E, Data: 01.02.03"
+            },
+            {
+              "time": "2026-10-30T10:24:00.620Z",
+              "line": "55.FF.40.8E.00.01.10.00.04.01.D5.C3 [000401 > 000110] Type: 8E"
+            }
+          ]
+        },
+        {
+          "startedAt": "2026-10-30T10:25:00.000Z",
+          "endedAt": "2026-10-30T10:25:10.000Z",
+          "lines": [
+            {
+              "time": "2026-10-30T10:25:00.500Z",
+              "line": "55.FF.43.0E.00.04.01.00.01.10.D4.01.02.03.E6 [000110 > 000401] Type: 0E, Data: 01.02.03"
+            },
+            {
+              "time": "2026-10-30T10:25:00.620Z",
+              "line": "55.FF.40.8E.00.01.10.00.04.01.AF.14 [000401 > 000110] Type: 8E"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

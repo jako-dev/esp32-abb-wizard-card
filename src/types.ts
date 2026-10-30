@@ -62,6 +62,8 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   dials: DialSettings;
+  /** Manually set indoor station address (overrides auto-detection). */
+  indoorAddress?: number;
   steps: Record<StepId, StepRecord>;
 }
 
@@ -122,7 +124,7 @@ export interface OpenResult {
 
 export interface IndoorResult {
   address: number;
-  method: 'open' | 'frequency';
+  method: 'manual' | 'open' | 'frequency';
   count: number;
   expected?: number;
   matchesExpected?: boolean;
