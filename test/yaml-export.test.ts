@@ -3,7 +3,7 @@ import { parse } from 'yaml';
 import { analyzeSession } from '../src/analysis';
 import { apartmentFromDials } from '../src/address';
 import { createSession, parseSession } from '../src/session';
-import { generateYaml, type ExportOptions } from '../src/yaml-export';
+import { deviceNameFromFriendly, generateYaml, type ExportOptions } from '../src/yaml-export';
 
 // Run with UPDATE_GOLDEN=1 to rewrite the golden files after an intended change.
 const update = process.env.UPDATE_GOLDEN === '1';
@@ -27,6 +27,11 @@ describe('generateYaml golden files', () => {
     ['two-outdoor-neighbours', 'two-outdoor-neighbours.masked.yaml', { maskDoorCode: true }],
     ['three-byte', 'three-byte.yaml', { debugSensorId: null }],
     ['custom-doors', 'custom-doors.yaml', {}],
+    [
+      'two-outdoor-neighbours',
+      'two-outdoor-neighbours.full.yaml',
+      { device: { name: 'abb-welcome-demo', friendlyName: 'ABB Welcome Demo' } },
+    ],
   ] as const)('%s → %s', (fixture, golden, options) => {
     expectGolden(exportFixture(fixture, options), golden);
   });
@@ -106,5 +111,59 @@ describe('generateYaml', () => {
     const empty = generateYaml(analyzeSession(session), session.doors);
     expect(empty).toContain('Keine Innenstationsadresse ermittelt');
     expect(parse(empty)).toBeNull();
+  });
+
+  describe('complete device configuration', () => {
+    const secret = { tag: '!secret', resolve: (value: string) => `secret:${value}` };
+    const full = parse(
+      exportFixture('two-outdoor-neighbours', {
+        device: { name: 'klingel', friendlyName: 'Klingel', debugSensorName: 'ABB Welcome Last Frame' },
+      }),
+      { customTags: [secret] },
+    );
+
+    it('contains everything needed to flash the device', () => {
+      expect(Object.keys(full)).toEqual([
+        'esp32',
+        'esphome',
+        'wifi',
+        'captive_portal',
+        'logger',
+        'api',
+        'ota',
+        'remote_transmitter',
+        'remote_receiver',
+        'binary_sensor',
+        'sensor',
+        'text_sensor',
+        'lock',
+        'button',
+        'status_led',
+      ]);
+      expect(full.esp32.framework.type).toBe('esp-idf');
+      expect(full.esphome).toMatchObject({ name: 'klingel', friendly_name: 'Klingel' });
+      expect(full.api).toEqual({ encryption: { key: 'secret:api_encryption_key' }, batch_delay: '0ms' });
+      expect(full.remote_receiver).toMatchObject({ pin: { number: 'GPIO25' }, dump: ['abbwelcome'] });
+      expect(full.remote_transmitter.pin).toBe('GPIO26');
+    });
+
+    it('keeps the debug sensor so this card keeps working', () => {
+      expect(full.text_sensor).toEqual([
+        {
+          platform: 'template',
+          name: 'ABB Welcome Last Frame',
+          id: 'doorbell_intercom',
+          icon: 'mdi:bell-circle',
+          update_interval: 'never',
+        },
+      ]);
+      expect(full.remote_receiver.on_abbwelcome.then[0].lambda).toContain('id(doorbell_intercom)');
+    });
+
+    it('derives ESPHome node names', () => {
+      expect(deviceNameFromFriendly('ABB Welcome Demo')).toBe('abb-welcome-demo');
+      expect(deviceNameFromFriendly('Türklingel Süd')).toBe('tuerklingel-sued');
+      expect(deviceNameFromFriendly('!!')).toBe('abb-welcome-demo');
+    });
   });
 });

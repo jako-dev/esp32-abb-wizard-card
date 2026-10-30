@@ -31,7 +31,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.3.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.4.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -116,15 +116,25 @@ in Ruhe zur Tür gehen kannst.
 
 ### Export
 
-Die erzeugte YAML ersetzt in der ESPHome-Konfiguration deines ESP32 die gleichnamigen Abschnitte der
-Demo-Firmware (`esphome.on_boot`, `remote_receiver.on_abbwelcome`, `binary_sensor`, `lock`):
+Auf der Ergebnisseite gibt es die ESPHome-Konfiguration in zwei Varianten (Kopieren oder Herunterladen):
+
+- **Komplette Datei** (Standard): vollständige Gerätekonfiguration auf Basis der Demo-Firmware – im ESPHome
+  Device Builder beim Gerät auf **Bearbeiten**, den gesamten Inhalt ersetzen und **Installieren** (drahtlos).
+  Gerätename, Anzeigename und Name des Debug-Sensors schlägt die Karte aus Home Assistant vor. Der Gerätename muss
+  zum bestehenden Gerät passen, sonst ist es per OTA nicht mehr erreichbar. In `secrets.yaml` werden `wifi_ssid`,
+  `wifi_password`, `api_encryption_key`, `ota_password` und `ap_password` erwartet – den API-Schlüssel aus der
+  bisherigen Datei übernehmen.
+- **Nur geänderte Abschnitte**: ersetzt in der bestehenden Konfiguration nur `esphome.on_boot`,
+  `remote_receiver.on_abbwelcome`, `binary_sensor` und `lock`.
+
+Ergebnis in Home Assistant:
 
 - je Tür ein Binary-Sensor „Klingel _Name_“ (ESPHome-id `klingel_<name>`, z. B. `klingel_haustuer`)
 - je Tür mit Öffner ein Schloss „_Name_“ (id `<name>`, z. B. `haustuer`), öffnet per
   `remote_transmitter.transmit_abbwelcome`; die Bestätigung vom Bus setzt das Schloss kurz auf „Wird entriegelt“
+- Türen ohne Öffner (z. B. die Wohnungstür) bekommen nur den Klingel-Sensor.
 
-Danach im ESPHome Device Builder installieren (OTA). Die Firmware muss mit `esp32: framework: type: esp-idf`
-gebaut werden (in der Demo-Firmware bereits so eingestellt).
+Die Firmware wird mit `esp32: framework: type: esp-idf` gebaut (in beiden Varianten berücksichtigt).
 
 ### Sitzung speichern
 

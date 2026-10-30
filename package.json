@@ -1,6 +1,6 @@
 {
   "name": "abb-welcome-wizard-card",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Home Assistant Lovelace card that guides through calibrating a Busch-Welcome / ABB-Welcome intercom via an ESP32 doorbell bus interface and generates ESPHome YAML.",
   "type": "module",
   "license": "MIT",

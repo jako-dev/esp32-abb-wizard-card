@@ -11,7 +11,41 @@ export interface ExportOptions {
   unlockSeconds?: number;
   /** Apartment number shown in the header comment. */
   apartment?: number;
+  /** Generate a complete device configuration (based on Mat931's demo firmware) instead of a snippet. */
+  device?: DeviceOptions;
 }
+
+export interface DeviceOptions {
+  /** `esphome.name` – must match the existing device, otherwise OTA and Home Assistant lose it. */
+  name: string;
+  friendlyName: string;
+  /** Name of the debug text sensor; keep it to keep its entity id (and this card's config) unchanged. */
+  debugSensorName?: string;
+  board?: string;
+}
+
+export const DEFAULT_DEVICE: DeviceOptions = {
+  name: 'abb-welcome-demo',
+  friendlyName: 'ABB Welcome Demo',
+  debugSensorName: 'Doorbell Intercom',
+  board: 'esp32dev',
+};
+
+/** ESPHome node names: lower case letters, digits and hyphens. */
+export function deviceNameFromFriendly(friendly: string): string {
+  return (
+    friendly
+      .toLowerCase()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || DEFAULT_DEVICE.name
+  );
+}
+
+const SECRETS = ['wifi_ssid', 'wifi_password', 'api_encryption_key', 'ota_password', 'ap_password'];
 
 export interface ExportTarget {
   door: Door;
@@ -122,15 +156,27 @@ function writeHeader(w: YamlWriter, result: WizardResult, options: ExportOptions
   }
   w.comment(0, `Adresslänge: ${threeByte ? '3 Byte (three_byte_address: true)' : '2 Byte'}`);
   w.comment(0, '');
-  w.comment(0, 'Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:');
-  w.comment(0, 'esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.');
-  w.comment(0, 'Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von');
-  w.comment(0, 'remote_receiver, text_sensor ...) unverändert lassen.');
-  w.comment(0, '');
-  w.comment(0, 'Voraussetzung (in der Demo-Firmware bereits gesetzt):');
-  w.comment(0, 'esp32:');
-  w.comment(0, '  framework:');
-  w.comment(0, '    type: esp-idf');
+  if (options.device) {
+    w.comment(0, 'Komplette Gerätekonfiguration auf Basis der ABB-Welcome-Demo-Firmware (Mat931).');
+    w.comment(0, `Im ESPHome Device Builder den Inhalt von ${options.device.name}.yaml hierdurch ersetzen.`);
+    w.comment(0, 'WICHTIG: esphome.name muss zum bestehenden Gerät passen – sonst ist es per OTA und');
+    w.comment(0, 'in Home Assistant nicht mehr erreichbar.');
+    w.comment(0, '');
+    w.comment(0, `Benötigt in secrets.yaml: ${SECRETS.join(', ')}.`);
+    w.comment(0, 'Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in');
+    w.comment(0, 'Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den');
+    w.comment(0, 'ota-Abschnitt aus der bisherigen Datei übernehmen.');
+  } else {
+    w.comment(0, 'Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:');
+    w.comment(0, 'esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.');
+    w.comment(0, 'Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von');
+    w.comment(0, 'remote_receiver, text_sensor ...) unverändert lassen.');
+    w.comment(0, '');
+    w.comment(0, 'Voraussetzung (in der Demo-Firmware bereits gesetzt):');
+    w.comment(0, 'esp32:');
+    w.comment(0, '  framework:');
+    w.comment(0, '    type: esp-idf');
+  }
   if (Object.values(result.opens).some((o) => o !== null)) {
     w.comment(0, '');
     w.comment(
@@ -156,7 +202,8 @@ export function generateYaml(
 ): string {
   const w = new YamlWriter();
   const { indoor, threeByte } = result;
-  const debugId = options.debugSensorId === undefined ? 'doorbell_intercom' : options.debugSensorId;
+  const device = options.device ? { ...DEFAULT_DEVICE, ...options.device } : undefined;
+  const debugId = device || options.debugSensorId === undefined ? 'doorbell_intercom' : options.debugSensorId;
   const unlockSeconds = options.unlockSeconds ?? 3;
 
   writeHeader(w, result, options);
@@ -176,16 +223,34 @@ export function generateYaml(
     ...allLocks.filter((t) => !result.opens[t.door.key]).map((t) => `Öffnen ${t.name}`),
   ];
 
-  if (rings.length + locks.length > 0) {
+  if (device) {
+    w.line(0, 'esp32:');
+    w.line(2, `board: ${device.board}`);
+    w.line(2, 'framework:');
+    w.line(4, 'type: esp-idf');
+    w.comment(4, 'sdkconfig_options:');
+    w.comment(4, '  CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig');
+    w.line(0);
+  }
+  if (device || rings.length + locks.length > 0) {
     w.line(0, 'esphome:');
-    w.line(2, 'on_boot:');
-    for (const t of rings) publish(w, 4, 'binary_sensor', t.id, 'OFF');
-    for (const t of locks) publish(w, 4, 'lock', t.id, 'LOCKED');
+    if (device) {
+      w.line(2, `name: ${device.name}`);
+      w.line(2, `friendly_name: ${quote(device.friendlyName)}`);
+    }
+    if (rings.length + locks.length > 0) {
+      w.line(2, 'on_boot:');
+      for (const t of rings) publish(w, 4, 'binary_sensor', t.id, 'OFF');
+      for (const t of locks) publish(w, 4, 'lock', t.id, 'LOCKED');
+    }
     w.line(0);
   }
 
+  if (device) writeDeviceBase(w);
+
   w.line(0, 'remote_receiver:');
-  w.comment(2, 'pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration');
+  if (device) writeReceiverSettings(w);
+  else w.comment(2, 'pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration');
   w.line(2, 'on_abbwelcome:');
   w.line(4, 'then:');
   if (debugId) {
@@ -245,6 +310,23 @@ export function generateYaml(
     w.line(0);
   }
 
+  if (device) {
+    w.line(0, 'sensor:');
+    w.line(2, '- platform: internal_temperature');
+    w.line(4, 'name: "Internal Temperature"');
+    w.line(0);
+    w.line(0, 'text_sensor:');
+    w.line(2, '- platform: template');
+    w.line(
+      4,
+      `name: ${quote(device.debugSensorName ?? DEFAULT_DEVICE.debugSensorName!)} # Debug-Sensor für diese Karte`,
+    );
+    w.line(4, 'id: doorbell_intercom');
+    w.line(4, 'icon: mdi:bell-circle');
+    w.line(4, 'update_interval: never');
+    w.line(0);
+  }
+
   if (locks.length > 0) {
     w.line(0, 'lock:');
     for (const t of locks) {
@@ -277,5 +359,63 @@ export function generateYaml(
     }
   }
 
+  if (device) {
+    if (locks.length > 0) w.line(0);
+    w.line(0, 'button:');
+    w.line(2, '- platform: restart');
+    w.line(4, 'name: "Reboot"');
+    w.line(2, '- platform: safe_mode');
+    w.line(4, 'name: "Reboot (Safe Mode)"');
+    w.line(0);
+    w.line(0, 'status_led:');
+    w.line(2, 'pin:');
+    w.line(4, 'number: GPIO2');
+    w.line(4, 'ignore_strapping_warning: true');
+  }
+
   return w.toString();
+}
+
+/** wifi, api, ota and transmitter as in the demo firmware of the ESP32 doorbell bus interface. */
+function writeDeviceBase(w: YamlWriter): void {
+  w.line(0, 'wifi:');
+  w.line(2, 'ssid: !secret wifi_ssid');
+  w.line(2, 'password: !secret wifi_password');
+  w.line(2, 'ap:');
+  w.line(4, 'password: !secret ap_password');
+  w.line(0);
+  w.line(0, 'captive_portal:');
+  w.line(0);
+  w.line(0, 'logger:');
+  w.line(0);
+  w.line(0, 'api:');
+  w.line(2, 'encryption:');
+  w.line(4, 'key: !secret api_encryption_key');
+  w.line(2, 'batch_delay: 0ms # jeden Bus-Frame einzeln an Home Assistant senden');
+  w.line(0);
+  w.line(0, 'ota:');
+  w.line(2, '- platform: esphome');
+  w.line(4, 'password: !secret ota_password');
+  w.line(0);
+  w.line(0, 'remote_transmitter:');
+  w.line(2, 'pin: GPIO26');
+  w.line(2, 'carrier_duty_percent: 100%');
+  w.line(2, 'non_blocking: true');
+  w.line(0);
+}
+
+function writeReceiverSettings(w: YamlWriter): void {
+  w.line(2, 'pin:');
+  w.line(4, 'number: GPIO25');
+  w.line(4, 'mode:');
+  w.line(6, 'input: true');
+  w.line(2, 'dump: [abbwelcome]');
+  w.line(2, 'filter: 8us');
+  w.line(2, 'tolerance:');
+  w.line(4, 'type: time');
+  w.line(4, 'value: 26us');
+  w.line(2, 'idle: 1500us');
+  w.line(2, 'buffer_size: 15kB');
+  w.line(2, 'rmt_symbols: 320');
+  w.line(2, 'clock_resolution: 500000');
 }

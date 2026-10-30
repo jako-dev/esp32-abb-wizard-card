@@ -34,6 +34,9 @@ export interface HomeAssistant {
   connection: HassConnection;
   /** False while the websocket connection to Home Assistant is down. */
   connected?: boolean;
+  /** Entity and device registry (as provided by the frontend), used to suggest the ESPHome device name. */
+  entities?: Record<string, { device_id?: string | null }>;
+  devices?: Record<string, { name?: string | null; name_by_user?: string | null }>;
   user?: { is_admin: boolean; name?: string };
 }
 

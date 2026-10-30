@@ -279,6 +279,41 @@ export const cardStyles = css`
     cursor: pointer;
   }
 
+  /* Export */
+  .segmented {
+    display: inline-flex;
+    border: 1px solid var(--wiz-divider);
+    border-radius: 999px;
+    padding: 2px;
+    gap: 2px;
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+  .segmented button {
+    font: inherit;
+    font-size: 0.85rem;
+    border: none;
+    background: transparent;
+    color: var(--wiz-text);
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .segmented button.active {
+    background: var(--wiz-accent);
+    color: var(--text-primary-color, #fff);
+  }
+  .segmented button:focus-visible {
+    outline: 2px solid var(--wiz-accent);
+    outline-offset: 1px;
+  }
+  .device-fields {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .device-fields label.field span {
+    font-size: 0.7rem;
+  }
+
   /* Door editor */
   .doors {
     display: grid;

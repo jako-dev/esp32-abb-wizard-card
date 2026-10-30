@@ -64,10 +64,17 @@ import type {
   Severity,
   WizardResult,
 } from './types';
-import { generateYaml, lockTargets, ringTargets } from './yaml-export';
+import {
+  DEFAULT_DEVICE,
+  deviceNameFromFriendly,
+  generateYaml,
+  lockTargets,
+  ringTargets,
+  type DeviceOptions,
+} from './yaml-export';
 
 const CARD_TAG = 'abb-welcome-wizard-card';
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */
@@ -99,6 +106,9 @@ export class AbbWelcomeWizardCard extends LitElement {
   @state() private toast = '';
   @state() private maskDoorCode = false;
   @state() private showDoorCode = false;
+  @state() private exportMode: 'full' | 'snippet' = 'full';
+  /** Device settings edited by the user; unset fields are suggested from Home Assistant. */
+  @state() private deviceEdits: Partial<DeviceOptions> = {};
   @state() private indoorInput = '';
   @state() private receivedCount = 0;
   /** Per-page override of the step's default capture mode. */
@@ -1184,7 +1194,12 @@ export class AbbWelcomeWizardCard extends LitElement {
     const result = this.result;
     const { indoor, threeByte } = result;
     const apartment = apartmentFromDials(this.session.dials);
-    const yaml = generateYaml(result, this.session.doors, { maskDoorCode: this.maskDoorCode, apartment });
+    const device = this.device;
+    const yaml = generateYaml(result, this.session.doors, {
+      maskDoorCode: this.maskDoorCode,
+      apartment,
+      device: this.exportMode === 'full' ? device : undefined,
+    });
     const recorded = Object.values(this.session.steps).some((s) => s.captures.length > 0);
 
     if (!recorded) {
@@ -1315,9 +1330,34 @@ export class AbbWelcomeWizardCard extends LitElement {
             />Türcode maskieren
           </label>
         </h3>
+        <div class="segmented" role="radiogroup" aria-label="Umfang">
+          ${(
+            [
+              ['full', 'Komplette Datei'],
+              ['snippet', 'Nur geänderte Abschnitte'],
+            ] as const
+          ).map(
+            ([mode, label]) =>
+              html`<button
+                role="radio"
+                aria-checked=${this.exportMode === mode}
+                class=${this.exportMode === mode ? 'active' : ''}
+                @click=${() => (this.exportMode = mode)}
+              >
+                ${label}
+              </button>`,
+          )}
+        </div>
+        ${this.exportMode === 'full' ? this.renderDeviceFields(device) : nothing}
         <p class="muted small">
-          In der ESPHome-Konfiguration deines ESP32 die gleichnamigen Abschnitte der Demo-Firmware ersetzen
-          und per OTA installieren.
+          ${
+            this.exportMode === 'full'
+              ? html`Im ESPHome Device Builder beim Gerät auf <b>Bearbeiten</b>, den gesamten Inhalt durch
+                  diese Datei ersetzen und <b>Installieren</b> (drahtlos). Benötigt in
+                  <code>secrets.yaml</code>: wifi_ssid, wifi_password, api_encryption_key, ota_password,
+                  ap_password – den API-Schlüssel aus der bisherigen Datei übernehmen.`
+              : 'In der ESPHome-Konfiguration deines ESP32 die gleichnamigen Abschnitte der Demo-Firmware ersetzen und per OTA installieren.'
+          }
           ${
             this.maskDoorCode
               ? 'Türcodes sind durch Platzhalter ersetzt – gut zum Teilen in Foren.'
@@ -1328,7 +1368,15 @@ export class AbbWelcomeWizardCard extends LitElement {
           <button class="btn primary" @click=${() => this.copyYaml(yaml)}>
             <ha-icon icon="mdi:content-copy"></ha-icon>Kopieren
           </button>
-          <button class="btn" @click=${() => downloadText('abb-welcome.yaml', yaml, 'text/yaml')}>
+          <button
+            class="btn"
+            @click=${() =>
+              downloadText(
+                this.exportMode === 'full' ? `${device.name}.yaml` : 'abb-welcome-abschnitte.yaml',
+                yaml,
+                'text/yaml',
+              )}
+          >
             <ha-icon icon="mdi:download"></ha-icon>Herunterladen
           </button>
         </div>
@@ -1351,6 +1399,52 @@ export class AbbWelcomeWizardCard extends LitElement {
       </details>
       ${this.renderLimitations()}
     `;
+  }
+
+  /** Device settings: user edits, otherwise suggested from the debug sensor's device in Home Assistant. */
+  private get device(): DeviceOptions {
+    const entity = this.config ? this._hass?.entities?.[this.config.entity] : undefined;
+    const registered = entity?.device_id ? this._hass?.devices?.[entity.device_id] : undefined;
+    const friendly = registered?.name_by_user || registered?.name || DEFAULT_DEVICE.friendlyName;
+    const stateName = this.config
+      ? this._hass?.states[this.config.entity]?.attributes.friendly_name
+      : undefined;
+    // The entity's friendly name is "<device> <sensor>"; keep the sensor part so the entity id stays the same.
+    const sensorName =
+      typeof stateName === 'string' && stateName.startsWith(`${friendly} `)
+        ? stateName.slice(friendly.length + 1)
+        : DEFAULT_DEVICE.debugSensorName;
+    return {
+      ...DEFAULT_DEVICE,
+      name: deviceNameFromFriendly(friendly),
+      friendlyName: friendly,
+      debugSensorName: sensorName,
+      ...this.deviceEdits,
+    };
+  }
+
+  private renderDeviceFields(device: DeviceOptions): TemplateResult {
+    const field = (key: keyof DeviceOptions, label: string, hint?: string) =>
+      html`<label class="field"
+        >${label}
+        <input
+          type="text"
+          .value=${device[key] ?? ''}
+          @change=${(ev: Event) => {
+            const value = (ev.target as HTMLInputElement).value.trim();
+            const edits = { ...this.deviceEdits };
+            if (value === '') delete edits[key];
+            else edits[key] = key === 'name' ? deviceNameFromFriendly(value) : value;
+            this.deviceEdits = edits;
+          }}
+        />
+        ${hint ? html`<span>${hint}</span>` : nothing}
+      </label>`;
+    return html`<div class="fields device-fields">
+      ${field('name', 'Gerätename', 'esphome name – muss zum bestehenden Gerät passen')}
+      ${field('friendlyName', 'Anzeigename')}
+      ${field('debugSensorName', 'Debug-Sensor', 'Unverändert lassen, damit diese Karte ihn findet')}
+    </div>`;
   }
 
   private async copyYaml(yaml: string): Promise<void> {

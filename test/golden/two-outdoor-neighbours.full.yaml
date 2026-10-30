@@ -1,0 +1,234 @@
+# ABB-Welcome Wizard – generierte ESPHome-Konfiguration
+# Innenstation: 0x1010, Wohnung 16
+# Adresslänge: 2 Byte
+#
+# Komplette Gerätekonfiguration auf Basis der ABB-Welcome-Demo-Firmware (Mat931).
+# Im ESPHome Device Builder den Inhalt von abb-welcome-demo.yaml hierdurch ersetzen.
+# WICHTIG: esphome.name muss zum bestehenden Gerät passen – sonst ist es per OTA und
+# in Home Assistant nicht mehr erreichbar.
+#
+# Benötigt in secrets.yaml: wifi_ssid, wifi_password, api_encryption_key, ota_password, ap_password.
+# Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in
+# Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den
+# ota-Abschnitt aus der bisherigen Datei übernehmen.
+#
+# ACHTUNG: "data" der Öffnen-Befehle ist euer TÜRCODE – nicht öffentlich teilen!
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    # sdkconfig_options:
+    #   CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig
+
+esphome:
+  name: abb-welcome-demo
+  friendly_name: "ABB Welcome Demo"
+  on_boot:
+    - binary_sensor.template.publish:
+        id: klingel_tor
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_haustuer
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_wohnungstuer
+        state: OFF
+    - lock.template.publish:
+        id: tor
+        state: LOCKED
+    - lock.template.publish:
+        id: haustuer
+        state: LOCKED
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    password: !secret ap_password
+
+captive_portal:
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  batch_delay: 0ms # jeden Bus-Frame einzeln an Home Assistant senden
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+remote_transmitter:
+  pin: GPIO26
+  carrier_duty_percent: 100%
+  non_blocking: true
+
+remote_receiver:
+  pin:
+    number: GPIO25
+    mode:
+      input: true
+  dump: [abbwelcome]
+  filter: 8us
+  tolerance:
+    type: time
+    value: 26us
+  idle: 1500us
+  buffer_size: 15kB
+  rmt_symbols: 320
+  clock_resolution: 500000
+  on_abbwelcome:
+    then:
+      # Debug-Textsensor (id ggf. an eure Firmware anpassen)
+      - lambda: 'char buf[192]; x.format_to(buf, 192); id(doorbell_intercom).publish_state(buf);'
+      # Klingel Tor – Außenstation #1 (0x2001)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #1 (0x2001) > Innenstation #16 (0x1010) (3/3 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x1010);'
+              # Typ 0A: Außenstation #1 (0x2001) > Gateway (0x3001), Data: 01 10 10 (3/3 Aufnahmen)
+              - lambda: 'std::vector<uint8_t> d = {0x01, 0x10, 0x10}; return (x.get_message_type() == 0x0a) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x3001) && (x.get_data() == d);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_tor
+                state: OFF
+      # Klingel Haustür – Außenstation #2 (0x2002)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #2 (0x2002) > Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2002) && (x.get_destination_address() == 0x1010);'
+              # Typ 81: Innenstation #16 (0x1010) > Außenstation #2 (0x2002) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1010) && (x.get_destination_address() == 0x2002);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: OFF
+      # Klingel Wohnungstür
+      - if:
+          condition:
+            or:
+              # Typ 11, Quelle: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x11) && (x.get_source_address() == 0x1010);'
+              # Typ 91, Ziel: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1010);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_wohnungstuer
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_wohnungstuer
+                state: OFF
+      # Tor geöffnet (Bestätigung Typ 8D)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8d);'
+              - lambda: 'return (x.get_source_address() == 0x2001);'
+              - lambda: 'return (x.get_destination_address() == 0x1010);'
+          then:
+            - lock.template.publish:
+                id: tor
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: tor
+                state: LOCKED
+      # Haustür geöffnet (Bestätigung Typ 8D)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8d);'
+              - lambda: 'return (x.get_source_address() == 0x4001);'
+              - lambda: 'return (x.get_destination_address() == 0x1010);'
+          then:
+            - lock.template.publish:
+                id: haustuer
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: haustuer
+                state: LOCKED
+
+binary_sensor:
+  - platform: template
+    name: "Klingel Tor"
+    id: klingel_tor
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Haustür"
+    id: klingel_haustuer
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Wohnungstür"
+    id: klingel_wohnungstuer
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+
+sensor:
+  - platform: internal_temperature
+    name: "Internal Temperature"
+
+text_sensor:
+  - platform: template
+    name: "Doorbell Intercom" # Debug-Sensor für diese Karte
+    id: doorbell_intercom
+    icon: mdi:bell-circle
+    update_interval: never
+
+lock:
+  - platform: template
+    name: "Tor"
+    id: tor
+    icon: mdi:gate
+    lock_action:
+      - lock.template.publish:
+          id: tor
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x1010 # Innenstation
+          destination_address: 0x2001 # Außenstation #1 (0x2001)
+          three_byte_address: false
+          message_type: 0x0d # Türöffner
+          data: [0x12, 0x34, 0x56] # TÜRCODE – nicht öffentlich teilen!
+  - platform: template
+    name: "Haustür"
+    id: haustuer
+    icon: mdi:door
+    lock_action:
+      - lock.template.publish:
+          id: haustuer
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x1010 # Innenstation
+          destination_address: 0x4001 # Türsteuergerät (0x4001)
+          three_byte_address: false
+          message_type: 0x0d # Türöffner
+          data: [0xab, 0xcd, 0xef] # TÜRCODE – nicht öffentlich teilen!
+
+button:
+  - platform: restart
+    name: "Reboot"
+  - platform: safe_mode
+    name: "Reboot (Safe Mode)"
+
+status_led:
+  pin:
+    number: GPIO2
+    ignore_strapping_warning: true
