@@ -1,5 +1,6 @@
 import { describeAddress, formatAddress, formatByte } from './address';
-import type { OpenResult, OpenStepId, RingCandidate, RingStepId, WizardResult } from './types';
+import { doorIcon, doorIds } from './doors';
+import type { Door, OpenResult, RingCandidate, WizardResult } from './types';
 
 export interface ExportOptions {
   /** Replace the door code bytes with zero placeholders, e.g. for sharing the YAML in a forum. */
@@ -12,29 +13,32 @@ export interface ExportOptions {
   apartment?: number;
 }
 
-interface RingTarget {
-  step: RingStepId;
-  id: string;
-  name: string;
-}
-
-interface LockTarget {
-  step: OpenStepId;
+export interface ExportTarget {
+  door: Door;
+  /** ESPHome id of the binary sensor (`klingel_<id>`) or lock (`<id>`). */
   id: string;
   name: string;
   icon: string;
 }
 
-export const RING_TARGETS: readonly RingTarget[] = [
-  { step: 'ring_gate', id: 'klingel_tor', name: 'Klingel Tor' },
-  { step: 'ring_house', id: 'klingel_haustuer', name: 'Klingel Haustür' },
-  { step: 'ring_apartment', id: 'klingel_wohnung', name: 'Klingel Wohnungstür' },
-];
+/** Binary sensor per door: `klingel_<door id>` named „Klingel <door name>“. */
+export function ringTargets(doors: readonly Door[]): ExportTarget[] {
+  const ids = doorIds(doors);
+  return doors.map((door) => ({
+    door,
+    id: `klingel_${ids[door.key]}`,
+    name: `Klingel ${door.name}`,
+    icon: 'mdi:bell',
+  }));
+}
 
-export const LOCK_TARGETS: readonly LockTarget[] = [
-  { step: 'open_gate', id: 'tor', name: 'Tor', icon: 'mdi:gate' },
-  { step: 'open_house', id: 'haustuer', name: 'Haustür', icon: 'mdi:door' },
-];
+/** Template lock per door with an opener: `<door id>` named like the door. */
+export function lockTargets(doors: readonly Door[]): ExportTarget[] {
+  const ids = doorIds(doors);
+  return doors
+    .filter((d) => d.open)
+    .map((door) => ({ door, id: ids[door.key], name: door.name, icon: doorIcon(door) }));
+}
 
 const SECRET_NOTE = 'TÜRCODE – nicht öffentlich teilen!';
 
@@ -47,7 +51,7 @@ class YamlWriter {
   }
 
   comment(indent: number, text: string): this {
-    return this.line(indent, `# ${text}`.trimEnd());
+    return this.line(indent, `# ${text.replace(/[\r\n]+/g, ' ')}`.trimEnd());
   }
 
   toString(): string {
@@ -56,7 +60,10 @@ class YamlWriter {
 }
 
 function quote(text: string): string {
-  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return `"${text
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')}"`;
 }
 
 function typeHex(type: number): string {
@@ -124,7 +131,7 @@ function writeHeader(w: YamlWriter, result: WizardResult, options: ExportOptions
   w.comment(0, 'esp32:');
   w.comment(0, '  framework:');
   w.comment(0, '    type: esp-idf');
-  if (result.opens.open_gate || result.opens.open_house) {
+  if (Object.values(result.opens).some((o) => o !== null)) {
     w.comment(0, '');
     w.comment(
       0,
@@ -142,7 +149,11 @@ function writeHeader(w: YamlWriter, result: WizardResult, options: ExportOptions
 }
 
 /** Generate the ESPHome YAML snippet for a WizardResult (syntax per Mat931's how_to_customize). */
-export function generateYaml(result: WizardResult, options: ExportOptions = {}): string {
+export function generateYaml(
+  result: WizardResult,
+  doors: readonly Door[],
+  options: ExportOptions = {},
+): string {
   const w = new YamlWriter();
   const { indoor, threeByte } = result;
   const debugId = options.debugSensorId === undefined ? 'doorbell_intercom' : options.debugSensorId;
@@ -154,13 +165,15 @@ export function generateYaml(result: WizardResult, options: ExportOptions = {}):
     return w.toString();
   }
 
-  const rings = RING_TARGETS.filter((t) => result.rings[t.step].selected.length > 0);
-  const locks = LOCK_TARGETS.map((t) => ({ ...t, open: result.opens[t.step] })).filter(
-    (t): t is LockTarget & { open: OpenResult } => t.open !== null,
-  );
+  const allRings = ringTargets(doors);
+  const allLocks = lockTargets(doors);
+  const rings = allRings.filter((t) => (result.rings[t.door.key]?.selected.length ?? 0) > 0);
+  const locks = allLocks
+    .map((t) => ({ ...t, open: result.opens[t.door.key] ?? null }))
+    .filter((t): t is ExportTarget & { open: OpenResult } => t.open !== null);
   const missing = [
-    ...RING_TARGETS.filter((t) => !rings.includes(t)).map((t) => t.name),
-    ...LOCK_TARGETS.filter((t) => !result.opens[t.step]).map((t) => `Öffnen ${t.name}`),
+    ...allRings.filter((t) => !rings.includes(t)).map((t) => t.name),
+    ...allLocks.filter((t) => !result.opens[t.door.key]).map((t) => `Öffnen ${t.name}`),
   ];
 
   if (rings.length + locks.length > 0) {
@@ -180,7 +193,7 @@ export function generateYaml(result: WizardResult, options: ExportOptions = {}):
     w.line(6, `- lambda: 'char buf[192]; x.format_to(buf, 192); id(${debugId}).publish_state(buf);'`);
   }
   for (const t of rings) {
-    const ring = result.rings[t.step];
+    const ring = result.rings[t.door.key];
     const outdoor =
       ring.outdoorAddress !== undefined ? ` – ${describeAddress(ring.outdoorAddress, threeByte)}` : '';
     w.comment(6, `${t.name}${outdoor}`);
@@ -225,7 +238,7 @@ export function generateYaml(result: WizardResult, options: ExportOptions = {}):
       w.line(2, '- platform: template');
       w.line(4, `name: ${quote(t.name)}`);
       w.line(4, `id: ${t.id}`);
-      w.line(4, 'icon: mdi:bell');
+      w.line(4, `icon: ${t.icon}`);
       w.line(4, 'filters:');
       w.line(6, '- delayed_off: 1s');
     }

@@ -23,7 +23,7 @@ esphome:
         id: klingel_haustuer
         state: OFF
     - binary_sensor.template.publish:
-        id: klingel_wohnung
+        id: klingel_wohnungstuer
         state: OFF
     - lock.template.publish:
         id: tor
@@ -78,10 +78,10 @@ remote_receiver:
               - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1010);'
           then:
             - binary_sensor.template.publish:
-                id: klingel_wohnung
+                id: klingel_wohnungstuer
                 state: ON
             - binary_sensor.template.publish:
-                id: klingel_wohnung
+                id: klingel_wohnungstuer
                 state: OFF
       # Tor geöffnet (Bestätigung Typ 8D)
       - if:
@@ -129,7 +129,7 @@ binary_sensor:
       - delayed_off: 1s
   - platform: template
     name: "Klingel Wohnungstür"
-    id: klingel_wohnung
+    id: klingel_wohnungstuer
     icon: mdi:bell
     filters:
       - delayed_off: 1s

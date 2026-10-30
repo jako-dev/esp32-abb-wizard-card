@@ -11,7 +11,7 @@ const update = process.env.UPDATE_GOLDEN === '1';
 function exportFixture(name: string, options: ExportOptions = {}): string {
   const session = parseSession(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), 'utf8'));
   const result = analyzeSession(session);
-  return generateYaml(result, { apartment: apartmentFromDials(session.dials), ...options });
+  return generateYaml(result, session.doors, { apartment: apartmentFromDials(session.dials), ...options });
 }
 
 function expectGolden(actual: string, file: string): void {
@@ -26,6 +26,7 @@ describe('generateYaml golden files', () => {
     ['two-outdoor-neighbours', 'two-outdoor-neighbours.yaml', {}],
     ['two-outdoor-neighbours', 'two-outdoor-neighbours.masked.yaml', { maskDoorCode: true }],
     ['three-byte', 'three-byte.yaml', { debugSensorId: null }],
+    ['custom-doors', 'custom-doors.yaml', {}],
   ] as const)('%s → %s', (fixture, golden, options) => {
     expectGolden(exportFixture(fixture, options), golden);
   });
@@ -43,7 +44,7 @@ describe('generateYaml', () => {
     expect(doc.binary_sensor.map((b: { id: string }) => b.id)).toEqual([
       'klingel_tor',
       'klingel_haustuer',
-      'klingel_wohnung',
+      'klingel_wohnungstuer',
     ]);
     expect(doc.lock.map((l: { id: string }) => l.id)).toEqual(['tor', 'haustuer']);
   });
@@ -88,8 +89,21 @@ describe('generateYaml', () => {
     });
   });
 
+  it('names sensors and locks after the configured doors', () => {
+    const custom = parse(exportFixture('custom-doors'));
+    expect(custom.binary_sensor.map((b: { id: string; name: string }) => [b.id, b.name])).toEqual([
+      ['klingel_haustuer', 'Klingel Haustür'],
+      ['klingel_garage', 'Klingel Garage'],
+      ['klingel_wohnung_oben', 'Klingel Wohnung oben'],
+    ]);
+    expect(custom.lock.map((l: { id: string; name: string }) => [l.id, l.name])).toEqual([
+      ['haustuer', 'Haustür'],
+    ]);
+  });
+
   it('explains when nothing could be determined', () => {
-    const empty = generateYaml(analyzeSession(createSession('sensor.x')));
+    const session = createSession('sensor.x');
+    const empty = generateYaml(analyzeSession(session), session.doors);
     expect(empty).toContain('Keine Innenstationsadresse ermittelt');
     expect(parse(empty)).toBeNull();
   });

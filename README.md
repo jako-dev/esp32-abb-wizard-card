@@ -31,7 +31,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.1.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.2.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -39,7 +39,8 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 ## Konfiguration
 
-Karte zu einem Dashboard hinzufügen (am besten in einer eigenen Ansicht im Panel- oder Abschnitts-Layout):
+Dashboard bearbeiten → **Karte hinzufügen** → „ABB-Welcome Wizard“ wählen. Im visuellen Editor den
+Debug-Textsensor auswählen – fertig. Alternativ per YAML:
 
 ```yaml
 type: custom:abb-welcome-wizard-card
@@ -53,6 +54,7 @@ capture_seconds: 10 # optional
 | `capture_seconds` | nein    | `10`                      | Länge eines Aufnahmefensters in Sekunden (2–120).                                                              |
 | `indoor_address`  | nein    | automatisch               | Adresse der eigenen Innenstation, z. B. `"0x1010"` oder `"0x000110"`. Überschreibt die automatische Erkennung. |
 | `title`           | nein    | `ABB-Welcome Einrichtung` | Überschrift der Karte.                                                                                         |
+| `doors`           | nein    | Tor, Haustür, Wohnungstür | Vorgabe der Türen für neue Sitzungen (siehe unten). Normalerweise richtest du die Türen in der Karte ein.      |
 
 Nichts ist auf eine bestimmte Anlage festgelegt: Die Adresse der Innenstation, die Außenstationen, Türcodes und
 die Adresslänge werden aus deinen Aufnahmen ermittelt. Die Drehregler deiner Innenstation (STATION, X10, X1) trägst
@@ -60,25 +62,46 @@ du optional auf der Startseite ein. Sie dienen nur zur Kontrolle: Aus X10/X1 erg
 in den letzten beiden Stellen der Adresse steht (Wohnung 16 → `0x1010`, Wohnung 12 → `0x100c`). Bei Bedarf lässt
 sich die Adresse dort auch manuell festlegen.
 
+### Türen einrichten
+
+Auf der Startseite der Karte unter **„Türen deiner Anlage“** legst du fest, welche Türen deine Anlage hat –
+mit eigenen Namen, beliebig viele (bis zu 8):
+
+- **Außentür** – Tür mit eigener Außenstation, z. B. Tor, Haustür, Garage.
+- **Wohnungstür (Etagenruf)** – Klingeltaster, der direkt an der Innenstation hängt. Hat keinen Öffner.
+- **Türöffner** – die Schlüssel-Taste der Innenstation kann diese Tür öffnen.
+- **Standard-Tür** – die Tür, die die Schlüssel-Taste auch _ohne_ vorheriges Klingeln öffnet (meist die Haustür).
+
+Vorgabe ist Tor, Haustür (Standard-Tür) und Wohnungstür. Wer z. B. kein Tor hat, löscht es einfach. Die Türen werden
+mit der Sitzung gespeichert und exportiert. Optional lässt sich eine eigene Vorgabe in der Karten-Konfiguration
+setzen:
+
+```yaml
+doors:
+  - name: Haustür
+    default: true # öffnet ohne Klingeln
+  - name: Garage
+    open: false # nur Klingel, kein Öffner
+    icon: mdi:garage
+  - name: Wohnungstür
+    type: floor # Etagenruf
+```
+
 ## Ablauf
 
-| Schritt                     | Was du tust                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Start**                   | Prüfen, ob der Sensor existiert und Frames ankommen. Optional die Drehregler eintragen.              |
-| **1 · Baseline**            | Ohne Klingeln eine Sprechverbindung zur Außenstation öffnen und wieder beenden.                      |
-| **2 · Klingel Tor**         | Am Tor klingeln (2–3 Wiederholungen).                                                                |
-| **3 · Klingel Haustür**     | An der Haustür klingeln (2–3 Wiederholungen).                                                        |
-| **4 · Klingel Wohnungstür** | Etagenruf an der Wohnungstür auslösen (2–3 Wiederholungen).                                          |
-| **5 · Öffnen Tor**          | Am Tor klingeln, dann die Schlüssel-Taste drücken. Das Tor öffnet sich dabei.                        |
-| **6 · Öffnen Haustür**      | Einige Minuten nach dem letzten Klingeln die Schlüssel-Taste drücken. Die Haustür öffnet sich dabei. |
-| **Ergebnis**                | Auswertung ansehen, ESPHome-YAML kopieren oder herunterladen.                                        |
+| Schritt          | Was du tust                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Start**        | Prüfen, ob der Sensor Frames liefert. Türen einrichten, optional die Drehregler eintragen.                 |
+| **Baseline**     | Ohne Klingeln eine Sprechverbindung zur Außenstation öffnen und wieder beenden.                            |
+| **Je Tür**       | An der Tür klingeln bzw. den Etagenruf auslösen (2–3 Wiederholungen).                                      |
+| **Je Öffner**    | An der Tür klingeln, dann die Schlüssel-Taste drücken. Die Tür öffnet sich dabei.                          |
+| **Standard-Tür** | Einige Minuten nach dem letzten Klingeln die Schlüssel-Taste drücken (ohne Klingeln). Die Tür öffnet sich. |
+| **Ergebnis**     | Auswertung ansehen, ESPHome-YAML kopieren oder herunterladen.                                              |
 
 Jeder Schritt zeigt eine kurze Anleitung, einen Countdown und die eingehenden Frames live an.
 Mit **Wiederholen** nimmst du eine weitere Aufnahme auf, mit **Verwerfen** löschst du die letzte. Schritte lassen
-sich überspringen, wenn deine Anlage z. B. kein Tor hat. Bei den Klingel-Schritten startet die Aufnahme
-standardmäßig erst mit dem ersten Frame, damit du in Ruhe zur Tür gehen kannst.
-
-Die Wohnungstür hat keinen elektrischen Öffner und wird deshalb nur als Klingel erfasst.
+sich überspringen. Bei den Klingel-Schritten startet die Aufnahme standardmäßig erst mit dem ersten Frame, damit du
+in Ruhe zur Tür gehen kannst.
 
 ### Auswertung
 
@@ -87,7 +110,7 @@ Die Wohnungstür hat keinen elektrischen Öffner und wird deshalb nur als Klinge
 - **Baseline-Abzug:** Frames, die identisch auch bei der normalen Sprechverbindung auftreten, werden ignoriert.
 - **Nachbarn:** Frames ohne Bezug zur eigenen Innenstation (weder Quelle, Ziel noch in den Daten) werden verworfen.
 - **Klingeln:** Typ `01`/`81`/`0A` (Außenstation) bzw. `11`/`91` (Etagenruf). Zuverlässig ist ein Kandidat,
-  der in allen Wiederholungen vorkommt. Tor und Haustür werden über die Adresse der Außenstation unterschieden.
+  der in allen Wiederholungen vorkommt. Mehrere Außentüren werden über die Adresse ihrer Außenstation unterschieden.
 - **Öffnen:** der `0D`/`0E`-Frame der Innenstation (Ziel, Typ, Türcode) und die passende Bestätigung `8D`/`8E`.
 - **Adresslänge:** 6-stellige Adressen bedeuten 3-Byte-Adressen (`three_byte_address: true`).
 
@@ -96,9 +119,9 @@ Die Wohnungstür hat keinen elektrischen Öffner und wird deshalb nur als Klinge
 Die erzeugte YAML ersetzt in der ESPHome-Konfiguration deines ESP32 die gleichnamigen Abschnitte der
 Demo-Firmware (`esphome.on_boot`, `remote_receiver.on_abbwelcome`, `binary_sensor`, `lock`):
 
-- `binary_sensor.klingel_tor`, `binary_sensor.klingel_haustuer`, `binary_sensor.klingel_wohnung`
-- `lock.tor`, `lock.haustuer` (öffnen per `remote_transmitter.transmit_abbwelcome`; die Bestätigung vom Bus
-  setzt das Schloss kurz auf „Wird entriegelt“)
+- je Tür ein Binary-Sensor „Klingel _Name_“ (ESPHome-id `klingel_<name>`, z. B. `klingel_haustuer`)
+- je Tür mit Öffner ein Schloss „_Name_“ (id `<name>`, z. B. `haustuer`), öffnet per
+  `remote_transmitter.transmit_abbwelcome`; die Bestätigung vom Bus setzt das Schloss kurz auf „Wird entriegelt“
 
 Danach im ESPHome Device Builder installieren (OTA). Die Firmware muss mit `esp32: framework: type: esp-idf`
 gebaut werden (in der Demo-Firmware bereits so eingestellt).

@@ -1,6 +1,6 @@
 {
   "format": "abb-welcome-wizard-session",
-  "version": 1,
+  "version": 2,
   "entity": "sensor.doorbell_intercom",
   "createdAt": "2026-10-30T10:00:00.000Z",
   "updatedAt": "2026-10-30T10:08:20.000Z",
@@ -8,6 +8,22 @@
     "x10": 1,
     "x1": 2
   },
+  "doors": [
+    {
+      "key": "haustuer",
+      "name": "Haustür",
+      "type": "outdoor",
+      "open": true,
+      "default": true
+    },
+    {
+      "key": "wohnung",
+      "name": "Wohnungstür",
+      "type": "floor",
+      "open": false,
+      "default": false
+    }
+  ],
   "steps": {
     "baseline": {
       "skipped": false,
@@ -44,7 +60,7 @@
         }
       ]
     },
-    "ring_gate": {
+    "ring:haustuer": {
       "skipped": false,
       "captures": [
         {
@@ -131,11 +147,7 @@
         }
       ]
     },
-    "ring_house": {
-      "skipped": true,
-      "captures": []
-    },
-    "ring_apartment": {
+    "ring:wohnung": {
       "skipped": false,
       "captures": [
         {
@@ -168,7 +180,7 @@
         }
       ]
     },
-    "open_gate": {
+    "open:haustuer": {
       "skipped": false,
       "captures": [
         {
@@ -204,10 +216,6 @@
           ]
         }
       ]
-    },
-    "open_house": {
-      "skipped": true,
-      "captures": []
     }
   }
 }

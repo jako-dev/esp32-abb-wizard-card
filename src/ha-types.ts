@@ -1,3 +1,5 @@
+import type { DoorConfigInput } from './doors';
+
 // Minimal subset of the Home Assistant frontend types used by this card.
 
 export interface HassEntity {
@@ -39,4 +41,6 @@ export interface CardConfig {
   /** Optional indoor station address, e.g. "0x1010" (overrides auto-detection). */
   indoor_address?: string | number;
   title?: string;
+  /** Optional preset of the doors; can also be edited in the card. */
+  doors?: DoorConfigInput[];
 }

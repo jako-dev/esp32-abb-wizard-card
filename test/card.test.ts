@@ -97,7 +97,7 @@ describe('abb-welcome-wizard-card', () => {
       finishCapture(): void;
       session: { steps: Record<string, { captures: { lines: unknown[] }[] }> };
     };
-    internals.page = 2; // ring_gate
+    internals.page = 2; // ring:tor
     await card.updateComplete;
     internals.beginCapture(true);
     await card.updateComplete;
@@ -110,11 +110,58 @@ describe('abb-welcome-wizard-card', () => {
     internals.finishCapture();
     await card.updateComplete;
 
-    expect(internals.session.steps.ring_gate.captures[0].lines).toHaveLength(2);
+    expect(internals.session.steps['ring:tor'].captures[0].lines).toHaveLength(2);
     expect(localStorage.getItem('abb-welcome-wizard-card:session:sensor.doorbell_intercom')).toContain(
       'Type: 81',
     );
     expect(text(card)).toContain('Aufnahme 1');
+  });
+
+  it('lets the user rename, add and remove doors', async () => {
+    const { card } = await mount();
+    const root = card.shadowRoot!;
+    const nameInput = root.querySelector<HTMLInputElement>('.door-row input[type=text]')!;
+    nameInput.value = 'Einfahrt';
+    nameInput.dispatchEvent(new Event('change'));
+    await card.updateComplete;
+    expect(text(card)).toContain('Einfahrt');
+
+    const addButton = [...root.querySelectorAll('button')].find((b) =>
+      b.textContent!.includes('Tür hinzufügen'),
+    )!;
+    addButton.click();
+    await card.updateComplete;
+    const internals = card as unknown as { session: { doors: { name: string }[] } };
+    expect(internals.session.doors.map((d) => d.name)).toEqual([
+      'Einfahrt',
+      'Haustür',
+      'Wohnungstür',
+      'Neue Tür',
+    ]);
+    // Stepper: start, baseline, 4 doorbells, 3 openers (gate, new door, house door), result.
+    expect(root.querySelectorAll('.stepper button')).toHaveLength(10);
+
+    root.querySelectorAll<HTMLButtonElement>('.door-row button.icon')[3].click();
+    await card.updateComplete;
+    expect(internals.session.doors).toHaveLength(3);
+  });
+
+  it('uses doors from the card config for new sessions', async () => {
+    localStorage.clear();
+    const card = document.createElement('abb-welcome-wizard-card') as AbbWelcomeWizardCard;
+    card.setConfig({
+      type: 'custom:abb-welcome-wizard-card',
+      entity: 'sensor.other',
+      doors: [
+        { name: 'Haustür', default: true },
+        { name: 'Wohnung', type: 'floor' },
+      ],
+    });
+    const internals = card as unknown as { session: { doors: { key: string }[] } };
+    expect(internals.session.doors.map((d) => d.key)).toEqual(['haustuer', 'wohnung']);
+    expect(() =>
+      card.setConfig({ type: 'x', entity: 'sensor.other', doors: [{ name: 'A', type: 'nope' }] }),
+    ).toThrow('outdoor');
   });
 
   it('unsubscribes when removed', async () => {

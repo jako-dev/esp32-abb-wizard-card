@@ -279,6 +279,52 @@ export const cardStyles = css`
     cursor: pointer;
   }
 
+  /* Door editor */
+  .doors {
+    display: grid;
+    gap: 8px;
+  }
+  .door-row {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--wiz-surface);
+  }
+  .door-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .door-main ha-icon {
+    color: var(--wiz-muted);
+    flex: none;
+  }
+  .door-main input {
+    flex: 1;
+    background: var(--card-background-color, transparent);
+  }
+  .door-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+    padding-left: 32px;
+  }
+  select {
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--wiz-text);
+    background: var(--card-background-color, transparent);
+    border: 1px solid var(--wiz-divider);
+    border-radius: 8px;
+    padding: 6px 8px;
+    max-width: 100%;
+  }
+  .switch:has(input:disabled) {
+    opacity: 0.5;
+  }
+
   /* Buttons */
   .actions {
     display: flex;
@@ -346,6 +392,10 @@ export const cardStyles = css`
     border-radius: 50%;
     color: var(--wiz-muted);
     --mdc-icon-size: 20px;
+  }
+  button.icon:disabled {
+    opacity: 0.3;
+    cursor: default;
   }
   button.icon:hover {
     background: var(--wiz-surface);

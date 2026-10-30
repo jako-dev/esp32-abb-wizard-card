@@ -9,23 +9,21 @@ import {
   isIndoor,
   isOutdoor,
 } from './address';
+import { BASELINE_STEP, openStepId, ringStepId } from './doors';
 import { parseFrame } from './parser';
 import type {
+  Door,
+  DoorType,
   Frame,
   IndoorResult,
   OpenResult,
-  OpenStepId,
   RingCandidate,
   RingResult,
-  RingStepId,
   Session,
   StepId,
   Warning,
   WizardResult,
 } from './types';
-
-export const RING_STEPS: readonly RingStepId[] = ['ring_gate', 'ring_house', 'ring_apartment'];
-export const OPEN_STEPS: readonly OpenStepId[] = ['open_gate', 'open_house'];
 
 export const TYPE_RING_OUTDOOR = 0x01;
 export const TYPE_CALL = 0x0a;
@@ -37,16 +35,11 @@ export const REPLY_FLAG = 0x80;
 /** Rule order, used to sort candidates the same way as the examples in Mat931's how_to_customize. */
 const RULE_ORDER = [0x01, 0x81, 0x0a, 0x11, 0x91];
 
-export const STEP_LABELS: Record<StepId, string> = {
-  baseline: 'Baseline',
-  ring_gate: 'Klingeln Tor',
-  ring_house: 'Klingeln Haustür',
-  ring_apartment: 'Klingeln Wohnungstür',
-  open_gate: 'Öffnen Tor',
-  open_house: 'Öffnen Haustür',
-};
+export const ringLabel = (door: Door): string => `Klingel „${door.name}“`;
+export const openLabel = (door: Door): string => `Öffnen „${door.name}“`;
 
 type ParsedSteps = Record<StepId, Frame[][]>;
+const capturesOf = (steps: ParsedSteps, id: StepId): Frame[][] => steps[id] ?? [];
 
 export interface AnalysisOptions {
   /** Overrides the apartment number derived from the session's dial settings. */
@@ -86,7 +79,7 @@ function increment<T>(map: Map<T, number>, key: T, by = 1): void {
 function parseSteps(session: Session, unparsed: string[]): { steps: ParsedSteps; total: number } {
   let total = 0;
   const steps = {} as ParsedSteps;
-  for (const [id, record] of Object.entries(session.steps) as [StepId, Session['steps'][StepId]][]) {
+  for (const [id, record] of Object.entries(session.steps)) {
     steps[id] = record.captures.map((capture) =>
       capture.lines.flatMap((entry) => {
         total++;
@@ -100,10 +93,14 @@ function parseSteps(session: Session, unparsed: string[]): { steps: ParsedSteps;
   return { steps, total };
 }
 
-function determineIndoor(steps: ParsedSteps, preferred?: number): Omit<IndoorResult, 'expected'> | null {
+function determineIndoor(
+  steps: ParsedSteps,
+  doors: readonly Door[],
+  preferred?: number,
+): Omit<IndoorResult, 'expected'> | null {
   const byOpen = new Map<number, number>();
-  for (const id of OPEN_STEPS) {
-    for (const frames of steps[id]) {
+  for (const door of doors.filter((d) => d.open)) {
+    for (const frames of capturesOf(steps, openStepId(door))) {
       for (const f of frames) {
         if ((f.type === TYPE_DOOR_BUZZER || f.type === TYPE_DOOR_SLIDING) && isIndoor(f.src, f.threeByte)) {
           increment(byOpen, f.src);
@@ -132,9 +129,9 @@ function determineIndoor(steps: ParsedSteps, preferred?: number): Omit<IndoorRes
 type RuleMatch = Pick<RingCandidate, 'type' | 'src' | 'dst' | 'data' | 'outdoor'>;
 
 /** Doorbell rules from Mat931's how_to_customize. */
-export function matchRingRule(step: RingStepId, f: Frame, indoor: number): RuleMatch | null {
+export function matchRingRule(type: DoorType, f: Frame, indoor: number): RuleMatch | null {
   const outdoorOf = (address: number) => (isOutdoor(address, f.threeByte) ? address : undefined);
-  if (step === 'ring_apartment') {
+  if (type === 'floor') {
     if (f.type === TYPE_RING_INDOOR && f.src === indoor) return { type: f.type, src: f.src };
     if (f.type === (TYPE_RING_INDOOR | REPLY_FLAG) && f.dst === indoor) return { type: f.type, dst: f.dst };
     return null;
@@ -169,18 +166,20 @@ interface Context {
   stats: WizardResult['stats'];
 }
 
-function warnMissingStep(ctx: Context, step: StepId): void {
-  const skipped = ctx.session.steps[step].skipped;
+function warnMissingStep(ctx: Context, step: StepId, label: string): void {
+  const skipped = ctx.session.steps[step]?.skipped === true;
   ctx.warnings.push({
     code: skipped ? 'step_skipped' : 'step_missing',
     severity: 'info',
     step,
-    message: `${STEP_LABELS[step]}: ${skipped ? 'übersprungen' : 'keine Aufnahme vorhanden'}.`,
+    message: `${label}: ${skipped ? 'übersprungen' : 'keine Aufnahme vorhanden'}.`,
   });
 }
 
-function analyzeRing(ctx: Context, step: RingStepId): RingResult {
-  const captures = ctx.steps[step];
+function analyzeRing(ctx: Context, door: Door): RingResult {
+  const step = ringStepId(door);
+  const label = ringLabel(door);
+  const captures = capturesOf(ctx.steps, step);
   const found = new Map<string, { match: RuleMatch; in: Set<number> }>();
   const other = new Map<string, Frame>();
 
@@ -194,7 +193,7 @@ function analyzeRing(ctx: Context, step: RingStepId): RingResult {
         ctx.stats.neighbourFiltered++;
         continue;
       }
-      const match = matchRingRule(step, f, ctx.indoor);
+      const match = matchRingRule(door.type, f, ctx.indoor);
       if (!match) {
         if (!other.has(frameKey(f))) other.set(frameKey(f), f);
         continue;
@@ -217,14 +216,14 @@ function analyzeRing(ctx: Context, step: RingStepId): RingResult {
 
   let selected = candidates.filter((c) => c.reliable);
   if (captures.length === 0) {
-    warnMissingStep(ctx, step);
+    warnMissingStep(ctx, step, label);
   } else if (candidates.length === 0) {
     ctx.warnings.push({
       code: 'no_ring_candidates',
       severity: 'warning',
       step,
-      message: `${STEP_LABELS[step]}: keine passenden Frames gefunden (erwartet: ${
-        step === 'ring_apartment' ? 'Typ 11/91' : 'Typ 01/81/0A'
+      message: `${label}: keine passenden Frames gefunden (erwartet: ${
+        door.type === 'floor' ? 'Typ 11/91' : 'Typ 01/81/0A'
       } mit Bezug zu ${formatAddress(ctx.indoor, ctx.threeByte)}).`,
     });
   } else {
@@ -235,7 +234,7 @@ function analyzeRing(ctx: Context, step: RingStepId): RingResult {
         code: 'unstable_candidates',
         severity: 'warning',
         step,
-        message: `${STEP_LABELS[step]}: kein Kandidat kam in allen ${captures.length} Aufnahmen vor; verwende die besten (${Math.round(best * 100)} %).`,
+        message: `${label}: kein Kandidat kam in allen ${captures.length} Aufnahmen vor; verwende die besten (${Math.round(best * 100)} %).`,
       });
     }
     if (captures.length === 1) {
@@ -243,13 +242,13 @@ function analyzeRing(ctx: Context, step: RingStepId): RingResult {
         code: 'single_capture',
         severity: 'info',
         step,
-        message: `${STEP_LABELS[step]}: nur eine Aufnahme – Stabilität nicht prüfbar. 2–3 Wiederholungen empfohlen.`,
+        message: `${label}: nur eine Aufnahme – Stabilität nicht prüfbar. 2–3 Wiederholungen empfohlen.`,
       });
     }
   }
 
   return {
-    step,
+    door: door.key,
     captures: captures.length,
     candidates,
     selected,
@@ -264,49 +263,58 @@ function outdoorAddressOf(candidates: RingCandidate[]): number | undefined {
   return mostFrequent(counts, (a, b) => a - b)?.[0];
 }
 
-/** Gate and house doorbells must be distinguishable; drop candidates both steps share. */
-function separateGateAndHouse(ctx: Context, gate: RingResult, house: RingResult): void {
-  if (gate.selected.length === 0 || house.selected.length === 0) return;
-  const houseKeys = new Set(house.selected.map((c) => c.key));
-  const shared = new Set(gate.selected.filter((c) => houseKeys.has(c.key)).map((c) => c.key));
+/**
+ * Doorbells of different outdoor doors must be distinguishable. Candidates shared by several doors are dropped
+ * if every door keeps at least one own candidate; otherwise the affected pairs are reported.
+ */
+function separateOutdoorDoors(ctx: Context, doors: readonly Door[], rings: Record<string, RingResult>): void {
+  const active = doors.filter((d) => d.type === 'outdoor' && rings[d.key].selected.length > 0);
+  const owners = new Map<string, number>();
+  for (const door of active) for (const c of rings[door.key].selected) increment(owners, c.key);
+  const shared = new Set([...owners].filter(([, n]) => n > 1).map(([key]) => key));
+  const own = (door: Door) => rings[door.key].selected.filter((c) => !shared.has(c.key));
 
-  const gateOnly = gate.selected.filter((c) => !shared.has(c.key));
-  const houseOnly = house.selected.filter((c) => !shared.has(c.key));
-  const indistinguishable =
-    gateOnly.length === 0 ||
-    houseOnly.length === 0 ||
-    (gate.outdoorAddress !== undefined && gate.outdoorAddress === house.outdoorAddress);
+  let conflicts = 0;
+  for (let i = 0; i < active.length; i++) {
+    for (let j = i + 1; j < active.length; j++) {
+      const [a, b] = [active[i], active[j]];
+      const ra = rings[a.key];
+      const rb = rings[b.key];
+      const keysB = new Set(rb.selected.map((c) => c.key));
+      const overlap = ra.selected.some((c) => keysB.has(c.key));
+      const sameOutdoor = ra.outdoorAddress !== undefined && ra.outdoorAddress === rb.outdoorAddress;
+      if (!sameOutdoor && !(overlap && (own(a).length === 0 || own(b).length === 0))) continue;
+      conflicts++;
+      ctx.warnings.push({
+        code: 'doors_indistinguishable',
+        severity: 'warning',
+        message:
+          `„${a.name}“ und „${b.name}“ nicht unterscheidbar: beide Klingeln erzeugen dieselben Frames` +
+          (sameOutdoor ? ` (Außenstation ${formatAddress(ra.outdoorAddress!, ctx.threeByte)})` : '') +
+          '. Beide Klingel-Sensoren würden gemeinsam auslösen.',
+      });
+    }
+  }
+  if (conflicts > 0 || shared.size === 0) return;
 
-  if (indistinguishable) {
-    ctx.warnings.push({
-      code: 'gate_house_indistinguishable',
-      severity: 'warning',
-      message:
-        'Tor und Haustür nicht unterscheidbar: beide Klingeln erzeugen dieselben Frames' +
-        (gate.outdoorAddress !== undefined && gate.outdoorAddress === house.outdoorAddress
-          ? ` (Außenstation ${formatAddress(gate.outdoorAddress, ctx.threeByte)})`
-          : '') +
-        '. Beide Klingel-Sensoren würden gemeinsam auslösen.',
-    });
-    return;
+  for (const door of active) {
+    const ring = rings[door.key];
+    ring.selected = own(door);
+    ring.outdoorAddress = outdoorAddressOf(ring.selected);
   }
-  if (shared.size > 0) {
-    gate.selected = gateOnly;
-    house.selected = houseOnly;
-    gate.outdoorAddress = outdoorAddressOf(gateOnly);
-    house.outdoorAddress = outdoorAddressOf(houseOnly);
-    ctx.warnings.push({
-      code: 'gate_house_shared_removed',
-      severity: 'info',
-      message: `${shared.size} Kandidat(en) kamen bei Tor und Haustür vor und wurden nicht verwendet.`,
-    });
-  }
+  ctx.warnings.push({
+    code: 'shared_candidates_removed',
+    severity: 'info',
+    message: `${shared.size} Kandidat(en) kamen bei mehreren Türen vor und wurden nicht verwendet.`,
+  });
 }
 
-function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
-  const captures = ctx.steps[step];
+function analyzeOpen(ctx: Context, door: Door): OpenResult | null {
+  const step = openStepId(door);
+  const label = openLabel(door);
+  const captures = capturesOf(ctx.steps, step);
   if (captures.length === 0) {
-    warnMissingStep(ctx, step);
+    warnMissingStep(ctx, step, label);
     return null;
   }
 
@@ -328,7 +336,7 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
       code: 'no_open_frame',
       severity: 'warning',
       step,
-      message: `${STEP_LABELS[step]}: kein 0D/0E-Frame von ${formatAddress(ctx.indoor, ctx.threeByte)} gefunden.`,
+      message: `${label}: kein 0D/0E-Frame von ${formatAddress(ctx.indoor, ctx.threeByte)} gefunden.`,
     });
     return null;
   }
@@ -337,7 +345,7 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
       code: 'multiple_open_frames',
       severity: 'info',
       step,
-      message: `${STEP_LABELS[step]}: ${seen.size} verschiedene Öffnen-Frames gefunden, verwende den häufigsten.`,
+      message: `${label}: ${seen.size} verschiedene Öffnen-Frames gefunden, verwende den häufigsten.`,
     });
   }
   if (best.in.size < captures.length) {
@@ -345,13 +353,13 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
       code: 'unstable_open',
       severity: 'warning',
       step,
-      message: `${STEP_LABELS[step]}: Öffnen-Frame nur in ${best.in.size} von ${captures.length} Aufnahmen.`,
+      message: `${label}: Öffnen-Frame nur in ${best.in.size} von ${captures.length} Aufnahmen.`,
     });
   }
 
   const { frame } = best;
   const result: OpenResult = {
-    step,
+    door: door.key,
     captures: captures.length,
     destination: frame.dst,
     messageType: frame.type,
@@ -385,14 +393,14 @@ function analyzeOpen(ctx: Context, step: OpenStepId): OpenResult | null {
       code: 'no_confirmation',
       severity: 'info',
       step,
-      message: `${STEP_LABELS[step]}: keine Bestätigung (${hex2(confirmType)}) gefunden – das Schloss meldet dann keinen Status.`,
+      message: `${label}: keine Bestätigung (${hex2(confirmType)}) gefunden – das Schloss meldet dann keinen Status.`,
     });
   }
   return result;
 }
 
-function emptyRing(step: RingStepId): RingResult {
-  return { step, captures: 0, candidates: [], selected: [], otherFrames: [] };
+function emptyRing(door: Door): RingResult {
+  return { door: door.key, captures: 0, candidates: [], selected: [], otherFrames: [] };
 }
 
 export function analyzeSession(session: Session, options: AnalysisOptions = {}): WizardResult {
@@ -424,16 +432,12 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
   const found: Omit<IndoorResult, 'expected'> | null =
     manual !== undefined
       ? { address: manual, method: 'manual', count: 0 }
-      : determineIndoor(steps, preferred);
+      : determineIndoor(steps, session.doors, preferred);
   const result: WizardResult = {
     indoor: null,
     threeByte: majorityThreeByte,
-    rings: {
-      ring_gate: emptyRing('ring_gate'),
-      ring_house: emptyRing('ring_house'),
-      ring_apartment: emptyRing('ring_apartment'),
-    },
-    opens: { open_gate: null, open_house: null },
+    rings: Object.fromEntries(session.doors.map((d) => [d.key, emptyRing(d)])),
+    opens: Object.fromEntries(session.doors.filter((d) => d.open).map((d) => [d.key, null])),
     warnings,
     stats,
   };
@@ -494,38 +498,43 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
     steps,
     indoor: found.address,
     threeByte,
-    baseline: new Set(steps.baseline.flat().map(frameKey)),
+    baseline: new Set(capturesOf(steps, BASELINE_STEP).flat().map(frameKey)),
     warnings,
     stats,
   };
-  if (steps.baseline.length === 0) {
+  if (capturesOf(steps, BASELINE_STEP).length === 0) {
     warnings.push({
       code: 'no_baseline',
       severity: 'info',
-      step: 'baseline',
+      step: BASELINE_STEP,
       message:
         'Keine Baseline aufgenommen – Frames einer normalen Sprechverbindung können nicht ausgefiltert werden.',
     });
   }
 
-  for (const step of RING_STEPS) result.rings[step] = analyzeRing(ctx, step);
-  separateGateAndHouse(ctx, result.rings.ring_gate, result.rings.ring_house);
+  for (const door of session.doors) result.rings[door.key] = analyzeRing(ctx, door);
+  separateOutdoorDoors(ctx, session.doors, result.rings);
 
-  for (const step of OPEN_STEPS) result.opens[step] = analyzeOpen(ctx, step);
-  const { open_gate: gate, open_house: house } = result.opens;
-  if (
-    gate &&
-    house &&
-    gate.destination === house.destination &&
-    gate.messageType === house.messageType &&
-    formatBytesPlain(gate.data) === formatBytesPlain(house.data)
-  ) {
-    warnings.push({
-      code: 'gate_house_same_open',
-      severity: 'warning',
-      message:
-        'Öffnen Tor und Öffnen Haustür senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen.',
-    });
+  const openable = session.doors.filter((d) => d.open);
+  for (const door of openable) result.opens[door.key] = analyzeOpen(ctx, door);
+  for (let i = 0; i < openable.length; i++) {
+    for (let j = i + 1; j < openable.length; j++) {
+      const a = result.opens[openable[i].key];
+      const b = result.opens[openable[j].key];
+      if (
+        a &&
+        b &&
+        a.destination === b.destination &&
+        a.messageType === b.messageType &&
+        formatBytesPlain(a.data) === formatBytesPlain(b.data)
+      ) {
+        warnings.push({
+          code: 'same_open_frame',
+          severity: 'warning',
+          message: `${openLabel(openable[i])} und ${openLabel(openable[j])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen.`,
+        });
+      }
+    }
   }
 
   return result;

@@ -1,0 +1,134 @@
+# ABB-Welcome Wizard – generierte ESPHome-Konfiguration
+# Innenstation: 0x1007, Wohnung 7
+# Adresslänge: 2 Byte
+#
+# Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
+# esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.
+# Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von
+# remote_receiver, text_sensor ...) unverändert lassen.
+#
+# Voraussetzung (in der Demo-Firmware bereits gesetzt):
+# esp32:
+#   framework:
+#     type: esp-idf
+#
+# ACHTUNG: "data" der Öffnen-Befehle ist euer TÜRCODE – nicht öffentlich teilen!
+
+esphome:
+  on_boot:
+    - binary_sensor.template.publish:
+        id: klingel_haustuer
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_garage
+        state: OFF
+    - binary_sensor.template.publish:
+        id: klingel_wohnung_oben
+        state: OFF
+    - lock.template.publish:
+        id: haustuer
+        state: LOCKED
+
+remote_receiver:
+  # pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration
+  on_abbwelcome:
+    then:
+      # Debug-Textsensor (id ggf. an eure Firmware anpassen)
+      - lambda: 'char buf[192]; x.format_to(buf, 192); id(doorbell_intercom).publish_state(buf);'
+      # Klingel Haustür – Außenstation #1 (0x2001)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #1 (0x2001) > Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x1007);'
+              # Typ 81: Innenstation #7 (0x1007) > Außenstation #1 (0x2001) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1007) && (x.get_destination_address() == 0x2001);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_haustuer
+                state: OFF
+      # Klingel Garage – Außenstation #3 (0x2003)
+      - if:
+          condition:
+            or:
+              # Typ 01: Außenstation #3 (0x2003) > Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2003) && (x.get_destination_address() == 0x1007);'
+              # Typ 81: Innenstation #7 (0x1007) > Außenstation #3 (0x2003) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1007) && (x.get_destination_address() == 0x2003);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_garage
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_garage
+                state: OFF
+      # Klingel Wohnung oben
+      - if:
+          condition:
+            or:
+              # Typ 11, Quelle: Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x11) && (x.get_source_address() == 0x1007);'
+              # Typ 91, Ziel: Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1007);'
+          then:
+            - binary_sensor.template.publish:
+                id: klingel_wohnung_oben
+                state: ON
+            - binary_sensor.template.publish:
+                id: klingel_wohnung_oben
+                state: OFF
+      # Haustür geöffnet (Bestätigung Typ 8D)
+      - if:
+          condition:
+            and:
+              - lambda: 'return (x.get_message_type() == 0x8d);'
+              - lambda: 'return (x.get_source_address() == 0x4001);'
+              - lambda: 'return (x.get_destination_address() == 0x1007);'
+          then:
+            - lock.template.publish:
+                id: haustuer
+                state: UNLOCKING
+            - delay: 3s
+            - lock.template.publish:
+                id: haustuer
+                state: LOCKED
+
+binary_sensor:
+  - platform: template
+    name: "Klingel Haustür"
+    id: klingel_haustuer
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Garage"
+    id: klingel_garage
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+  - platform: template
+    name: "Klingel Wohnung oben"
+    id: klingel_wohnung_oben
+    icon: mdi:bell
+    filters:
+      - delayed_off: 1s
+
+lock:
+  - platform: template
+    name: "Haustür"
+    id: haustuer
+    icon: mdi:door
+    lock_action:
+      - lock.template.publish:
+          id: haustuer
+          state: LOCKED
+    unlock_action:
+      - remote_transmitter.transmit_abbwelcome:
+          source_address: 0x1007 # Innenstation
+          destination_address: 0x4001 # Türsteuergerät (0x4001)
+          three_byte_address: false
+          message_type: 0x0d # Türöffner
+          data: [0x11, 0x22, 0x33] # TÜRCODE – nicht öffentlich teilen!

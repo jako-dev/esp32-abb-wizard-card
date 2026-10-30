@@ -24,18 +24,28 @@ export interface RecordedLine {
   line: string;
 }
 
-export const STEP_IDS = [
-  'baseline',
-  'ring_gate',
-  'ring_house',
-  'ring_apartment',
-  'open_gate',
-  'open_house',
-] as const;
-export type StepId = (typeof STEP_IDS)[number];
+export type DoorType = 'outdoor' | 'floor';
 
-export type RingStepId = 'ring_gate' | 'ring_house' | 'ring_apartment';
-export type OpenStepId = 'open_gate' | 'open_house';
+/**
+ * A door of the user's system. Outdoor doors have their own outdoor station (doorbell via types 01/81/0A),
+ * floor doors are the apartment doorbell wired to the indoor station (types 11/91).
+ */
+export interface Door {
+  /** Stable internal key, used for step ids. */
+  key: string;
+  name: string;
+  type: DoorType;
+  /** The key button of the indoor station can open this door (outdoor doors only). */
+  open: boolean;
+  /** Opened by the key button without a preceding doorbell (default outdoor station). */
+  default: boolean;
+  /** ESPHome id override; derived from the name if missing. */
+  id?: string;
+  icon?: string;
+}
+
+/** `baseline`, `ring:<door key>` or `open:<door key>`. */
+export type StepId = string;
 
 export interface Capture {
   startedAt: string;
@@ -57,13 +67,14 @@ export interface DialSettings {
 
 export interface Session {
   format: 'abb-welcome-wizard-session';
-  version: 1;
+  version: 2;
   entity: string;
   createdAt: string;
   updatedAt: string;
   dials: DialSettings;
   /** Manually set indoor station address (overrides auto-detection). */
   indoorAddress?: number;
+  doors: Door[];
   steps: Record<StepId, StepRecord>;
 }
 
@@ -95,7 +106,7 @@ export interface RingCandidate {
 }
 
 export interface RingResult {
-  step: RingStepId;
+  door: string;
   captures: number;
   candidates: RingCandidate[];
   /** Candidates used for the generated YAML. */
@@ -114,7 +125,7 @@ export interface OpenConfirmation {
 }
 
 export interface OpenResult {
-  step: OpenStepId;
+  door: string;
   captures: number;
   destination: number;
   messageType: number;
@@ -143,8 +154,10 @@ export interface AnalysisStats {
 export interface WizardResult {
   indoor: IndoorResult | null;
   threeByte: boolean;
-  rings: Record<RingStepId, RingResult>;
-  opens: Record<OpenStepId, OpenResult | null>;
+  /** Keyed by door key, for every door. */
+  rings: Record<string, RingResult>;
+  /** Keyed by door key, for every door with an opener. */
+  opens: Record<string, OpenResult | null>;
   warnings: Warning[];
   stats: AnalysisStats;
 }

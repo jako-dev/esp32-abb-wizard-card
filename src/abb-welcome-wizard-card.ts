@@ -9,7 +9,9 @@ import {
   formatBytesPlain,
   involvesAddress,
 } from './address';
-import { analyzeSession, RING_STEPS } from './analysis';
+import { analyzeSession } from './analysis';
+import { EDITOR_TAG } from './editor';
+import { DEFAULT_DOORS, doorIcon, doorsFromConfig, MAX_DOORS, newDoor, openStepId } from './doors';
 import type { CardConfig, HassEvent, HomeAssistant, StateChangedData, Unsubscribe } from './ha-types';
 import { parseFrame } from './parser';
 import {
@@ -23,19 +25,23 @@ import {
 import {
   addCapture,
   createSession,
+  stepRecord,
   lastRingTime,
   parseSession,
   removeCapture,
   serializeSession,
   setDials,
+  setDoors,
+  doorCaptureCount,
   setIndoorAddress,
   setSkipped,
 } from './session';
-import { OPEN_HOUSE_PAUSE_MINUTES, STEPS, type StepDefinition } from './steps';
+import { buildSteps, OPEN_DEFAULT_PAUSE_MINUTES, type StepDefinition } from './steps';
 import { clearStoredSession, copyText, downloadText, loadStoredSession, storeSession } from './storage';
 import { cardStyles } from './styles';
 import type {
   DialSettings,
+  Door,
   OpenResult,
   RecordedLine,
   RingCandidate,
@@ -44,14 +50,12 @@ import type {
   Severity,
   WizardResult,
 } from './types';
-import { generateYaml, LOCK_TARGETS, RING_TARGETS } from './yaml-export';
+import { generateYaml, lockTargets, ringTargets } from './yaml-export';
 
 const CARD_TAG = 'abb-welcome-wizard-card';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
-/** Page 0 is the start page, 1..STEPS.length are the recording steps, the last page is the result. */
-const RESULT_PAGE = STEPS.length + 1;
 
 const SEVERITY_ICON: Record<Severity, string> = {
   info: 'mdi:information-outline',
@@ -89,8 +93,13 @@ export class AbbWelcomeWizardCard extends LitElement {
   private timer?: number;
   private toastTimer?: number;
   private analysisCache?: { session: Session; indoor?: number; result: WizardResult };
+  private stepsCache?: { doors: Door[]; steps: StepDefinition[] };
 
   // ---- Lovelace API --------------------------------------------------------------------------------
+
+  public static getConfigElement(): HTMLElement {
+    return document.createElement(EDITOR_TAG);
+  }
 
   public static getStubConfig(hass: HomeAssistant): Partial<CardConfig> {
     const candidates = Object.keys(hass?.states ?? {}).filter(
@@ -114,11 +123,12 @@ export class AbbWelcomeWizardCard extends LitElement {
     if (config.indoor_address !== undefined && parseAddressInput(config.indoor_address) === undefined) {
       throw new Error('"indoor_address" muss eine Adresse wie 0x1010 oder 0x000110 sein.');
     }
+    if (config.doors !== undefined) doorsFromConfig(config.doors);
     const entityChanged = this.config?.entity !== config.entity;
     this.config = config;
     if (entityChanged) {
       this.resubscribe();
-      this.session = loadStoredSession(config.entity) ?? createSession(config.entity);
+      this.session = loadStoredSession(config.entity) ?? createSession(config.entity, this.configDoors);
       this.indoorInput =
         this.session.indoorAddress !== undefined
           ? formatAddress(this.session.indoorAddress, this.session.indoorAddress > 0xffff)
@@ -155,6 +165,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   }
 
   protected override updated(changed: PropertyValues): void {
+    if (this.session && this.page > this.resultPage) this.page = this.resultPage;
     if (changed.has('page') && changed.get('page') !== undefined) {
       // Bring the new step (and the top of the card) into view after navigating.
       this.renderRoot
@@ -256,6 +267,23 @@ export class AbbWelcomeWizardCard extends LitElement {
     storeSession(session);
   }
 
+  /** Doors from the card config (`doors:`), otherwise the default gate / house door / apartment setup. */
+  private get configDoors(): Door[] {
+    return this.config?.doors !== undefined ? doorsFromConfig(this.config.doors) : [...DEFAULT_DOORS];
+  }
+
+  private get steps(): StepDefinition[] {
+    if (this.stepsCache?.doors !== this.session.doors) {
+      this.stepsCache = { doors: this.session.doors, steps: buildSteps(this.session.doors) };
+    }
+    return this.stepsCache.steps;
+  }
+
+  /** Page 0 is the start page, 1..steps.length are the recording steps, the last page is the result. */
+  private get resultPage(): number {
+    return this.steps.length + 1;
+  }
+
   private get configIndoor(): number | undefined {
     return parseAddressInput(this.config?.indoor_address);
   }
@@ -299,7 +327,7 @@ export class AbbWelcomeWizardCard extends LitElement {
         imported.indoorAddress !== undefined
           ? formatAddress(imported.indoorAddress, imported.indoorAddress > 0xffff)
           : '';
-      this.page = RESULT_PAGE;
+      this.page = this.resultPage;
       this.showToast('Sitzung importiert.');
     } catch (err) {
       this.showToast(err instanceof Error ? err.message : String(err));
@@ -310,7 +338,7 @@ export class AbbWelcomeWizardCard extends LitElement {
     if (!this.config) return;
     if (!window.confirm('Alle Aufnahmen dieser Sitzung löschen und neu beginnen?')) return;
     clearStoredSession(this.config.entity);
-    this.updateSession(createSession(this.config.entity));
+    this.updateSession(createSession(this.config.entity, this.configDoors));
     this.indoorInput = '';
     this.capture = null;
     this.page = 0;
@@ -337,6 +365,48 @@ export class AbbWelcomeWizardCard extends LitElement {
     }
   }
 
+  private updateDoor(key: string, patch: Partial<Door>): void {
+    let doors = this.session.doors.map((d) => (d.key === key ? { ...d, ...patch } : d));
+    // Only one default door: checking one unchecks the others.
+    if (patch.default) doors = doors.map((d) => (d.key === key ? d : { ...d, default: false }));
+    this.updateSession(setDoors(this.session, doors));
+  }
+
+  private renameDoor(door: Door, ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const name = input.value.trim();
+    if (name === '') input.value = door.name;
+    else if (name !== door.name) this.updateDoor(door.key, { name });
+  }
+
+  private addDoor(): void {
+    if (this.session.doors.length >= MAX_DOORS) return;
+    this.updateSession(setDoors(this.session, [...this.session.doors, newDoor(this.session.doors)]));
+  }
+
+  private removeDoor(door: Door): void {
+    if (this.session.doors.length <= 1) return;
+    const captures = doorCaptureCount(this.session, door);
+    if (captures > 0 && !window.confirm(`„${door.name}“ und ${captures} Aufnahme(n) dieser Tür löschen?`))
+      return;
+    this.updateSession(
+      setDoors(
+        this.session,
+        this.session.doors.filter((d) => d.key !== door.key),
+      ),
+    );
+  }
+
+  private resetDoors(): void {
+    const doors = this.configDoors;
+    const lost = this.session.doors
+      .filter((d) => !doors.some((c) => c.key === d.key))
+      .reduce((n, d) => n + doorCaptureCount(this.session, d), 0);
+    if (lost > 0 && !window.confirm(`Dabei gehen ${lost} Aufnahme(n) entfernter Türen verloren. Fortfahren?`))
+      return;
+    this.updateSession(setDoors(this.session, doors));
+  }
+
   private showToast(text: string): void {
     this.toast = text;
     window.clearTimeout(this.toastTimer);
@@ -346,12 +416,13 @@ export class AbbWelcomeWizardCard extends LitElement {
   // ---- Navigation ----------------------------------------------------------------------------------
 
   private get currentStep(): StepDefinition | undefined {
-    return this.page >= 1 && this.page <= STEPS.length ? STEPS[this.page - 1] : undefined;
+    const steps = this.steps;
+    return this.page >= 1 && this.page <= steps.length ? steps[this.page - 1] : undefined;
   }
 
   private goTo(page: number): void {
     if (this.capture) return;
-    this.page = Math.max(0, Math.min(RESULT_PAGE, page));
+    this.page = Math.max(0, Math.min(this.resultPage, page));
     this.waitForFrame = undefined;
   }
 
@@ -385,14 +456,14 @@ export class AbbWelcomeWizardCard extends LitElement {
           <input id="import" type="file" accept="application/json,.json" @change=${this.onImportFile} />
         </div>
         ${this.renderStepper()}
-        <div class="progress"><div style="width:${(this.page / RESULT_PAGE) * 100}%"></div></div>
+        <div class="progress"><div style="width:${(this.page / this.resultPage) * 100}%"></div></div>
         <div class="content">
           ${
             this.page === 0
               ? this.renderStart()
-              : this.page === RESULT_PAGE
+              : this.page >= this.resultPage
                 ? this.renderResult()
-                : this.renderStep(STEPS[this.page - 1])
+                : this.renderStep(this.steps[this.page - 1])
           }
         </div>
         ${this.renderFooter()}
@@ -403,8 +474,8 @@ export class AbbWelcomeWizardCard extends LitElement {
   private renderStepper(): TemplateResult {
     const pages: { label: string; icon: string; status: string }[] = [
       { label: 'Start', icon: 'mdi:play', status: '' },
-      ...STEPS.map((s) => {
-        const record = this.session.steps[s.id];
+      ...this.steps.map((s) => {
+        const record = stepRecord(this.session, s.id);
         const status = record.captures.length > 0 ? 'done' : record.skipped ? 'skipped' : '';
         return { label: s.short, icon: status === 'done' ? 'mdi:check' : s.icon, status };
       }),
@@ -432,7 +503,7 @@ export class AbbWelcomeWizardCard extends LitElement {
 
   private renderFooter(): TemplateResult {
     const step = this.currentStep;
-    const hasCaptures = step ? this.session.steps[step.id].captures.length > 0 : false;
+    const hasCaptures = step ? stepRecord(this.session, step.id).captures.length > 0 : false;
     return html`
       <div class="footer">
         <button
@@ -453,13 +524,13 @@ export class AbbWelcomeWizardCard extends LitElement {
             : nothing
         }
         ${
-          this.page < RESULT_PAGE
+          this.page < this.resultPage
             ? html`<button
                 class="btn ${!step || hasCaptures ? 'primary' : ''}"
                 ?disabled=${!!this.capture}
                 @click=${() => this.goTo(this.page + 1)}
               >
-                ${this.page === STEPS.length ? 'Auswerten' : 'Weiter'}<ha-icon
+                ${this.page === this.steps.length ? 'Auswerten' : 'Weiter'}<ha-icon
                   icon="mdi:chevron-right"
                 ></ha-icon>
               </button>`
@@ -581,8 +652,115 @@ export class AbbWelcomeWizardCard extends LitElement {
         </div>
       </details>
 
-      ${this.renderLive('Live-Frames')} ${this.renderLimitations()}
+      ${this.renderDoorEditor()} ${this.renderLive('Live-Frames')} ${this.renderLimitations()}
     `;
+  }
+
+  private renderDoorEditor(): TemplateResult {
+    const doors = this.session.doors;
+    return html`
+      <div class="panel">
+        <h3>3 · Türen deiner Anlage</h3>
+        <p class="muted small">
+          Für jede Tür gibt es einen Klingel-Schritt, für Türen mit Öffner zusätzlich einen Öffnen-Schritt.
+          Namen frei wählbar – sie werden auch für die Sensoren und Schlösser in ESPHome verwendet.
+        </p>
+        <div class="doors">
+          ${doors.map(
+            (door) => html`
+              <div class="door-row">
+                <div class="door-main">
+                  <ha-icon icon=${doorIcon(door)}></ha-icon>
+                  <input
+                    type="text"
+                    aria-label="Name der Tür"
+                    maxlength="40"
+                    .value=${door.name}
+                    @change=${(ev: Event) => this.renameDoor(door, ev)}
+                  />
+                  <button
+                    class="icon"
+                    title="Tür entfernen"
+                    ?disabled=${doors.length <= 1}
+                    @click=${() => this.removeDoor(door)}
+                  >
+                    <ha-icon icon="mdi:delete-outline"></ha-icon>
+                  </button>
+                </div>
+                <div class="door-options">
+                  <select
+                    aria-label="Art der Klingel"
+                    .value=${door.type}
+                    @change=${(ev: Event) =>
+                      this.updateDoor(door.key, {
+                        type: (ev.target as HTMLSelectElement).value as Door['type'],
+                        open: (ev.target as HTMLSelectElement).value === 'outdoor',
+                      })}
+                  >
+                    <option value="outdoor">Außentür (eigene Außenstation)</option>
+                    <option value="floor">Wohnungstür (Etagenruf)</option>
+                  </select>
+                  <label class="switch" title="Die Schlüssel-Taste der Innenstation kann diese Tür öffnen">
+                    <input
+                      type="checkbox"
+                      .checked=${door.open}
+                      ?disabled=${door.type === 'floor'}
+                      @change=${(ev: Event) =>
+                        this.updateDoor(door.key, { open: (ev.target as HTMLInputElement).checked })}
+                    />Türöffner
+                  </label>
+                  <label
+                    class="switch"
+                    title="Öffnet sich mit der Schlüssel-Taste auch ohne vorheriges Klingeln"
+                  >
+                    <input
+                      type="checkbox"
+                      .checked=${door.default}
+                      ?disabled=${!door.open}
+                      @change=${(ev: Event) =>
+                        this.updateDoor(door.key, { default: (ev.target as HTMLInputElement).checked })}
+                    />Standard-Tür
+                  </label>
+                </div>
+              </div>
+            `,
+          )}
+        </div>
+        <div class="actions">
+          <button class="btn" ?disabled=${doors.length >= MAX_DOORS} @click=${this.addDoor}>
+            <ha-icon icon="mdi:plus"></ha-icon>Tür hinzufügen
+          </button>
+          <button class="btn text" @click=${this.resetDoors}>Vorgabe wiederherstellen</button>
+        </div>
+        <details>
+          <summary>Was bedeuten die Optionen?</summary>
+          <ul class="small" style="margin:0;padding-left:1.2em;line-height:1.5">
+            <li>
+              <b>Außentür:</b> Tür mit eigener Außenstation (Klingeltaster mit Lautsprecher), z. B. Tor oder
+              Haustür.
+            </li>
+            <li>
+              <b>Wohnungstür (Etagenruf):</b> Klingeltaster, der direkt an der Innenstation angeschlossen ist.
+              Kein Öffner.
+            </li>
+            <li>
+              <b>Türöffner:</b> Die Schlüssel-Taste der Innenstation öffnet diese Tür (nach dem Klingeln an
+              ihr).
+            </li>
+            <li>
+              <b>Standard-Tür:</b> Die Tür, die die Schlüssel-Taste auch <i>ohne</i> vorheriges Klingeln
+              öffnet – meist die Haustür. Höchstens eine.
+            </li>
+          </ul>
+        </details>
+      </div>
+    `;
+  }
+
+  private renderDoorsWithoutOpener(): TemplateResult | typeof nothing {
+    const names = this.session.doors.filter((d) => !d.open).map((d) => `„${d.name}“`);
+    if (names.length === 0) return nothing;
+    return html`<p class="muted small">Ohne elektrischen Öffner (nur Klingel): ${names.join(', ')}.</p>`;
   }
 
   private renderLimitations(): TemplateResult {
@@ -652,7 +830,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   // ---- Recording step ------------------------------------------------------------------------------
 
   private renderStep(step: StepDefinition): TemplateResult {
-    const record = this.session.steps[step.id];
+    const record = stepRecord(this.session, step.id);
     const count = record.captures.length;
     return html`
       <h2><ha-icon icon=${step.icon}></ha-icon>${step.title}</h2>
@@ -663,9 +841,9 @@ export class AbbWelcomeWizardCard extends LitElement {
         <summary>Warum?</summary>
         <p class="small">${step.why}</p>
       </details>
-      ${step.id === 'open_house' ? this.renderPauseHint() : nothing}
+      ${step.needsPause ? this.renderPauseHint() : nothing}
       ${
-        step.id === 'open_gate' || step.id === 'open_house'
+        step.kind === 'open'
           ? html`<div class="callout warning">
               <ha-icon icon="mdi:door-open"></ha-icon>
               <span
@@ -694,7 +872,7 @@ export class AbbWelcomeWizardCard extends LitElement {
     const last = lastRingTime(this.session);
     if (!last) return html``;
     const minutes = (this.now - last.getTime()) / 60000;
-    const ok = minutes >= OPEN_HOUSE_PAUSE_MINUTES;
+    const ok = minutes >= OPEN_DEFAULT_PAUSE_MINUTES;
     return html`<div class="callout ${ok ? 'ok' : 'warning'}">
       <ha-icon icon="mdi:timer-outline"></ha-icon>
       <span
@@ -703,7 +881,7 @@ export class AbbWelcomeWizardCard extends LitElement {
         ${
           ok
             ? 'Passt – die Schlüssel-Taste öffnet jetzt die Standard-Außenstation.'
-            : `Bitte noch etwas warten (mindestens ${OPEN_HOUSE_PAUSE_MINUTES} Minuten).`
+            : `Bitte noch etwas warten (mindestens ${OPEN_DEFAULT_PAUSE_MINUTES} Minuten).`
         }</span
       >
     </div>`;
@@ -795,7 +973,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   }
 
   private renderCaptures(step: StepDefinition): TemplateResult {
-    const captures = this.session.steps[step.id].captures;
+    const captures = stepRecord(this.session, step.id).captures;
     return html`
       <div class="captures">
         <div class="actions">
@@ -842,17 +1020,17 @@ export class AbbWelcomeWizardCard extends LitElement {
         <span>Innenstation noch nicht erkannt – sie ergibt sich spätestens aus den Öffnen-Schritten.</span>
       </div>`;
     }
-    if (step.id === 'baseline') {
+    if (step.kind === 'baseline' || !step.door) {
       return html`<div class="callout ok">
         <ha-icon icon="mdi:check-circle-outline"></ha-icon>
         <span
-          >${this.session.steps.baseline.captures.flatMap((c) => c.lines).length} Frames als Baseline
+          >${stepRecord(this.session, step.id).captures.flatMap((c) => c.lines).length} Frames als Baseline
           markiert.</span
         >
       </div>`;
     }
-    if ((RING_STEPS as readonly string[]).includes(step.id)) {
-      const ring = result.rings[step.id as RingResult['step']];
+    if (step.kind === 'ring') {
+      const ring = result.rings[step.door.key];
       return ring.candidates.length > 0
         ? html`<div class="panel">
             <h3>Erkannt</h3>
@@ -866,7 +1044,7 @@ export class AbbWelcomeWizardCard extends LitElement {
             >
           </div>`;
     }
-    const open = result.opens[step.id as OpenResult['step']];
+    const open = result.opens[step.door.key];
     return open
       ? html`<div class="panel">
           <h3>Erkannt</h3>
@@ -884,7 +1062,7 @@ export class AbbWelcomeWizardCard extends LitElement {
     const result = this.result;
     const { indoor, threeByte } = result;
     const apartment = apartmentFromDials(this.session.dials);
-    const yaml = generateYaml(result, { maskDoorCode: this.maskDoorCode, apartment });
+    const yaml = generateYaml(result, this.session.doors, { maskDoorCode: this.maskDoorCode, apartment });
     const recorded = Object.values(this.session.steps).some((s) => s.captures.length > 0);
 
     if (!recorded) {
@@ -939,11 +1117,11 @@ export class AbbWelcomeWizardCard extends LitElement {
 
       <div class="panel">
         <h3>Klingeln</h3>
-        ${RING_TARGETS.map((t) => {
-          const ring = result.rings[t.step];
+        ${ringTargets(this.session.doors).map((t) => {
+          const ring = result.rings[t.door.key];
           const ok = ring.selected.length > 0;
           return html`<div class="result-row">
-            <ha-icon icon=${STEPS.find((s) => s.id === t.step)!.icon}></ha-icon>
+            <ha-icon icon=${doorIcon(t.door)}></ha-icon>
             <div>
               <div class="row-head">
                 <b>${t.name}</b>
@@ -980,9 +1158,9 @@ export class AbbWelcomeWizardCard extends LitElement {
             <ha-icon icon=${this.showDoorCode ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}></ha-icon>
           </button>
         </h3>
-        ${LOCK_TARGETS.map((t) => {
-          const open = result.opens[t.step];
-          const recorded = this.session.steps[t.step].captures.length > 0;
+        ${lockTargets(this.session.doors).map((t) => {
+          const open = result.opens[t.door.key];
+          const recorded = stepRecord(this.session, openStepId(t.door)).captures.length > 0;
           return html`<div class="result-row">
             <ha-icon icon=${t.icon}></ha-icon>
             <div>
@@ -1001,9 +1179,7 @@ export class AbbWelcomeWizardCard extends LitElement {
             </div>
           </div>`;
         })}
-        <p class="muted small">
-          Die Wohnungstür hat keinen elektrischen Öffner und erscheint deshalb nur als Klingel.
-        </p>
+        ${this.renderDoorsWithoutOpener()}
       </div>
 
       <div class="panel">

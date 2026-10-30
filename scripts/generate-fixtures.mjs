@@ -59,22 +59,36 @@ function capture(lines) {
   return { startedAt, endedAt: new Date(clock + 10_000).toISOString(), lines: recorded };
 }
 
-function session(entity, dials, steps) {
-  const all = ['baseline', 'ring_gate', 'ring_house', 'ring_apartment', 'open_gate', 'open_house'];
+const DEFAULT_DOORS = [
+  { key: 'tor', name: 'Tor', type: 'outdoor', open: true, default: false, icon: 'mdi:gate' },
+  { key: 'haustuer', name: 'Haustür', type: 'outdoor', open: true, default: true, icon: 'mdi:door' },
+  {
+    key: 'wohnung',
+    name: 'Wohnungstür',
+    type: 'floor',
+    open: false,
+    default: false,
+    icon: 'mdi:door-closed',
+  },
+];
+
+/** steps: { baseline | 'ring:<door key>' | 'open:<door key>': captures[] | 'skip' } */
+function session(entity, dials, doors, steps) {
   const createdAt = '2026-10-30T10:00:00.000Z';
   const result = {
     format: 'abb-welcome-wizard-session',
-    version: 1,
+    version: 2,
     entity,
     createdAt,
     updatedAt: createdAt,
     dials,
+    doors,
     steps: Object.fromEntries(
-      all.map((id) => [
+      Object.entries(steps).map(([id, captures]) => [
         id,
-        steps[id] === 'skip'
+        captures === 'skip'
           ? { skipped: true, captures: [] }
-          : { skipped: false, captures: (steps[id] ?? []).map(capture) },
+          : { skipped: false, captures: captures.map(capture) },
       ]),
     ),
   };
@@ -104,6 +118,10 @@ function write(name, data) {
     session(
       'sensor.doorbell_intercom',
       { x10: 1, x1: 2 },
+      [
+        { key: 'haustuer', name: 'Haustür', type: 'outdoor', open: true, default: true },
+        { key: 'wohnung', name: 'Wohnungstür', type: 'floor', open: false, default: false },
+      ],
       {
         baseline: [
           [
@@ -115,17 +133,16 @@ function write(name, data) {
             f('2001 > 100C', 0x82, [], legacy),
           ],
         ],
-        ring_gate: [
+        'ring:haustuer': [
           ringOutdoor(),
           ringOutdoor([f('2001 > 100C', 0x01, [], { ...legacy, retransmission: true })]),
           ringOutdoor(),
         ],
-        ring_house: 'skip',
-        ring_apartment: [
+        'ring:wohnung': [
           [f('100C > 3001', 0x11, [], legacy), f('3001 > 100C', 0x91, [], legacy)],
           [f('100C > 3001', 0x11, [], legacy), f('3001 > 100C', 0x91, [], legacy)],
         ],
-        open_gate: [
+        'open:haustuer': [
           [f('100C > 4001', 0x0d, [0xab, 0xcd, 0xef], legacy), f('4001 > 100C', 0x8d, [], legacy)],
           [
             f('100C > 3001', 0x12, [], legacy),
@@ -133,7 +150,6 @@ function write(name, data) {
             f('4001 > 100C', 0x8d, [], legacy),
           ],
         ],
-        open_house: 'skip',
       },
     ),
   );
@@ -160,64 +176,60 @@ function write(name, data) {
   ];
   write(
     'two-outdoor-neighbours.json',
-    session(
-      'sensor.abb_welcome_last_frame',
-      { station: 2, x10: 1, x1: 6 },
-      {
-        baseline: [
-          [
-            f('1010 > 2002', 0x04),
-            f('2002 > 1010', 0x84),
-            f('2002 > 3001', 0x0a, [0x01, 0x10, 0x10]),
-            f('1010 > 3001', 0x12),
-            f('3001 > 1010', 0x92),
-            f('2001 > 1011', 0x01),
-            f('1011 > 2001', 0x81),
-            f('1010 > 2002', 0x02, [0x00]),
-            f('2002 > 1010', 0x82),
-          ],
-          [
-            f('1010 > 2002', 0x04),
-            f('2002 > 1010', 0x84),
-            f('2002 > 3001', 0x0a, [0x01, 0x10, 0x10]),
-            f('1010 > 2002', 0x02, [0x00]),
-            f('2002 > 1010', 0x82),
-          ],
+    session('sensor.abb_welcome_last_frame', { station: 2, x10: 1, x1: 6 }, DEFAULT_DOORS, {
+      baseline: [
+        [
+          f('1010 > 2002', 0x04),
+          f('2002 > 1010', 0x84),
+          f('2002 > 3001', 0x0a, [0x01, 0x10, 0x10]),
+          f('1010 > 3001', 0x12),
+          f('3001 > 1010', 0x92),
+          f('2001 > 1011', 0x01),
+          f('1011 > 2001', 0x81),
+          f('1010 > 2002', 0x02, [0x00]),
+          f('2002 > 1010', 0x82),
         ],
-        ring_gate: [
-          ringGate(),
-          // 81 reply lost (e.g. dropped duplicate state in HA).
-          [...ringGate(false), f('1011 > 3001', 0x12)],
-          [
-            ...ringGate(),
-            f('2002 > 100F', 0x01),
-            f('100F > 2002', 0x81),
-            f('2002 > 3001', 0x0a, [0x01, 0x10, 0x0f]),
-            'unavailable',
-            '55.FF.00.41.10 [Invalid]',
-          ],
+        [
+          f('1010 > 2002', 0x04),
+          f('2002 > 1010', 0x84),
+          f('2002 > 3001', 0x0a, [0x01, 0x10, 0x10]),
+          f('1010 > 2002', 0x02, [0x00]),
+          f('2002 > 1010', 0x82),
         ],
-        ring_house: [ringHouse(), [...ringHouse(), f('2002 > 1010', 0x01, [], { retransmission: true })]],
-        ring_apartment: [
-          [f('1010 > 3001', 0x11), f('3001 > 1010', 0x91)],
-          [f('1011 > 3001', 0x11), f('3001 > 1011', 0x91), f('1010 > 3001', 0x11), f('3001 > 1010', 0x91)],
+      ],
+      'ring:tor': [
+        ringGate(),
+        // 81 reply lost (e.g. dropped duplicate state in HA).
+        [...ringGate(false), f('1011 > 3001', 0x12)],
+        [
+          ...ringGate(),
+          f('2002 > 100F', 0x01),
+          f('100F > 2002', 0x81),
+          f('2002 > 3001', 0x0a, [0x01, 0x10, 0x0f]),
+          'unavailable',
+          '55.FF.00.41.10 [Invalid]',
         ],
-        open_gate: [
-          [...ringGate(), f('1010 > 2001', 0x0d, [0x12, 0x34, 0x56]), f('2001 > 1010', 0x8d)],
-          [
-            ...ringGate(),
-            f('1011 > 4001', 0x0d, [0x99, 0x88, 0x77]),
-            f('4001 > 1011', 0x8d),
-            f('1010 > 2001', 0x0d, [0x12, 0x34, 0x56]),
-            f('2001 > 1010', 0x8d),
-          ],
+      ],
+      'ring:haustuer': [ringHouse(), [...ringHouse(), f('2002 > 1010', 0x01, [], { retransmission: true })]],
+      'ring:wohnung': [
+        [f('1010 > 3001', 0x11), f('3001 > 1010', 0x91)],
+        [f('1011 > 3001', 0x11), f('3001 > 1011', 0x91), f('1010 > 3001', 0x11), f('3001 > 1010', 0x91)],
+      ],
+      'open:tor': [
+        [...ringGate(), f('1010 > 2001', 0x0d, [0x12, 0x34, 0x56]), f('2001 > 1010', 0x8d)],
+        [
+          ...ringGate(),
+          f('1011 > 4001', 0x0d, [0x99, 0x88, 0x77]),
+          f('4001 > 1011', 0x8d),
+          f('1010 > 2001', 0x0d, [0x12, 0x34, 0x56]),
+          f('2001 > 1010', 0x8d),
         ],
-        open_house: [
-          [f('1010 > 3001', 0x12), f('1010 > 4001', 0x0d, [0xab, 0xcd, 0xef]), f('4001 > 1010', 0x8d)],
-          [f('1010 > 4001', 0x0d, [0xab, 0xcd, 0xef]), f('4001 > 1010', 0x8d)],
-        ],
-      },
-    ),
+      ],
+      'open:haustuer': [
+        [f('1010 > 3001', 0x12), f('1010 > 4001', 0x0d, [0xab, 0xcd, 0xef]), f('4001 > 1010', 0x8d)],
+        [f('1010 > 4001', 0x0d, [0xab, 0xcd, 0xef]), f('4001 > 1010', 0x8d)],
+      ],
+    }),
   );
 }
 
@@ -227,21 +239,56 @@ function write(name, data) {
   const bare = { style: 'bare' };
   write(
     'three-byte.json',
+    session('sensor.doorbell_intercom', { x10: 1, x1: 6 }, DEFAULT_DOORS, {
+      baseline: 'skip',
+      'ring:tor': [
+        [f('000201 > 000110', 0x01), f('000110 > 000201', 0x81)],
+        [f('000201 > 000110', 0x01, [], bare), f('000110 > 000201', 0x81, [], bare)],
+      ],
+      'ring:haustuer': 'skip',
+      'ring:wohnung': 'skip',
+      'open:tor': 'skip',
+      'open:haustuer': [
+        [f('000110 > 000401', 0x0e, [0x01, 0x02, 0x03]), f('000401 > 000110', 0x8e)],
+        [f('000110 > 000401', 0x0e, [0x01, 0x02, 0x03]), f('000401 > 000110', 0x8e)],
+      ],
+    }),
+  );
+}
+
+// --- Scenario 4: custom doors, no gate ----------------------------------------------------------
+// Indoor station #7 (0x1007), house door (0x2001, default, opener 0x4001), garage with its own outdoor
+// station but no opener (0x2003), apartment doorbell named „Wohnung oben“.
+{
+  const ring = (outdoor) => [
+    f(`${outdoor} > 1007`, 0x01),
+    f(`1007 > ${outdoor}`, 0x81),
+    f('1007 > 3001', 0x12),
+    f('3001 > 1007', 0x92),
+  ];
+  write(
+    'custom-doors.json',
     session(
       'sensor.doorbell_intercom',
-      { x10: 1, x1: 6 },
+      { x10: 0, x1: 7 },
+      [
+        { key: 'haustuer', name: 'Haustür', type: 'outdoor', open: true, default: true },
+        { key: 'garage', name: 'Garage', type: 'outdoor', open: false, default: false, icon: 'mdi:garage' },
+        { key: 'wohnung_oben', name: 'Wohnung oben', type: 'floor', open: false, default: false },
+      ],
       {
-        baseline: 'skip',
-        ring_gate: [
-          [f('000201 > 000110', 0x01), f('000110 > 000201', 0x81)],
-          [f('000201 > 000110', 0x01, [], bare), f('000110 > 000201', 0x81, [], bare)],
+        baseline: [
+          [f('1007 > 2001', 0x04), f('2001 > 1007', 0x84), f('1007 > 3001', 0x12), f('3001 > 1007', 0x92)],
         ],
-        ring_house: 'skip',
-        ring_apartment: 'skip',
-        open_gate: 'skip',
-        open_house: [
-          [f('000110 > 000401', 0x0e, [0x01, 0x02, 0x03]), f('000401 > 000110', 0x8e)],
-          [f('000110 > 000401', 0x0e, [0x01, 0x02, 0x03]), f('000401 > 000110', 0x8e)],
+        'ring:haustuer': [ring('2001'), ring('2001')],
+        'ring:garage': [ring('2003'), [...ring('2003'), f('2001 > 1008', 0x01)]],
+        'ring:wohnung_oben': [
+          [f('1007 > 3001', 0x11), f('3001 > 1007', 0x91)],
+          [f('1007 > 3001', 0x11), f('3001 > 1007', 0x91)],
+        ],
+        'open:haustuer': [
+          [f('1007 > 4001', 0x0d, [0x11, 0x22, 0x33]), f('4001 > 1007', 0x8d)],
+          [f('1007 > 4001', 0x0d, [0x11, 0x22, 0x33]), f('4001 > 1007', 0x8d)],
         ],
       },
     ),
