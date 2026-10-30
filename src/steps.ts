@@ -81,11 +81,11 @@ function openStep(door: Door): StepDefinition {
   return {
     ...base,
     todo: [
-      `An ${quoted(door)} klingeln (lassen).`,
-      'Sofort danach auf „Aufnahme starten“ tippen.',
-      `An der Innenstation die Schlüssel-Taste drücken – ${quoted(door)} wird dabei wirklich geöffnet.`,
+      `An ${quoted(door)} klingeln – oder klingeln lassen. Allein: klingeln und zügig zur Innenstation gehen.`,
+      'Erst an der Innenstation auf „Aufnahme starten“ tippen (das Klingeln muss nicht mit aufgenommen werden).',
+      `Sofort die Schlüssel-Taste drücken, solange der Ruf noch aktiv ist – ${quoted(door)} wird dabei wirklich geöffnet.`,
     ],
-    why: 'Nach einem Klingeln öffnet die Schlüssel-Taste die rufende Außenstation. Gesucht wird der Frame vom Typ 0D/0E deiner Innenstation und die Bestätigung 8D/8E.',
+    why: 'Nach einem Klingeln öffnet die Schlüssel-Taste die rufende Außenstation – aber nur, solange der Ruf an der Innenstation noch aktiv ist. Ist er schon abgelaufen, öffnet sie die Standard-Tür; die Auswertung warnt dann. Gesucht wird der Frame vom Typ 0D/0E deiner Innenstation und die Bestätigung 8D/8E.',
     needsPause: false,
   };
 }

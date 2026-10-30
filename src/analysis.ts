@@ -531,7 +531,7 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
         warnings.push({
           code: 'same_open_frame',
           severity: 'warning',
-          message: `${openLabel(openable[i])} und ${openLabel(openable[j])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen.`,
+          message: `${openLabel(openable[i])} und ${openLabel(openable[j])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`,
         });
       }
     }
