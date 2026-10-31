@@ -35,7 +35,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.6.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.7.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -62,9 +62,9 @@ capture_seconds: 10 # optional
 
 Nichts ist auf eine bestimmte Anlage festgelegt: Die Adresse der Innenstation, die Außenstationen, Türcodes und
 die Adresslänge werden aus deinen Aufnahmen ermittelt. Die Drehregler deiner Innenstation (STATION, X10, X1) trägst
-du optional auf der Startseite ein. Sie dienen nur zur Kontrolle: Aus X10/X1 ergibt sich die Wohnungsnummer, die
-in den letzten beiden Stellen der Adresse steht (Wohnung 16 → `0x1010`, Wohnung 12 → `0x100c`). Bei Bedarf lässt
-sich die Adresse dort auch manuell festlegen.
+du optional auf der Startseite ein. Sie dienen nur zur Kontrolle. Anlagen lesen die Regler unterschiedlich: bei
+manchen stehen die Ziffern direkt in der Adresse (X10=1, X1=6 → `0x1016`), bei anderen wird dezimal umgerechnet
+(16 → `0x1010`). Die Karte vergleicht beide Lesarten mit der gemessenen Adresse und zeigt die passende an.
 
 ### Türen einrichten
 
@@ -109,14 +109,25 @@ in Ruhe zur Tür gehen kannst.
 
 ### Auswertung
 
-- **Innenstation:** die Quelle der Öffnen-Frames (Typ `0D`/`0E`); ohne Öffnen-Aufnahme die häufigste Adresse
-  `10XX`/`0001XX`. Weicht sie von den Drehreglern ab, gibt es eine Warnung.
+- **Innenstation:** die Quelle der Öffnen-Frames (Typ `0D`/`0E`) bzw. das Ziel ihrer Bestätigung; ohne
+  Öffnen-Aufnahme die häufigste Adresse `10XX`/`0001XX`. Passt sie zu keiner Lesart der Drehregler, gibt es eine
+  Warnung.
 - **Baseline-Abzug:** Frames, die identisch auch bei der normalen Sprechverbindung auftreten, werden ignoriert.
 - **Nachbarn:** Frames ohne Bezug zur eigenen Innenstation (weder Quelle, Ziel noch in den Daten) werden verworfen.
 - **Klingeln:** Typ `01`/`81`/`0A` (Außenstation) bzw. `11`/`91` (Etagenruf). Zuverlässig ist ein Kandidat,
   der in allen Wiederholungen vorkommt. Mehrere Außentüren werden über die Adresse ihrer Außenstation unterschieden.
 - **Öffnen:** der `0D`/`0E`-Frame der Innenstation (Ziel, Typ, Türcode) und die passende Bestätigung `8D`/`8E`.
+  Kam nur die Bestätigung an (z. B. `[4002 > 1016] Type: 8D Data: 1C 41 68`), wird der Befehl daraus abgeleitet
+  (`[1016 > 4002] Type: 0D Data: 1C 41 68`) und als **„abgeleitet – unbestätigt“** markiert – bitte testen.
 - **Adresslänge:** 6-stellige Adressen bedeuten 3-Byte-Adressen (`three_byte_address: true`).
+
+### Werte von Hand eintragen
+
+Auf der Ergebnisseite lässt sich jeder Wert mit dem Stift bearbeiten: Innenstationsadresse, Adresslänge,
+Außenstationsadressen, Klingel-Bedingungen (Typ / Quelle / Ziel / Data, hinzufügen und entfernen) und der
+Öffnen-Frame jeder Tür (Ziel, Typ, Data). Eingaben werden als Hex geprüft. Manuelle Werte sind mit „manuell“
+markiert, haben Vorrang vor der Auswertung und bleiben auch bei neuen Aufnahmen erhalten; „Analyse verwenden“ nimmt
+sie wieder zurück. Ein Türöffner lässt sich so auch ganz ohne Aufnahme anlegen, wenn die Werte bekannt sind.
 
 ### Export
 
@@ -127,15 +138,17 @@ Auf der Ergebnisseite gibt es die ESPHome-Konfiguration in zwei Varianten (Kopie
   Gerätename, Anzeigename und Name des Debug-Sensors schlägt die Karte aus Home Assistant vor. Der Gerätename muss
   zum bestehenden Gerät passen, sonst ist es per OTA nicht mehr erreichbar. In `secrets.yaml` werden `wifi_ssid`,
   `wifi_password`, `api_encryption_key`, `ota_password` und `ap_password` erwartet – den API-Schlüssel aus der
-  bisherigen Datei übernehmen.
+  bisherigen Datei übernehmen. Die Option `name_add_mac_suffix` ist wie in der Demo-Firmware aus; passt der Name
+  nicht zum Gerät in Home Assistant, warnt die Karte. `api: batch_delay: 0ms` ist gesetzt.
 - **Nur geänderte Abschnitte**: ersetzt in der bestehenden Konfiguration nur `esphome.on_boot`,
   `remote_receiver.on_abbwelcome`, `binary_sensor` und `lock`.
 
 Ergebnis in Home Assistant:
 
 - je Tür ein Binary-Sensor „Klingel _Name_“ (ESPHome-id `klingel_<name>`, z. B. `klingel_haustuer`)
-- je Tür mit Öffner ein Schloss „_Name_“ (id `<name>`, z. B. `haustuer`), öffnet per
-  `remote_transmitter.transmit_abbwelcome`; die Bestätigung vom Bus setzt das Schloss kurz auf „Wird entriegelt“
+- je Tür mit Öffner ein Schloss „_Name_“ (id `<name>`, z. B. `haustuer`) – auch für abgeleitete und manuelle
+  Frames –, öffnet per `remote_transmitter.transmit_abbwelcome`; die Bestätigung `8D`/`8E` vom Bus setzt das
+  Schloss für 3 s auf „Wird entriegelt“ (ohne Aufnahme der Bestätigung wird sie von der Tür angenommen)
 - Türen ohne Öffner (z. B. die Wohnungstür) bekommen nur den Klingel-Sensor.
 
 Die Firmware wird mit `esp32: framework: type: esp-idf` gebaut (in beiden Varianten berücksichtigt).
@@ -144,7 +157,12 @@ Die Firmware wird mit `esp32: framework: type: esp-idf` gebaut (in beiden Varian
 
 Die Sitzung wird automatisch im Browser (`localStorage`) zwischengespeichert. Über die Symbole oben rechts lässt
 sie sich als JSON-Datei **exportieren** und wieder **importieren**, z. B. um auf einem anderen Gerät
-weiterzumachen oder die Aufnahmen für eine Fehlersuche aufzubewahren.
+weiterzumachen oder die Aufnahmen für eine Fehlersuche aufzubewahren. Manuelle Werte und Export-Einstellungen
+gehören zur Sitzung.
+
+Updates übernehmen bestehende Sitzungen: Der Speicherort bleibt gleich, ältere Sitzungsformate werden beim Laden
+automatisch umgewandelt. Sollte eine gespeicherte Sitzung einmal nicht lesbar sein, legt die Karte vorher eine
+Sicherung im Browser an (`abb-welcome-wizard-card:backup:<entity>`).
 
 ## Tür-Karte
 

@@ -2653,7 +2653,7 @@ var Ss = Object.defineProperty, zs = Object.getOwnPropertyDescriptor, A = (e, t,
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
   return i && s && Ss(t, n, s), s;
 };
-const he = "abb-welcome-wizard-card", Es = "0.6.0", jt = 10, Ds = 40, Ts = 900 * 1e3, Cs = {
+const he = "abb-welcome-wizard-card", Es = "0.7.0", jt = 10, Ds = 40, Ts = 900 * 1e3, Cs = {
   info: "mdi:information-outline",
   warning: "mdi:alert-outline",
   error: "mdi:alert-circle-outline"
