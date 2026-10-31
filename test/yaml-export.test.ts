@@ -169,6 +169,8 @@ describe('generateYaml', () => {
         'message_type',
         'data',
       ]);
+      // Like the upstream demo: OTA reuses the api key instead of a separate password.
+      expect(full.ota).toEqual([{ platform: 'esphome', encryption: null }]);
       expect(full.remote_receiver).toMatchObject({ pin: { number: 'GPIO25' }, dump: ['abbwelcome'] });
       expect(full.remote_transmitter.pin).toBe('GPIO26');
     });
@@ -304,5 +306,11 @@ describe('device name', () => {
         registered,
       ),
     ).toBeUndefined();
+  });
+
+  it('allows the first plaintext upload onto the factory firmware on request', () => {
+    expect(exportWith({ name: 'x', friendlyName: 'X', allowPlaintextUpload: true }).ota).toEqual([
+      { platform: 'esphome', encryption: { allow_plaintext_upload: true } },
+    ]);
   });
 });

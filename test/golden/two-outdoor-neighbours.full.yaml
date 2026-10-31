@@ -7,10 +7,11 @@
 # WICHTIG: esphome.name muss zum bestehenden Gerät passen – sonst ist es per OTA und
 # in Home Assistant nicht mehr erreichbar.
 #
-# Benötigt in secrets.yaml: wifi_ssid, wifi_password, api_encryption_key, ota_password, ap_password.
-# Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in
-# Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den
-# ota-Abschnitt aus der bisherigen Datei übernehmen.
+# Benötigt in secrets.yaml: wifi_ssid, wifi_password, api_encryption_key, ap_password.
+# Der API-Schlüssel sichert auch das Aufspielen (ota: encryption) – kein OTA-Passwort nötig.
+# Ein neuer Schlüssel muss danach in Home Assistant beim ESPHome-Gerät eingetragen werden.
+# Verlangt das Gerät beim ersten Aufspielen noch ein OTA-Passwort, dieses einmalig unter
+# ota: als „password: …“ ergänzen und danach wieder entfernen.
 #
 # ACHTUNG: "data" der Öffnen-Befehle ist euer TÜRCODE – nicht öffentlich teilen!
 
@@ -74,7 +75,7 @@ api:
 
 ota:
   - platform: esphome
-    password: !secret ota_password
+    encryption: # nutzt den api_encryption_key
 
 remote_transmitter:
   pin: GPIO26

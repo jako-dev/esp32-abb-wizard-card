@@ -20,6 +20,11 @@ export interface DeviceOptions {
   /** Name of the debug text sensor; keep it to keep its entity id (and this card's config) unchanged. */
   debugSensorName?: string;
   board?: string;
+  /**
+   * First upload onto firmware without OTA encryption (factory firmware, older own builds): adds
+   * `allow_plaintext_upload: true`, to be removed after that one install.
+   */
+  allowPlaintextUpload?: boolean;
   /** `esphome.name_add_mac_suffix` – the demo firmware does not set it (false). */
   nameAddMacSuffix?: boolean;
   /**
@@ -90,7 +95,7 @@ export function checkDeviceName(device: DeviceOptions, registered: RegisteredDev
   return `Gerätename „${exported}“ passt nicht zum Gerät „${registered.name}“ in Home Assistant (erwartet „${expected}“). Ein anderer Name ist für ESPHome ein neues Gerät – im ESPHome Device Builder prüfen.`;
 }
 
-const SECRETS = ['wifi_ssid', 'wifi_password', 'api_encryption_key', 'ota_password', 'ap_password'];
+const SECRETS = ['wifi_ssid', 'wifi_password', 'api_encryption_key', 'ap_password'];
 
 export interface ExportTarget {
   door: Door;
@@ -207,9 +212,13 @@ function writeHeader(w: YamlWriter, result: WizardResult, options: ExportOptions
     w.comment(0, 'in Home Assistant nicht mehr erreichbar.');
     w.comment(0, '');
     w.comment(0, `Benötigt in secrets.yaml: ${SECRETS.join(', ')}.`);
-    w.comment(0, 'Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in');
-    w.comment(0, 'Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den');
-    w.comment(0, 'ota-Abschnitt aus der bisherigen Datei übernehmen.');
+    w.comment(
+      0,
+      'Der API-Schlüssel sichert auch das Aufspielen (ota: encryption) – kein OTA-Passwort nötig.',
+    );
+    w.comment(0, 'Ein neuer Schlüssel muss danach in Home Assistant beim ESPHome-Gerät eingetragen werden.');
+    w.comment(0, 'Verlangt das Gerät beim ersten Aufspielen noch ein OTA-Passwort, dieses einmalig unter');
+    w.comment(0, 'ota: als „password: …“ ergänzen und danach wieder entfernen.');
   } else {
     w.comment(0, 'Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:');
     w.comment(0, 'esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock.');
@@ -476,7 +485,14 @@ function writeDeviceBase(w: YamlWriter, device: DeviceOptions): void {
   w.line(0);
   w.line(0, 'ota:');
   w.line(2, '- platform: esphome');
-  w.line(4, 'password: !secret ota_password');
+  // Like the upstream demo config: a bare encryption block reuses the api key, which saves the flash and
+  // RAM a separate OTA password costs (ESPHome warns about password + api key).
+  if (device.allowPlaintextUpload) {
+    w.line(4, 'encryption:');
+    w.line(6, 'allow_plaintext_upload: true # nur für das erste Aufspielen – danach entfernen');
+  } else {
+    w.line(4, 'encryption: # nutzt den api_encryption_key');
+  }
   w.line(0);
   w.line(0, 'remote_transmitter:');
   w.line(2, 'pin: GPIO26');

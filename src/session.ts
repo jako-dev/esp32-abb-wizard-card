@@ -260,6 +260,7 @@ function parseExportSettings(raw: unknown): ExportSettings {
     if (typeof raw[key] === 'string' && raw[key] !== '') settings[key] = raw[key] as string;
   }
   if (typeof raw.nameAddMacSuffix === 'boolean') settings.nameAddMacSuffix = raw.nameAddMacSuffix;
+  if (typeof raw.allowPlaintextUpload === 'boolean') settings.allowPlaintextUpload = raw.allowPlaintextUpload;
   return settings;
 }
 

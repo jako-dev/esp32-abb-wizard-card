@@ -110,7 +110,7 @@ type Editing =
   | { kind: 'outdoor'; door: string; value: string; error?: string }
   | { kind: 'ring'; door: string; rows: ConditionDraft[]; errors: FieldErrors<ConditionDraft>[] }
   | { kind: 'open'; door: string; draft: OpenDraft; errors: FieldErrors<OpenDraft> };
-const VERSION = '0.8.1';
+const VERSION = '0.8.2';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */
@@ -1414,8 +1414,8 @@ export class AbbWelcomeWizardCard extends LitElement {
             this.exportSettings.mode === 'full'
               ? html`Im ESPHome Device Builder beim Gerät auf <b>Bearbeiten</b>, den gesamten Inhalt durch
                   diese Datei ersetzen und <b>Installieren</b> (drahtlos). Benötigt in
-                  <code>secrets.yaml</code>: wifi_ssid, wifi_password, api_encryption_key, ota_password,
-                  ap_password – den API-Schlüssel aus der bisherigen Datei übernehmen.`
+                  <code>secrets.yaml</code>: wifi_ssid, wifi_password, api_encryption_key, ap_password. Der
+                  API-Schlüssel sichert auch das Aufspielen ab, ein OTA-Passwort ist nicht nötig.`
               : 'In der ESPHome-Konfiguration deines ESP32 die gleichnamigen Abschnitte der Demo-Firmware ersetzen und per OTA installieren.'
           }
           ${
@@ -1503,6 +1503,7 @@ export class AbbWelcomeWizardCard extends LitElement {
       debugSensorName: saved.debugSensorName ?? sensorName,
       nameAddMacSuffix: saved.nameAddMacSuffix ?? false,
       useAddress: saved.useAddress,
+      allowPlaintextUpload: saved.allowPlaintextUpload ?? false,
     };
   }
 
@@ -1554,6 +1555,22 @@ export class AbbWelcomeWizardCard extends LitElement {
                 : ''
             }.
             Die Demo-Firmware nutzt das nicht.</span
+          ></span
+        >
+      </label>
+      <label class="switch">
+        <input
+          type="checkbox"
+          .checked=${!!device.allowPlaintextUpload}
+          @change=${(ev: Event) =>
+            this.updateExportSettings({ allowPlaintextUpload: (ev.target as HTMLInputElement).checked })}
+        />
+        <span
+          >Erstes Aufspielen auf die Werks-Firmware
+          <span class="muted"
+            >– setzt <code>allow_plaintext_upload</code>, weil die bisherige Firmware noch keine
+            OTA-Verschlüsselung kennt. Nach dem ersten erfolgreichen Aufspielen Haken entfernen, Datei neu
+            kopieren und noch einmal installieren.</span
           ></span
         >
       </label>

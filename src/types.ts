@@ -102,6 +102,8 @@ export interface ExportSettings {
   nameAddMacSuffix?: boolean;
   /** wifi.use_address for the upload after a rename. */
   useAddress?: string;
+  /** ota encryption allow_plaintext_upload for the first install onto older firmware. */
+  allowPlaintextUpload?: boolean;
 }
 
 export interface Session {

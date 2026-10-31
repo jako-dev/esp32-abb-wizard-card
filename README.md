@@ -36,7 +36,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.1`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.2`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -150,8 +150,10 @@ Auf der Ergebnisseite gibt es die ESPHome-Konfiguration in zwei Varianten (Kopie
   Device Builder beim Gerät auf **Bearbeiten**, den gesamten Inhalt ersetzen und **Installieren** (drahtlos).
   Gerätename, Anzeigename und Name des Debug-Sensors schlägt die Karte aus Home Assistant vor. Der Gerätename muss
   zum bestehenden Gerät passen, sonst ist es per OTA nicht mehr erreichbar. In `secrets.yaml` werden `wifi_ssid`,
-  `wifi_password`, `api_encryption_key`, `ota_password` und `ap_password` erwartet – den API-Schlüssel aus der
-  bisherigen Datei übernehmen. Die Option `name_add_mac_suffix` ist wie in der Demo-Firmware aus; passt der Name
+  `wifi_password`, `api_encryption_key` und `ap_password` erwartet. Wie in der Upstream-Vorlage sichert der
+  API-Schlüssel auch das Aufspielen ab (`ota: encryption:`), ein OTA-Passwort ist nicht nötig. Für das erste
+  Aufspielen auf die Werks-Firmware den Haken „Erstes Aufspielen auf die Werks-Firmware“ setzen
+  (`allow_plaintext_upload: true`) und danach wieder entfernen. Die Option `name_add_mac_suffix` ist wie in der Demo-Firmware aus; passt der Name
   nicht zum Gerät in Home Assistant, warnt die Karte. `api: batch_delay: 0ms` ist gesetzt.
   **Umbenennen** (z. B. von der Werks-Firmware `abb-welcome-demo-factory-a7d7f8` auf `gegensprechanlage`): neuen
   Namen eintragen und unter „Adresse fürs Aufspielen“ den alten Namen mit `.local` oder die IP – das wird
