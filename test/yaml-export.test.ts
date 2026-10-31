@@ -149,6 +149,8 @@ describe('generateYaml', () => {
         'status_led',
       ]);
       expect(full.esp32.framework.type).toBe('esp-idf');
+      // Single-core boards crash without it.
+      expect(full.esp32.framework.sdkconfig_options).toEqual({ CONFIG_FREERTOS_UNICORE: 'y' });
       expect(full.esphome).toMatchObject({ name: 'klingel', friendly_name: 'Klingel' });
       expect(full.api).toMatchObject({
         encryption: { key: 'secret:api_encryption_key' },

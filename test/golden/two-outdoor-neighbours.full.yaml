@@ -19,8 +19,8 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
-    # sdkconfig_options:
-    #   CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig
+    sdkconfig_options:
+      CONFIG_FREERTOS_UNICORE: y # nötig bei Single-Core-ESP32 (Log: „1 core(s)“), schadet sonst nicht
 
 esphome:
   name: abb-welcome-demo

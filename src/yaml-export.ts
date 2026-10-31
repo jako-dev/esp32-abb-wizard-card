@@ -282,8 +282,13 @@ export function generateYaml(
     w.line(2, `board: ${device.board}`);
     w.line(2, 'framework:');
     w.line(4, 'type: esp-idf');
-    w.comment(4, 'sdkconfig_options:');
-    w.comment(4, '  CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig');
+    // Many doorbell bus interface boards carry a single-core ESP32; firmware built for two cores crashes at
+    // boot there (and safe mode rolls back). Running on one core is harmless on dual-core chips.
+    w.line(4, 'sdkconfig_options:');
+    w.line(
+      6,
+      'CONFIG_FREERTOS_UNICORE: y # nötig bei Single-Core-ESP32 (Log: „1 core(s)“), schadet sonst nicht',
+    );
     w.line(0);
   }
   if (device || rings.length + locks.length > 0) {

@@ -45,7 +45,7 @@ const Cn = (e) => new Xt(typeof e == "string" ? e : e + "", void 0, tt), nt = (e
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: Bn, defineProperty: In, getOwnPropertyDescriptor: Fn, getOwnPropertyNames: Pn, getOwnPropertySymbols: Rn, getPrototypeOf: Mn } = Object, Me = globalThis, kt = Me.trustedTypes, Nn = kt ? kt.emptyScript : "", Hn = Me.reactiveElementPolyfillSupport, ie = (e, t) => e, ze = { toAttribute(e, t) {
+const { is: Bn, defineProperty: In, getOwnPropertyDescriptor: Fn, getOwnPropertyNames: Pn, getOwnPropertySymbols: Rn, getPrototypeOf: Mn } = Object, Me = globalThis, kt = Me.trustedTypes, Nn = kt ? kt.emptyScript : "", Ln = Me.reactiveElementPolyfillSupport, ie = (e, t) => e, ze = { toAttribute(e, t) {
   switch (t) {
     case Boolean:
       e = e ? Nn : null;
@@ -256,14 +256,14 @@ let q = class extends HTMLElement {
   firstUpdated(t) {
   }
 };
-q.elementStyles = [], q.shadowRootOptions = { mode: "open" }, q[ie("elementProperties")] = /* @__PURE__ */ new Map(), q[ie("finalized")] = /* @__PURE__ */ new Map(), Hn?.({ ReactiveElement: q }), (Me.reactiveElementVersions ??= []).push("2.1.2");
+q.elementStyles = [], q.shadowRootOptions = { mode: "open" }, q[ie("elementProperties")] = /* @__PURE__ */ new Map(), q[ie("finalized")] = /* @__PURE__ */ new Map(), Ln?.({ ReactiveElement: q }), (Me.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const st = globalThis, _t = (e) => e, Ee = st.trustedTypes, At = Ee ? Ee.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, Yt = "$lit$", R = `lit$${Math.random().toFixed(9).slice(2)}$`, Jt = "?" + R, Ln = `<${Jt}>`, Z = document, ae = () => Z.createComment(""), de = (e) => e === null || typeof e != "object" && typeof e != "function", rt = Array.isArray, jn = (e) => rt(e) || typeof e?.[Symbol.iterator] == "function", Le = `[ 	
-\f\r]`, te = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, St = /-->/g, zt = />/g, L = RegExp(`>|${Le}(?:([^\\s"'>=/]+)(${Le}*=${Le}*(?:[^ 	
+const st = globalThis, _t = (e) => e, Ee = st.trustedTypes, At = Ee ? Ee.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, Yt = "$lit$", R = `lit$${Math.random().toFixed(9).slice(2)}$`, Jt = "?" + R, Hn = `<${Jt}>`, Z = document, ae = () => Z.createComment(""), de = (e) => e === null || typeof e != "object" && typeof e != "function", rt = Array.isArray, jn = (e) => rt(e) || typeof e?.[Symbol.iterator] == "function", He = `[ 	
+\f\r]`, te = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, St = /-->/g, zt = />/g, H = RegExp(`>|${He}(?:([^\\s"'>=/]+)(${He}*=${He}*(?:[^ 	
 \f\r"'\`<>=]|("|')|))|$)`, "g"), Et = /'/g, Tt = /"/g, Qt = /^(?:script|style|textarea|title)$/i, en = (e) => (t, ...n) => ({ _$litType$: e, strings: t, values: n }), c = en(1), Kn = en(2), J = Symbol.for("lit-noChange"), m = Symbol.for("lit-nothing"), Dt = /* @__PURE__ */ new WeakMap(), W = Z.createTreeWalker(Z, 129);
 function tn(e, t) {
   if (!rt(e) || !e.hasOwnProperty("raw")) throw Error("invalid template strings array");
@@ -275,9 +275,9 @@ const Un = (e, t) => {
   for (let a = 0; a < n; a++) {
     const d = e[a];
     let u, p, l = -1, f = 0;
-    for (; f < d.length && (o.lastIndex = f, p = o.exec(d), p !== null); ) f = o.lastIndex, o === te ? p[1] === "!--" ? o = St : p[1] !== void 0 ? o = zt : p[2] !== void 0 ? (Qt.test(p[2]) && (s = RegExp("</" + p[2], "g")), o = L) : p[3] !== void 0 && (o = L) : o === L ? p[0] === ">" ? (o = s ?? te, l = -1) : p[1] === void 0 ? l = -2 : (l = o.lastIndex - p[2].length, u = p[1], o = p[3] === void 0 ? L : p[3] === '"' ? Tt : Et) : o === Tt || o === Et ? o = L : o === St || o === zt ? o = te : (o = L, s = void 0);
-    const v = o === L && e[a + 1].startsWith("/>") ? " " : "";
-    r += o === te ? d + Ln : l >= 0 ? (i.push(u), d.slice(0, l) + Yt + d.slice(l) + R + v) : d + R + (l === -2 ? a : v);
+    for (; f < d.length && (o.lastIndex = f, p = o.exec(d), p !== null); ) f = o.lastIndex, o === te ? p[1] === "!--" ? o = St : p[1] !== void 0 ? o = zt : p[2] !== void 0 ? (Qt.test(p[2]) && (s = RegExp("</" + p[2], "g")), o = H) : p[3] !== void 0 && (o = H) : o === H ? p[0] === ">" ? (o = s ?? te, l = -1) : p[1] === void 0 ? l = -2 : (l = o.lastIndex - p[2].length, u = p[1], o = p[3] === void 0 ? H : p[3] === '"' ? Tt : Et) : o === Tt || o === Et ? o = H : o === St || o === zt ? o = te : (o = H, s = void 0);
+    const v = o === H && e[a + 1].startsWith("/>") ? " " : "";
+    r += o === te ? d + Hn : l >= 0 ? (i.push(u), d.slice(0, l) + Yt + d.slice(l) + R + v) : d + R + (l === -2 ? a : v);
   }
   return [tn(e, r + (e[n] || "<?>") + (t === 2 ? "</svg>" : t === 3 ? "</math>" : "")), i];
 };
@@ -524,7 +524,7 @@ Jn?.({ LitElement: M });
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const He = (e) => (t, n) => {
+const Le = (e) => (t, n) => {
   n !== void 0 ? n.addInitializer(() => {
     customElements.define(e, t);
   }) : customElements.define(e, t);
@@ -936,8 +936,8 @@ function Ai(e, t) {
       for (const I of _) {
         const E = g(I);
         if (!E) continue;
-        const H = `${E.dst}|${E.type}|${E.data.join(",")}`, yt = w.get(H) ?? { frame: E, in: /* @__PURE__ */ new Set() };
-        yt.in.add(b), w.set(H, yt);
+        const L = `${E.dst}|${E.type}|${E.data.join(",")}`, yt = w.get(L) ?? { frame: E, in: /* @__PURE__ */ new Set() };
+        yt.in.add(b), w.set(L, yt);
       }
     }), w;
   };
@@ -1070,8 +1070,8 @@ function zi(e, t) {
   for (const b of _) f.opens[b.key] = Ai(w, b);
   for (let b = 0; b < _.length; b++)
     for (let I = b + 1; I < _.length; I++) {
-      const E = f.opens[_[b].key], H = f.opens[_[I].key];
-      E && H && E.destination === H.destination && E.messageType === H.messageType && K(E.data) === K(H.data) && r.push({
+      const E = f.opens[_[b].key], L = f.opens[_[I].key];
+      E && L && E.destination === L.destination && E.messageType === L.messageType && K(E.data) === K(L.data) && r.push({
         code: "same_open_frame",
         severity: "warning",
         message: `${Ze(_[b])} und ${Ze(_[I])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`
@@ -1203,7 +1203,7 @@ ut([
   $()
 ], Ie.prototype, "config", 2);
 Ie = ut([
-  He(mn)
+  Le(mn)
 ], Ie);
 const fn = "send_frame", Ri = 6e3, It = (e) => `${e.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${fn}`;
 function Mi(e, t) {
@@ -1221,10 +1221,10 @@ function Ni(e, t, n) {
     three_byte: n
   };
 }
-async function Hi(e, t, n) {
+async function Li(e, t, n) {
   await e.callService("esphome", t, n);
 }
-function Li(e, t) {
+function Hi(e, t) {
   return e.type === (t.message_type | 128) && e.dst === t.source;
 }
 const ji = /* @__PURE__ */ new Set(["", "unknown", "unavailable"]);
@@ -1423,7 +1423,7 @@ function ne(e, t, n = /* @__PURE__ */ new Date()) {
   });
   return be({ ...e, doors: i, steps: r, overrides: p }, n);
 }
-function Ht(e, t) {
+function Lt(e, t) {
   return T(e, C(t)).captures.length + T(e, O(t)).captures.length;
 }
 function ss(e) {
@@ -1523,7 +1523,7 @@ function wn(e) {
   };
   return t.version === 2 && ee(t.indoorAddress) && (o.overrides = { ...o.overrides, indoorAddress: t.indoorAddress }), { ...ne(o, i), updatedAt: o.updatedAt };
 }
-const Lt = 3, X = (e) => `„${e.name}“`;
+const Ht = 3, X = (e) => `„${e.name}“`;
 function ls(e, t) {
   const n = e.type === "floor";
   return {
@@ -2544,7 +2544,10 @@ function Ss(e, t, n = {}) {
     ...u.filter((h) => !l.includes(h)).map((h) => h.name),
     ...p.filter((h) => !e.opens[h.door.key]).map((h) => `Öffnen ${h.name}`)
   ];
-  if (o && (i.line(0, "esp32:"), i.line(2, `board: ${o.board}`), i.line(2, "framework:"), i.line(4, "type: esp-idf"), i.comment(4, "sdkconfig_options:"), i.comment(4, "  CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig"), i.line(0)), o || l.length + f.length > 0) {
+  if (o && (i.line(0, "esp32:"), i.line(2, `board: ${o.board}`), i.line(2, "framework:"), i.line(4, "type: esp-idf"), i.line(4, "sdkconfig_options:"), i.line(
+    6,
+    "CONFIG_FREERTOS_UNICORE: y # nötig bei Single-Core-ESP32 (Log: „1 core(s)“), schadet sonst nicht"
+  ), i.line(0)), o || l.length + f.length > 0) {
     if (i.line(0, "esphome:"), o && (i.line(2, `name: ${o.name}`), i.line(2, `friendly_name: ${$e(o.friendlyName)}`), o.nameAddMacSuffix && i.line(2, "name_add_mac_suffix: true # hängt die letzten 6 Stellen der MAC an")), l.length + f.length > 0) {
       i.line(2, "on_boot:");
       for (const h of l) U(i, 4, "binary_sensor", h.id, "OFF");
@@ -2681,7 +2684,7 @@ var Bs = Object.defineProperty, Is = Object.getOwnPropertyDescriptor, A = (e, t,
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
   return i && s && Bs(t, n, s), s;
 };
-const he = "abb-welcome-wizard-card", Fs = "0.8.2", Wt = 10, Ps = 40, Rs = 900 * 1e3, Ms = {
+const he = "abb-welcome-wizard-card", Fs = "0.8.3", Wt = 10, Ps = 40, Rs = 900 * 1e3, Ms = {
   info: "mdi:information-outline",
   warning: "mdi:alert-outline",
   error: "mdi:alert-circle-outline"
@@ -2765,7 +2768,7 @@ let x = class extends M {
     const n = this.frameTest;
     if (n && (n.phase === "sending" || n.phase === "waiting")) {
       const i = Ve(t.line);
-      if (i.ok && Li(i.frame, n.payload)) {
+      if (i.ok && Hi(i.frame, n.payload)) {
         const { frame: s } = i;
         this.frameTest = {
           ...n,
@@ -2915,7 +2918,7 @@ let x = class extends M {
   }
   removeDoor(e) {
     if (this.session.doors.length <= 1) return;
-    const t = Ht(this.session, e);
+    const t = Lt(this.session, e);
     t > 0 && !window.confirm(`„${e.name}“ und ${t} Aufnahme(n) dieser Tür löschen?`) || this.updateSession(
       ne(
         this.session,
@@ -2924,7 +2927,7 @@ let x = class extends M {
     );
   }
   resetDoors() {
-    const e = this.configDoors, t = this.session.doors.filter((n) => !e.some((i) => i.key === n.key)).reduce((n, i) => n + Ht(this.session, i), 0);
+    const e = this.configDoors, t = this.session.doors.filter((n) => !e.some((i) => i.key === n.key)).reduce((n, i) => n + Lt(this.session, i), 0);
     t > 0 && !window.confirm(`Dabei gehen ${t} Aufnahme(n) entfernter Türen verloren. Fortfahren?`) || this.updateSession(ne(this.session, e));
   }
   showToast(e) {
@@ -3322,13 +3325,13 @@ let x = class extends M {
   renderPauseHint() {
     const e = ss(this.session);
     if (!e) return c``;
-    const t = (this.now - e.getTime()) / 6e4, n = t >= Lt;
+    const t = (this.now - e.getTime()) / 6e4, n = t >= Ht;
     return c`<div class="callout ${n ? "ok" : "warning"}">
       <ha-icon icon="mdi:timer-outline"></ha-icon>
       <span
         >Letztes Klingeln vor
         ${t < 1 ? "weniger als einer Minute" : `${Math.floor(t)} Minute(n)`}.
-        ${n ? "Passt – die Schlüssel-Taste öffnet jetzt die Standard-Außenstation." : `Bitte noch etwas warten (mindestens ${Lt} Minuten).`}</span
+        ${n ? "Passt – die Schlüssel-Taste öffnet jetzt die Standard-Außenstation." : `Bitte noch etwas warten (mindestens ${Ht} Minuten).`}</span
       >
     </div>`;
   }
@@ -3965,7 +3968,7 @@ let x = class extends M {
     if (this._hass) {
       this.frameTest = { door: e, phase: "sending", payload: n };
       try {
-        await Hi(this._hass, t, n), this.frameTest?.door === e && this.frameTest.phase === "sending" && (this.frameTest = { ...this.frameTest, phase: "waiting" }), window.clearTimeout(this.frameTestTimer), this.frameTestTimer = window.setTimeout(() => {
+        await Li(this._hass, t, n), this.frameTest?.door === e && this.frameTest.phase === "sending" && (this.frameTest = { ...this.frameTest, phase: "waiting" }), window.clearTimeout(this.frameTestTimer), this.frameTestTimer = window.setTimeout(() => {
           this.frameTest?.door === e && this.frameTest.phase === "waiting" && (this.frameTest = { ...this.frameTest, phase: "noreply" });
         }, Ri);
       } catch (i) {
@@ -4204,7 +4207,7 @@ A([
   $()
 ], x.prototype, "waitForFrame", 2);
 x = A([
-  He(he)
+  Le(he)
 ], x);
 window.customCards = window.customCards ?? [];
 window.customCards.some((e) => e.type === he) || window.customCards.push({
@@ -4317,8 +4320,8 @@ function Vt(e) {
       return { label: "Nicht verfügbar", tone: "unavailable" };
   }
 }
-const Ge = (e) => e === "unlocking" || e === "unlocked" || e === "opening" || e === "open", Hs = (e) => e === "unlocked" || e === "open";
-function Ls(e, t, n) {
+const Ge = (e) => e === "unlocking" || e === "unlocked" || e === "opening" || e === "open", Ls = (e) => e === "unlocked" || e === "open";
+function Hs(e, t, n) {
   if (e === void 0 || n <= 0) return 0;
   const i = Math.ceil((e + n * 1e3 - t) / 1e3);
   return i > 0 ? Math.min(i, n) : 0;
@@ -4595,7 +4598,7 @@ vt([
   $()
 ], me.prototype, "config", 2);
 me = vt([
-  He(Dn)
+  Le(Dn)
 ], me);
 const Xs = nt`
   :host {
@@ -5436,7 +5439,7 @@ let z = class extends M {
     const t = this.lastRings[e.doorbell];
     if (t !== void 0 && this.dismissed[e.doorbell] === t) return 0;
     const n = this._hass?.states[e.doorbell]?.state === "on", i = this.config?.ring_window ?? we.ring_window;
-    return Math.max(n ? i : 0, Ls(t, this.now, i));
+    return Math.max(n ? i : 0, Hs(t, this.now, i));
   }
   dismiss(e) {
     e.doorbell && (this.dismissed = { ...this.dismissed, [e.doorbell]: this.lastRing(e) });
@@ -5513,7 +5516,7 @@ let z = class extends M {
     </div>`;
   }
   renderLockAgain(e, t) {
-    return !this.operable(e) || !Hs(this.lockState(e)) ? m : c`<button
+    return !this.operable(e) || !Ls(this.lockState(e)) ? m : c`<button
       class="mini"
       title="${e.name} verriegeln"
       aria-label="${e.name} verriegeln"
@@ -5729,7 +5732,7 @@ B([
   $()
 ], z.prototype, "hint", 2);
 z = B([
-  He(Qe)
+  Le(Qe)
 ], z);
 window.customCards = window.customCards ?? [];
 window.customCards.some((e) => e.type === Qe) || window.customCards.push({
