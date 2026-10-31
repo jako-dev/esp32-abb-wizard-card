@@ -74,7 +74,7 @@ import {
 } from './yaml-export';
 
 const CARD_TAG = 'abb-welcome-wizard-card';
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */

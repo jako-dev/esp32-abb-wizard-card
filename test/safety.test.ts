@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 
-// Phase 1 is strictly read-only: no code path may call services or send anything to the bus.
+// The wizard is strictly read-only: no code path may call services or send anything to the bus.
+// Only the door card (src/door-card/) may call services, and only lock services.
 const FORBIDDEN = [
   /callService/,
   /call_service/,
@@ -33,5 +34,25 @@ describe('safety', () => {
     expect([...history.matchAll(/(?<![\w_])type: '([^']+)'/g)].map((m) => m[1])).toEqual([
       'history/history_during_period',
     ]);
+  });
+
+  it('lets the door card call lock services only', () => {
+    const doorDir = new URL('../src/door-card/', import.meta.url);
+    const doorFiles = readdirSync(doorDir).filter((f) => f.endsWith('.ts'));
+    const calls: string[] = [];
+    for (const file of doorFiles) {
+      const source = readFileSync(new URL(file, doorDir), 'utf8');
+      for (const pattern of [/callWS/, /callApi/, /sendMessage(?!Promise)/, /button\.press/]) {
+        expect(source, file).not.toMatch(pattern);
+      }
+      expect(source, file).not.toMatch(/sendMessagePromise\(/);
+      calls.push(...[...source.matchAll(/\.callService\(\s*'([^']+)'/g)].map((m) => m[1]));
+      // Every call site must name its domain literally.
+      expect(source.match(/\.callService\(/g)?.length ?? 0, file).toBe(
+        [...source.matchAll(/\.callService\(\s*'/g)].length,
+      );
+    }
+    expect(calls.length).toBeGreaterThan(0);
+    expect(new Set(calls)).toEqual(new Set(['lock']));
   });
 });

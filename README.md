@@ -1,12 +1,16 @@
-# ABB-Welcome Wizard Card
+# ABB-Welcome Cards
 
-Eine Lovelace-Karte für Home Assistant, die dich Schritt für Schritt durch das Einmessen deiner
-**Busch-Welcome / ABB-Welcome** 2-Draht-Gegensprechanlage führt: Du klingelst und drückst die Schlüssel-Taste,
-die Karte schneidet die Bus-Frames mit, wertet sie automatisch aus und erzeugt eine fertige
-**ESPHome-Konfiguration** mit Klingel-Sensoren und Türöffnern.
+Zwei Lovelace-Karten für Home Assistant rund um die **Busch-Welcome / ABB-Welcome** 2-Draht-Gegensprechanlage –
+in einer Datei, mit einer HACS-Installation:
 
-> **Nur lesen:** Die Karte sendet nichts auf den Bus und ruft keine Home-Assistant-Aktionen auf.
-> Türen öffnen sich nur, wenn du selbst die Schlüssel-Taste an der Innenstation drückst.
+- **ABB-Welcome Wizard** (`custom:abb-welcome-wizard-card`) führt dich Schritt für Schritt durch das Einmessen:
+  Du klingelst und drückst die Schlüssel-Taste, die Karte schneidet die Bus-Frames mit, wertet sie automatisch aus
+  und erzeugt eine fertige **ESPHome-Konfiguration** mit Klingel-Sensoren und Türöffnern.
+- **ABB-Welcome Türen** (`custom:abb-welcome-door-card`) ist die Karte für den Alltag: Türen öffnen und
+  verriegeln, mit Klingel-Anzeige – für die eingemessenen Türen und jedes andere Schloss (z. B. Aqara).
+
+> **Der Wizard ist nur lesend:** Er sendet nichts auf den Bus und ruft keine Home-Assistant-Aktionen auf. Türen
+> öffnen sich beim Einmessen nur, wenn du selbst die Schlüssel-Taste an der Innenstation drückst.
 
 ## Voraussetzungen
 
@@ -23,7 +27,7 @@ die Karte schneidet die Bus-Frames mit, wertet sie automatisch aus und erzeugt e
 
 1. HACS öffnen → Menü (⋮) → **Benutzerdefinierte Repositories**.
 2. Repository `https://github.com/jako-dev/esp32-abb-wizard-card` mit Typ **Dashboard** hinzufügen.
-3. „ABB-Welcome Wizard Card“ suchen, herunterladen und den Browser neu laden.
+3. „ABB-Welcome Cards“ suchen, herunterladen und den Browser neu laden.
 
 HACS legt die Dashboard-Ressource automatisch an.
 
@@ -31,7 +35,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.4.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.5.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -142,6 +146,53 @@ Die Sitzung wird automatisch im Browser (`localStorage`) zwischengespeichert. Ü
 sie sich als JSON-Datei **exportieren** und wieder **importieren**, z. B. um auf einem anderen Gerät
 weiterzumachen oder die Aufnahmen für eine Fehlersuche aufzubewahren.
 
+## Tür-Karte
+
+Dashboard bearbeiten → **Karte hinzufügen** → „ABB-Welcome Türen“. Im Editor **„Türen automatisch finden“**
+übernimmt die Klingel-Sensoren und Schlösser aus dem Wizard (und alle anderen Schlösser, z. B. Aqara).
+
+- **Kachel pro Tür** mit Status (verriegelt, wird entriegelt, offen …) und „klingelte vor 5 min“. Bei den
+  ABB-Welcome-Türen ist „wird entriegelt“ die echte Bestätigung vom Bus.
+- **Klingel-Modus:** Klingelt es, wird die Tür hervorgehoben, nach oben sortiert und zeigt „jetzt öffnen“ mit
+  Countdown – passend dazu, dass die Anlage nur kurz nach dem Klingeln öffnet.
+- **Öffnen bestätigen:** gedrückt halten (Standard), mit Rückfrage oder einmal tippen – pro Tür.
+- **Verriegeln:** für Schlösser, die offen bleiben (z. B. Aqara), erscheint „Verriegeln“.
+- **Kamera (optional):** Bild beim Klingeln oder dauerhaft.
+- **Berechtigung (optional):** Öffnen nur für bestimmte Benutzer. Das ist Bedienkomfort, kein Schutz – wer Zugriff
+  auf Home Assistant hat, kann Schlösser auch anders auslösen.
+- **Darstellung:** Kacheln, Liste oder kompakte Knöpfe.
+
+```yaml
+type: custom:abb-welcome-door-card
+title: Türen
+layout: tiles # tiles | rows | compact
+ring_window: 60 # Sekunden "es klingelt"-Hinweis
+doors:
+  - name: Tor
+    icon: mdi:gate
+    lock: lock.abb_welcome_demo_tor
+    doorbell: binary_sensor.abb_welcome_demo_klingel_tor
+  - name: Haustür
+    lock: lock.abb_welcome_demo_haustuer
+    doorbell: binary_sensor.abb_welcome_demo_klingel_haustuer
+  - name: Wohnungstür
+    lock: lock.aqara_wohnungstuer # jedes Schloss möglich
+    doorbell: binary_sensor.abb_welcome_demo_klingel_wohnungstuer
+    confirm: dialog # hold | dialog | tap
+    # action: open    # lock.open statt lock.unlock (Schlösser mit Falle)
+    # camera: camera.flur
+    # camera_view: ring # ring | always
+    # users: [abc123] # Benutzer-IDs, die öffnen dürfen
+```
+
+| Option        | Standard | Beschreibung                                                       |
+| ------------- | -------- | ------------------------------------------------------------------ |
+| `title`       | –        | Überschrift                                                        |
+| `layout`      | `tiles`  | `tiles` (Kacheln), `rows` (Liste), `compact` (Knöpfe)              |
+| `ring_window` | `60`     | Wie lange eine Tür nach dem Klingeln hervorgehoben wird (s)        |
+| `hold_time`   | `800`    | Wie lange gedrückt gehalten werden muss (ms)                       |
+| `doors`       | –        | Liste der Türen: `name`, `lock` und/oder `doorbell`, Rest optional |
+
 ## Datenschutz: Türcode
 
 Die Daten der Öffnen-Frames sind der **Türcode** deiner Anlage. Er bleibt in deinem Browser bzw. in Dateien, die
@@ -196,7 +247,8 @@ npm run build     # erzeugt dist/abb-welcome-wizard-card.js
 
 - **Phase 2:** generische Firmware, die jeden Frame als Event `esphome.abb_frame` meldet (keine verlorenen
   Wiederholungen) und eine Aktion `send_frame` anbietet.
-- **Phase 3:** Live-Test in der Karte: Tor/Haustür öffnen (nur nach Bestätigung, nur für Admins) und Klingel-Test.
+- **Tür-Karte:** PIN, Klingel-Verlauf, „Klingelton beenden“, Blueprints (Push-Nachricht mit Öffnen-Button,
+  Paketmodus).
 
 ## Danksagung
 

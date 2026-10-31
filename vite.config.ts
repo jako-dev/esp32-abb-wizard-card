@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   build: {
     lib: {
-      entry: 'src/abb-welcome-wizard-card.ts',
+      entry: 'src/index.ts',
       formats: ['es'],
       fileName: () => 'abb-welcome-wizard-card.js',
     },
