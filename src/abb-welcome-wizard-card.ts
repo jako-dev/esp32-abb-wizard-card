@@ -40,6 +40,7 @@ import {
   setDials,
   setDoors,
   doorCaptureCount,
+  setExportSettings,
   setIndoorAddress,
   setOverrides,
   setSkipped,
@@ -59,6 +60,7 @@ import { cardStyles } from './styles';
 import type {
   DialSettings,
   Door,
+  ExportSettings,
   Overrides,
   OpenResult,
   RecordedLine,
@@ -69,13 +71,16 @@ import type {
   WizardResult,
 } from './types';
 import {
+  checkDeviceName,
   DEFAULT_DEVICE,
   deviceNameFromFriendly,
+  effectiveDeviceName,
   generateYaml,
   lockTargets,
   ringTargets,
   type DeviceOptions,
   type ExportTarget,
+  type RegisteredDevice,
 } from './yaml-export';
 import {
   conditionDraft,
@@ -129,10 +134,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   @state() private toast = '';
   @state() private maskDoorCode = false;
   @state() private showDoorCode = false;
-  @state() private exportMode: 'full' | 'snippet' = 'full';
   @state() private editing?: Editing;
-  /** Device settings edited by the user; unset fields are suggested from Home Assistant. */
-  @state() private deviceEdits: Partial<DeviceOptions> = {};
   @state() private indoorInput = '';
   @state() private receivedCount = 0;
   /** Per-page override of the step's default capture mode. */
@@ -1240,7 +1242,7 @@ export class AbbWelcomeWizardCard extends LitElement {
     const device = this.device;
     const yaml = generateYaml(result, this.session.doors, {
       maskDoorCode: this.maskDoorCode,
-      device: this.exportMode === 'full' ? device : undefined,
+      device: this.exportSettings.mode === 'full' ? device : undefined,
     });
     const recorded = Object.values(this.session.steps).some((s) => s.captures.length > 0);
     const overrides = this.session.overrides;
@@ -1369,18 +1371,18 @@ export class AbbWelcomeWizardCard extends LitElement {
             ([mode, label]) =>
               html`<button
                 role="radio"
-                aria-checked=${this.exportMode === mode}
-                class=${this.exportMode === mode ? 'active' : ''}
-                @click=${() => (this.exportMode = mode)}
+                aria-checked=${this.exportSettings.mode === mode}
+                class=${this.exportSettings.mode === mode ? 'active' : ''}
+                @click=${() => this.updateExportSettings({ mode })}
               >
                 ${label}
               </button>`,
           )}
         </div>
-        ${this.exportMode === 'full' ? this.renderDeviceFields(device) : nothing}
+        ${this.exportSettings.mode === 'full' ? this.renderDeviceFields(device) : nothing}
         <p class="muted small">
           ${
-            this.exportMode === 'full'
+            this.exportSettings.mode === 'full'
               ? html`Im ESPHome Device Builder beim Gerät auf <b>Bearbeiten</b>, den gesamten Inhalt durch
                   diese Datei ersetzen und <b>Installieren</b> (drahtlos). Benötigt in
                   <code>secrets.yaml</code>: wifi_ssid, wifi_password, api_encryption_key, ota_password,
@@ -1401,7 +1403,7 @@ export class AbbWelcomeWizardCard extends LitElement {
             class="btn"
             @click=${() =>
               downloadText(
-                this.exportMode === 'full' ? `${device.name}.yaml` : 'abb-welcome-abschnitte.yaml',
+                this.exportSettings.mode === 'full' ? `${device.name}.yaml` : 'abb-welcome-abschnitte.yaml',
                 yaml,
                 'text/yaml',
               )}
@@ -1431,10 +1433,31 @@ export class AbbWelcomeWizardCard extends LitElement {
   }
 
   /** Device settings: user edits, otherwise suggested from the debug sensor's device in Home Assistant. */
-  private get device(): DeviceOptions {
+  /** Export settings of the session; the full device file is the default. */
+  private get exportSettings(): ExportSettings & { mode: 'full' | 'snippet' } {
+    return { mode: 'full', ...this.session.exportSettings };
+  }
+
+  private updateExportSettings(patch: Partial<ExportSettings>): void {
+    this.updateSession(setExportSettings(this.session, { ...this.session.exportSettings, ...patch }));
+  }
+
+  /** The ESP32 as Home Assistant knows it (device registry of the debug sensor). */
+  private get registeredDevice(): RegisteredDevice & { friendlyName?: string } {
     const entity = this.config ? this._hass?.entities?.[this.config.entity] : undefined;
-    const registered = entity?.device_id ? this._hass?.devices?.[entity.device_id] : undefined;
-    const friendly = registered?.name_by_user || registered?.name || DEFAULT_DEVICE.friendlyName;
+    const device = entity?.device_id ? this._hass?.devices?.[entity.device_id] : undefined;
+    const mac = device?.connections?.find(([type]) => type === 'mac')?.[1];
+    return {
+      name: device?.name ?? undefined,
+      friendlyName: device?.name_by_user || device?.name || undefined,
+      mac,
+    };
+  }
+
+  /** Device settings: saved values, otherwise suggested from the device in Home Assistant. */
+  private get device(): DeviceOptions {
+    const registered = this.registeredDevice;
+    const friendly = registered.friendlyName ?? DEFAULT_DEVICE.friendlyName;
     const stateName = this.config
       ? this._hass?.states[this.config.entity]?.attributes.friendly_name
       : undefined;
@@ -1443,17 +1466,18 @@ export class AbbWelcomeWizardCard extends LitElement {
       typeof stateName === 'string' && stateName.startsWith(`${friendly} `)
         ? stateName.slice(friendly.length + 1)
         : DEFAULT_DEVICE.debugSensorName;
+    const saved = this.session.exportSettings;
     return {
       ...DEFAULT_DEVICE,
-      name: deviceNameFromFriendly(friendly),
-      friendlyName: friendly,
-      debugSensorName: sensorName,
-      ...this.deviceEdits,
+      name: saved.name ?? (registered.name ? deviceNameFromFriendly(registered.name) : DEFAULT_DEVICE.name),
+      friendlyName: saved.friendlyName ?? friendly,
+      debugSensorName: saved.debugSensorName ?? sensorName,
+      nameAddMacSuffix: saved.nameAddMacSuffix ?? false,
     };
   }
 
   private renderDeviceFields(device: DeviceOptions): TemplateResult {
-    const field = (key: keyof DeviceOptions, label: string, hint?: string) =>
+    const field = (key: 'name' | 'friendlyName' | 'debugSensorName', label: string, hint?: string) =>
       html`<label class="field"
         >${label}
         <input
@@ -1461,19 +1485,46 @@ export class AbbWelcomeWizardCard extends LitElement {
           .value=${device[key] ?? ''}
           @change=${(ev: Event) => {
             const value = (ev.target as HTMLInputElement).value.trim();
-            const edits = { ...this.deviceEdits };
-            if (value === '') delete edits[key];
-            else edits[key] = key === 'name' ? deviceNameFromFriendly(value) : value;
-            this.deviceEdits = edits;
+            this.updateExportSettings({
+              [key]: value === '' ? undefined : key === 'name' ? deviceNameFromFriendly(value) : value,
+            });
           }}
         />
         ${hint ? html`<span>${hint}</span>` : nothing}
       </label>`;
+    const registered = this.registeredDevice;
+    const warning = checkDeviceName(device, registered);
     return html`<div class="fields device-fields">
-      ${field('name', 'Gerätename', 'esphome name – muss zum bestehenden Gerät passen')}
-      ${field('friendlyName', 'Anzeigename')}
-      ${field('debugSensorName', 'Debug-Sensor', 'Unverändert lassen, damit diese Karte ihn findet')}
-    </div>`;
+        ${field('name', 'Gerätename', 'esphome name – muss zum bestehenden Gerät passen')}
+        ${field('friendlyName', 'Anzeigename')}
+        ${field('debugSensorName', 'Debug-Sensor', 'Unverändert lassen, damit diese Karte ihn findet')}
+      </div>
+      <label class="switch">
+        <input
+          type="checkbox"
+          .checked=${!!device.nameAddMacSuffix}
+          @change=${(ev: Event) => this.updateExportSettings({ nameAddMacSuffix: (ev.target as HTMLInputElement).checked })}
+        />
+        <span
+          >name_add_mac_suffix
+          <span class="muted"
+            >– hängt die letzten 6 Stellen der MAC an den Namen
+            an${
+              registered.mac
+                ? ` (→ ${effectiveDeviceName({ ...device, nameAddMacSuffix: true }, registered.mac)})`
+                : ''
+            }.
+            Die Demo-Firmware nutzt das nicht.</span
+          ></span
+        >
+      </label>
+      ${
+        warning
+          ? html`<div class="callout warning">
+              <ha-icon icon="mdi:alert-outline"></ha-icon><span>${warning}</span>
+            </div>`
+          : nothing
+      }`;
   }
 
   private async copyYaml(yaml: string): Promise<void> {

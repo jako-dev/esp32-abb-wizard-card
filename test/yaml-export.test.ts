@@ -2,7 +2,15 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { analyzeSession } from '../src/analysis';
 import { createSession, parseSession } from '../src/session';
-import { deviceNameFromFriendly, generateYaml, type ExportOptions } from '../src/yaml-export';
+import {
+  checkDeviceName,
+  deviceNameFromFriendly,
+  effectiveDeviceName,
+  generateYaml,
+  macSuffix,
+  type ExportOptions,
+} from '../src/yaml-export';
+import { setOverrides } from '../src/session';
 
 // Run with UPDATE_GOLDEN=1 to rewrite the golden files after an intended change.
 const update = process.env.UPDATE_GOLDEN === '1';
@@ -164,5 +172,90 @@ describe('generateYaml', () => {
       expect(deviceNameFromFriendly('Türklingel Süd')).toBe('tuerklingel-sued');
       expect(deviceNameFromFriendly('!!')).toBe('abb-welcome-demo');
     });
+  });
+});
+
+describe('locks for manual and derived open frames', () => {
+  const session = setOverrides(createSession('sensor.x'), {
+    indoorAddress: 0x1016,
+    opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [0x1c, 0x41, 0x68] } },
+  });
+  const yaml = generateYaml(analyzeSession(session), session.doors);
+  const doc = parse(yaml);
+
+  it('creates a template lock that transmits the frame', () => {
+    expect(doc.lock).toHaveLength(1);
+    expect(doc.lock[0]).toMatchObject({ platform: 'template', name: 'Haustür', id: 'haustuer' });
+    expect(doc.lock[0].unlock_action[0]['remote_transmitter.transmit_abbwelcome']).toEqual({
+      source_address: 0x1016,
+      destination_address: 0x4002,
+      three_byte_address: false,
+      message_type: 0x0d,
+      data: [0x1c, 0x41, 0x68],
+    });
+    expect(yaml).toContain('# Haustür: Öffnen-Frame manuell eingetragen');
+  });
+
+  it('publishes LOCKED on boot and listens for the 8D reply', () => {
+    expect(doc.esphome.on_boot).toEqual([{ 'lock.template.publish': { id: 'haustuer', state: 'LOCKED' } }]);
+    const feedback = doc.remote_receiver.on_abbwelcome.then.find((step: { if?: { then: unknown[] } }) =>
+      JSON.stringify(step).includes('UNLOCKING'),
+    );
+    expect(feedback.if.condition.and).toEqual([
+      { lambda: 'return (x.get_message_type() == 0x8d);' },
+      { lambda: 'return (x.get_source_address() == 0x4002);' },
+      { lambda: 'return (x.get_destination_address() == 0x1016);' },
+    ]);
+    expect(feedback.if.then).toEqual([
+      { 'lock.template.publish': { id: 'haustuer', state: 'UNLOCKING' } },
+      { delay: '3s' },
+      { 'lock.template.publish': { id: 'haustuer', state: 'LOCKED' } },
+    ]);
+    expect(yaml).toContain('Bestätigung Typ 8D, angenommen – nicht aufgenommen');
+  });
+});
+
+describe('device name', () => {
+  const secret = { tag: '!secret', resolve: (value: string) => value };
+  const exportWith = (device: ExportOptions['device']) =>
+    parse(exportFixture('two-outdoor-neighbours', { device }), { customTags: [secret] });
+
+  it('adds name_add_mac_suffix only when enabled and keeps batch_delay', () => {
+    expect(
+      exportWith({ name: 'abb-welcome-demo', friendlyName: 'ABB' }).esphome.name_add_mac_suffix,
+    ).toBeUndefined();
+    const full = exportWith({ name: 'abb-welcome-demo', friendlyName: 'ABB', nameAddMacSuffix: true });
+    expect(full.esphome).toMatchObject({ name: 'abb-welcome-demo', name_add_mac_suffix: true });
+    expect(full.api.batch_delay).toBe('0ms');
+  });
+
+  it('computes the name with MAC suffix', () => {
+    expect(macSuffix('24:6F:28:AA:BB:CC')).toBe('aabbcc');
+    expect(macSuffix('nope')).toBeUndefined();
+    expect(
+      effectiveDeviceName(
+        { name: 'abb-welcome-demo', friendlyName: '', nameAddMacSuffix: true },
+        '24:6f:28:aa:bb:cc',
+      ),
+    ).toBe('abb-welcome-demo-aabbcc');
+  });
+
+  it('warns if the name does not fit the device in Home Assistant', () => {
+    const device = { name: 'abb-welcome-demo', friendlyName: 'ABB Welcome Demo' };
+    expect(checkDeviceName(device, { name: 'ABB Welcome Demo' })).toBeUndefined();
+    expect(checkDeviceName(device, {})).toBeUndefined();
+    expect(checkDeviceName({ ...device, name: 'klingel' }, { name: 'ABB Welcome Demo' })).toContain(
+      'passt nicht zum Gerät',
+    );
+    const mac = '24:6f:28:aa:bb:cc';
+    expect(checkDeviceName(device, { name: 'ABB Welcome Demo aabbcc', mac })).toContain(
+      'name_add_mac_suffix“ aktivieren',
+    );
+    expect(
+      checkDeviceName({ ...device, nameAddMacSuffix: true }, { name: 'ABB Welcome Demo aabbcc', mac }),
+    ).toBeUndefined();
+    expect(
+      checkDeviceName({ ...device, nameAddMacSuffix: true }, { name: 'ABB Welcome Demo', mac }),
+    ).toContain('ausschalten');
   });
 });

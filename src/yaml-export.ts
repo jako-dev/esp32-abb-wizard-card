@@ -20,6 +20,8 @@ export interface DeviceOptions {
   /** Name of the debug text sensor; keep it to keep its entity id (and this card's config) unchanged. */
   debugSensorName?: string;
   board?: string;
+  /** `esphome.name_add_mac_suffix` – the demo firmware does not set it (false). */
+  nameAddMacSuffix?: boolean;
 }
 
 export const DEFAULT_DEVICE: DeviceOptions = {
@@ -41,6 +43,46 @@ export function deviceNameFromFriendly(friendly: string): string {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || DEFAULT_DEVICE.name
   );
+}
+
+/** What Home Assistant knows about the ESP32 (device registry). */
+export interface RegisteredDevice {
+  name?: string;
+  mac?: string;
+}
+
+/** ESPHome's MAC suffix: last three bytes, lower case, e.g. "aabbcc". */
+export function macSuffix(mac: string | undefined): string | undefined {
+  const hex = mac?.toLowerCase().replace(/[^0-9a-f]/g, '');
+  return hex && hex.length === 12 ? hex.slice(6) : undefined;
+}
+
+/** The node name ESPHome will use, including the MAC suffix if enabled and known. */
+export function effectiveDeviceName(device: DeviceOptions, mac?: string): string {
+  const suffix = macSuffix(mac);
+  return device.nameAddMacSuffix && suffix ? `${device.name}-${suffix}` : device.name;
+}
+
+/**
+ * Warn if the exported esphome.name (plus MAC suffix) does not fit the device in Home Assistant – a renamed
+ * node is a new device for OTA and Home Assistant. Returns undefined if it fits or nothing is known.
+ */
+export function checkDeviceName(device: DeviceOptions, registered: RegisteredDevice): string | undefined {
+  if (!registered.name) return undefined;
+  const expected = deviceNameFromFriendly(registered.name);
+  const suffix = macSuffix(registered.mac);
+  const exported = effectiveDeviceName(device, registered.mac);
+  if (exported === expected) return undefined;
+  if (suffix && expected.endsWith(`-${suffix}`)) {
+    const base = expected.slice(0, -suffix.length - 1);
+    return device.name === base && !device.nameAddMacSuffix
+      ? `Das Gerät heißt in Home Assistant „${expected}“ – „name_add_mac_suffix“ aktivieren.`
+      : `Das Gerät heißt in Home Assistant „${expected}“ – Gerätename „${base}“ mit „name_add_mac_suffix“ verwenden.`;
+  }
+  if (device.nameAddMacSuffix && device.name === expected) {
+    return `Das Gerät heißt in Home Assistant „${expected}“ ohne MAC-Suffix – „name_add_mac_suffix“ ausschalten.`;
+  }
+  return `Gerätename „${exported}“ passt nicht zum Gerät „${registered.name}“ in Home Assistant (erwartet „${expected}“). Ein anderer Name ist für ESPHome ein neues Gerät – im ESPHome Device Builder prüfen.`;
 }
 
 const SECRETS = ['wifi_ssid', 'wifi_password', 'api_encryption_key', 'ota_password', 'ap_password'];
@@ -234,6 +276,8 @@ export function generateYaml(
     if (device) {
       w.line(2, `name: ${device.name}`);
       w.line(2, `friendly_name: ${quote(device.friendlyName)}`);
+      if (device.nameAddMacSuffix)
+        w.line(2, 'name_add_mac_suffix: true # hängt die letzten 6 Stellen der MAC an');
     }
     if (rings.length + locks.length > 0) {
       w.line(2, 'on_boot:');
@@ -271,9 +315,18 @@ export function generateYaml(
     publish(w, 12, 'binary_sensor', t.id, 'OFF');
   }
   for (const t of locks) {
-    const confirmation = t.open.confirmation;
-    if (!confirmation) continue;
-    w.comment(6, `${t.name} geöffnet (Bestätigung Typ ${typeHex(confirmation.messageType)})`);
+    const measured = t.open.confirmation;
+    // Without a recorded reply the door is expected to answer like the others: from the addressed device,
+    // with the reply flag set, to the indoor station.
+    const confirmation = measured ?? {
+      source: t.open.destination,
+      messageType: t.open.messageType | 0x80,
+      destination: indoor.address,
+    };
+    w.comment(
+      6,
+      `${t.name} geöffnet (Bestätigung Typ ${typeHex(confirmation.messageType)}${measured ? '' : ', angenommen – nicht aufgenommen'})`,
+    );
     w.line(6, '- if:');
     w.line(10, 'condition:');
     w.line(12, 'and:');
@@ -329,6 +382,7 @@ export function generateYaml(
     for (const t of locks) {
       const { open } = t;
       const data = options.maskDoorCode ? open.data.map(() => 0) : open.data;
+      if (open.manual) w.comment(2, `${t.name}: Öffnen-Frame manuell eingetragen`);
       if (open.derived) {
         w.comment(
           2,
@@ -355,10 +409,6 @@ export function generateYaml(
       );
       const note = options.maskDoorCode ? `PLATZHALTER: ${data.length} Byte ${SECRET_NOTE}` : SECRET_NOTE;
       w.line(10, `data: [${data.map(formatByte).join(', ')}] # ${note}`);
-      if (!open.confirmation) {
-        w.comment(6, 'Keine Bestätigung vom Bus aufgenommen – Status wird nur angenommen');
-        unlockSequence(w, 6, t.id, unlockSeconds);
-      }
     }
   }
 

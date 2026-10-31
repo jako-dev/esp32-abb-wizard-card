@@ -36,7 +36,10 @@ export interface HomeAssistant {
   connected?: boolean;
   /** Entity and device registry (as provided by the frontend), used to suggest the ESPHome device name. */
   entities?: Record<string, { device_id?: string | null }>;
-  devices?: Record<string, { name?: string | null; name_by_user?: string | null }>;
+  devices?: Record<
+    string,
+    { name?: string | null; name_by_user?: string | null; connections?: [string, string][] }
+  >;
   user?: { id?: string; is_admin: boolean; name?: string };
 }
 
