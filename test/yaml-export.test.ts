@@ -122,11 +122,12 @@ describe('generateYaml', () => {
 
   describe('complete device configuration', () => {
     const secret = { tag: '!secret', resolve: (value: string) => `secret:${value}` };
+    const lambda = { tag: '!lambda', resolve: (value: string) => `lambda:${value}` };
     const full = parse(
       exportFixture('two-outdoor-neighbours', {
         device: { name: 'klingel', friendlyName: 'Klingel', debugSensorName: 'ABB Welcome Last Frame' },
       }),
-      { customTags: [secret] },
+      { customTags: [secret, lambda] },
     );
 
     it('contains everything needed to flash the device', () => {
@@ -149,7 +150,25 @@ describe('generateYaml', () => {
       ]);
       expect(full.esp32.framework.type).toBe('esp-idf');
       expect(full.esphome).toMatchObject({ name: 'klingel', friendly_name: 'Klingel' });
-      expect(full.api).toEqual({ encryption: { key: 'secret:api_encryption_key' }, batch_delay: '0ms' });
+      expect(full.api).toMatchObject({
+        encryption: { key: 'secret:api_encryption_key' },
+        batch_delay: '0ms',
+      });
+      expect(full.api.actions[0].action).toBe('send_frame');
+      expect(Object.keys(full.api.actions[0].variables)).toEqual([
+        'source',
+        'destination',
+        'message_type',
+        'data',
+        'three_byte',
+      ]);
+      expect(Object.keys(full.api.actions[0].then[0]['remote_transmitter.transmit_abbwelcome'])).toEqual([
+        'source_address',
+        'destination_address',
+        'three_byte_address',
+        'message_type',
+        'data',
+      ]);
       expect(full.remote_receiver).toMatchObject({ pin: { number: 'GPIO25' }, dump: ['abbwelcome'] });
       expect(full.remote_transmitter.pin).toBe('GPIO26');
     });
@@ -216,9 +235,12 @@ describe('locks for manual and derived open frames', () => {
 });
 
 describe('device name', () => {
-  const secret = { tag: '!secret', resolve: (value: string) => value };
+  const tags = [
+    { tag: '!secret', resolve: (value: string) => value },
+    { tag: '!lambda', resolve: (value: string) => value },
+  ];
   const exportWith = (device: ExportOptions['device']) =>
-    parse(exportFixture('two-outdoor-neighbours', { device }), { customTags: [secret] });
+    parse(exportFixture('two-outdoor-neighbours', { device }), { customTags: tags });
 
   it('adds name_add_mac_suffix only when enabled and keeps batch_delay', () => {
     expect(

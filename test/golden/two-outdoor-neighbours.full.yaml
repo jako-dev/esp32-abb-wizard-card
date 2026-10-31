@@ -55,6 +55,22 @@ api:
   encryption:
     key: !secret api_encryption_key
   batch_delay: 0ms # jeden Bus-Frame einzeln an Home Assistant senden
+  # Für den „Testen“-Button des Wizards: sendet einen Frame (Aktion esphome.<gerät>_send_frame).
+  actions:
+    - action: send_frame
+      variables:
+        source: int
+        destination: int
+        message_type: int
+        data: int[]
+        three_byte: bool
+      then:
+        - remote_transmitter.transmit_abbwelcome:
+            source_address: !lambda 'return source;'
+            destination_address: !lambda 'return destination;'
+            three_byte_address: !lambda 'return three_byte;'
+            message_type: !lambda 'return message_type;'
+            data: !lambda 'return std::vector<uint8_t>(data.begin(), data.end());'
 
 ota:
   - platform: esphome

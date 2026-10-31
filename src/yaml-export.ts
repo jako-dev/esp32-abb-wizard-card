@@ -445,6 +445,25 @@ function writeDeviceBase(w: YamlWriter): void {
   w.line(2, 'encryption:');
   w.line(4, 'key: !secret api_encryption_key');
   w.line(2, 'batch_delay: 0ms # jeden Bus-Frame einzeln an Home Assistant senden');
+  w.comment(
+    2,
+    'Für den „Testen“-Button des Wizards: sendet einen Frame (Aktion esphome.<gerät>_send_frame).',
+  );
+  w.line(2, 'actions:');
+  w.line(4, '- action: send_frame');
+  w.line(6, 'variables:');
+  w.line(8, 'source: int');
+  w.line(8, 'destination: int');
+  w.line(8, 'message_type: int');
+  w.line(8, 'data: int[]');
+  w.line(8, 'three_byte: bool');
+  w.line(6, 'then:');
+  w.line(8, '- remote_transmitter.transmit_abbwelcome:');
+  w.line(12, "source_address: !lambda 'return source;'");
+  w.line(12, "destination_address: !lambda 'return destination;'");
+  w.line(12, "three_byte_address: !lambda 'return three_byte;'");
+  w.line(12, "message_type: !lambda 'return message_type;'");
+  w.line(12, "data: !lambda 'return std::vector<uint8_t>(data.begin(), data.end());'");
   w.line(0);
   w.line(0, 'ota:');
   w.line(2, '- platform: esphome');
