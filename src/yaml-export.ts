@@ -332,6 +332,12 @@ export function generateYaml(
     for (const t of locks) {
       const { open } = t;
       const data = options.maskDoorCode ? open.data.map(() => 0) : open.data;
+      if (open.derived) {
+        w.comment(
+          2,
+          `${t.name}: abgeleitet aus der Bestätigung ${typeHex(open.messageType | 0x80)} – unbestätigt, bitte testen`,
+        );
+      }
       w.line(2, '- platform: template');
       w.line(4, `name: ${quote(t.name)}`);
       w.line(4, `id: ${t.id}`);

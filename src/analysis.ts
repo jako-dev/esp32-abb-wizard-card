@@ -99,18 +99,19 @@ function determineIndoor(
   preferred?: number,
 ): Omit<IndoorResult, 'expected'> | null {
   const byOpen = new Map<number, number>();
+  const byReply = new Map<number, number>();
   for (const door of doors.filter((d) => d.open)) {
     for (const frames of capturesOf(steps, openStepId(door))) {
       for (const f of frames) {
-        if ((f.type === TYPE_DOOR_BUZZER || f.type === TYPE_DOOR_SLIDING) && isIndoor(f.src, f.threeByte)) {
-          increment(byOpen, f.src);
-        }
+        if (isOpenCommand(f) && isIndoor(f.src, f.threeByte)) increment(byOpen, f.src);
+        if (isOpenReply(f) && isIndoor(f.dst, f.threeByte)) increment(byReply, f.dst);
       }
     }
   }
   // Ties: prefer the address matching the dials, then the lowest address (deterministic).
   const tieBreak = (a: number, b: number) => (a === preferred ? -1 : b === preferred ? 1 : a - b);
-  const open = mostFrequent(byOpen, tieBreak);
+  // Without a recorded 0D/0E the 8D/8E confirmation addressed to the indoor station identifies it as well.
+  const open = mostFrequent(byOpen, tieBreak) ?? mostFrequent(byReply, tieBreak);
   if (open) return { address: open[0], method: 'open', count: open[1] };
 
   const byFrequency = new Map<number, number>();
@@ -124,6 +125,18 @@ function determineIndoor(
   }
   const freq = mostFrequent(byFrequency, tieBreak);
   return freq ? { address: freq[0], method: 'frequency', count: freq[1] } : null;
+}
+
+const isOpenCommand = (f: Frame) => f.type === TYPE_DOOR_BUZZER || f.type === TYPE_DOOR_SLIDING;
+const isOpenReply = (f: Frame) =>
+  f.type === (TYPE_DOOR_BUZZER | REPLY_FLAG) || f.type === (TYPE_DOOR_SLIDING | REPLY_FLAG);
+
+/**
+ * The open command the indoor station must have sent for an 8D/8E reply: source and destination swapped,
+ * type without the reply flag, same data. Used when only the confirmation was received.
+ */
+export function deriveOpenCommand(reply: Frame): Frame {
+  return { ...reply, src: reply.dst, dst: reply.src, type: reply.type & ~REPLY_FLAG, data: [...reply.data] };
 }
 
 type RuleMatch = Pick<RingCandidate, 'type' | 'src' | 'dst' | 'data' | 'outdoor'>;
@@ -318,16 +331,28 @@ function analyzeOpen(ctx: Context, door: Door): OpenResult | null {
     return null;
   }
 
-  const seen = new Map<string, { frame: Frame; in: Set<number> }>();
-  captures.forEach((frames, index) => {
-    for (const f of frames) {
-      if (f.src !== ctx.indoor || (f.type !== TYPE_DOOR_BUZZER && f.type !== TYPE_DOOR_SLIDING)) continue;
-      const key = `${f.dst}|${f.type}|${f.data.join(',')}`;
-      const entry = seen.get(key) ?? { frame: f, in: new Set<number>() };
-      entry.in.add(index);
-      seen.set(key, entry);
-    }
-  });
+  const collect = (select: (f: Frame) => Frame | null) => {
+    const seen = new Map<string, { frame: Frame; in: Set<number> }>();
+    captures.forEach((frames, index) => {
+      for (const f of frames) {
+        const command = select(f);
+        if (!command) continue;
+        const key = `${command.dst}|${command.type}|${command.data.join(',')}`;
+        const entry = seen.get(key) ?? { frame: command, in: new Set<number>() };
+        entry.in.add(index);
+        seen.set(key, entry);
+      }
+    });
+    return seen;
+  };
+
+  let derived = false;
+  let seen = collect((f) => (f.src === ctx.indoor && isOpenCommand(f) ? f : null));
+  if (seen.size === 0) {
+    // Only the confirmation arrived (e.g. the command was a duplicate state in HA): derive the command from it.
+    seen = collect((f) => (f.dst === ctx.indoor && isOpenReply(f) ? deriveOpenCommand(f) : null));
+    derived = seen.size > 0;
+  }
 
   let best: { frame: Frame; in: Set<number> } | undefined;
   for (const entry of seen.values()) if (!best || entry.in.size > best.in.size) best = entry;
@@ -339,6 +364,14 @@ function analyzeOpen(ctx: Context, door: Door): OpenResult | null {
       message: `${label}: kein 0D/0E-Frame von ${formatAddress(ctx.indoor, ctx.threeByte)} gefunden.`,
     });
     return null;
+  }
+  if (derived) {
+    ctx.warnings.push({
+      code: 'derived_open',
+      severity: 'warning',
+      step,
+      message: `${label}: kein 0D/0E empfangen – Befehl aus der Bestätigung ${hex2(best.frame.type | REPLY_FLAG)} abgeleitet (unbestätigt, bitte testen).`,
+    });
   }
   if (seen.size > 1) {
     ctx.warnings.push({
@@ -366,6 +399,7 @@ function analyzeOpen(ctx: Context, door: Door): OpenResult | null {
     data: [...frame.data],
     occurrences: best.in.size,
     score: best.in.size / captures.length,
+    ...(derived ? { derived: true } : {}),
   };
 
   const confirmType = frame.type | REPLY_FLAG;

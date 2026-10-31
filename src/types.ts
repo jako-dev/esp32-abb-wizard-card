@@ -133,6 +133,10 @@ export interface OpenResult {
   occurrences: number;
   score: number;
   confirmation?: OpenConfirmation;
+  /** Derived from an 8D/8E reply because no 0D/0E command was received – unconfirmed. */
+  derived?: boolean;
+  /** Entered by the user in the result step. */
+  manual?: boolean;
 }
 
 export interface IndoorResult {

@@ -1529,24 +1529,31 @@ export class AbbWelcomeWizardCard extends LitElement {
   private renderOpen(open: OpenResult): TemplateResult {
     const { threeByte } = this.result;
     const code = this.showDoorCode ? formatBytesPlain(open.data) : open.data.map(() => '••').join(' ');
-    return html`<dl class="kv" style="margin:6px 0 0">
-      <dt>Ziel</dt>
-      <dd>${describeAddress(open.destination, threeByte)}</dd>
-      <dt>Typ</dt>
-      <dd>${hex2(open.messageType)} ${open.messageType === 0x0e ? '(Schiebetür)' : '(Türöffner)'}</dd>
-      <dt>Türcode</dt>
-      <dd>${code || '—'}</dd>
-      <dt>Bestätigung</dt>
-      <dd>
-        ${
-          open.confirmation
-            ? `${hex2(open.confirmation.messageType)} von ${formatAddress(open.confirmation.source, threeByte)}`
-            : '—'
-        }
-      </dd>
-      <dt>Stabilität</dt>
-      <dd>${open.occurrences}/${open.captures} Aufnahmen</dd>
-    </dl>`;
+    return html`${
+        open.derived
+          ? html`<span class="badge warning" title="Kein 0D/0E empfangen – aus der Bestätigung abgeleitet"
+              >abgeleitet – unbestätigt</span
+            >`
+          : nothing
+      }
+      <dl class="kv" style="margin:6px 0 0">
+        <dt>Ziel</dt>
+        <dd>${describeAddress(open.destination, threeByte)}</dd>
+        <dt>Typ</dt>
+        <dd>${hex2(open.messageType)} ${open.messageType === 0x0e ? '(Schiebetür)' : '(Türöffner)'}</dd>
+        <dt>Türcode</dt>
+        <dd>${code || '—'}</dd>
+        <dt>Bestätigung</dt>
+        <dd>
+          ${
+            open.confirmation
+              ? `${hex2(open.confirmation.messageType)} von ${formatAddress(open.confirmation.source, threeByte)}`
+              : '—'
+          }
+        </dd>
+        <dt>Stabilität</dt>
+        <dd>${open.occurrences}/${open.captures} Aufnahmen</dd>
+      </dl>`;
   }
 }
 

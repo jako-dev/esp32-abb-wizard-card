@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { analyzeSession, matchRingRule } from '../src/analysis';
+import { analyzeSession, deriveOpenCommand, matchRingRule } from '../src/analysis';
+import { parseFrame } from '../src/parser';
+import { generateYaml } from '../src/yaml-export';
 import { DEFAULT_DOORS } from '../src/doors';
 import { addCapture, createSession, parseSession, setIndoorAddress, setSkipped } from '../src/session';
 import type { Door, RingCandidate, Session, StepId } from '../src/types';
@@ -314,5 +316,50 @@ describe('analyzeSession – custom doors without gate', () => {
     expect(r.warnings.find((w) => w.code === 'doors_indistinguishable')?.message).toContain(
       '„Vorne“ und „Hinten“',
     );
+  });
+});
+
+describe('derived open command', () => {
+  it('swaps source and destination and drops the reply flag', () => {
+    const reply = parseFrame('[4002 > 1016] Type: 8D Data: 1C 41 68');
+    if (!reply.ok) throw new Error('parse');
+    expect(deriveOpenCommand(reply.frame)).toMatchObject({
+      src: 0x1016,
+      dst: 0x4002,
+      type: 0x0d,
+      data: [0x1c, 0x41, 0x68],
+    });
+  });
+
+  it('derives the open frame when only the 8D confirmation was recorded', () => {
+    const session = sessionFrom({
+      'open:haustuer': [['[4002 > 1016] Type: 8D Data: 1C 41 68'], ['[4002 > 1016] Type: 8D Data: 1C 41 68']],
+    });
+    const result = analyzeSession(session);
+    expect(result.indoor).toMatchObject({ address: 0x1016, method: 'open' });
+    expect(result.opens.haustuer).toMatchObject({
+      destination: 0x4002,
+      messageType: 0x0d,
+      data: [0x1c, 0x41, 0x68],
+      derived: true,
+      occurrences: 2,
+      confirmation: { source: 0x4002, messageType: 0x8d, destination: 0x1016 },
+    });
+    expect(codes(result)).toContain('derived_open');
+
+    const yaml = generateYaml(result, session.doors);
+    expect(yaml).toContain('Haustür: abgeleitet aus der Bestätigung 8D – unbestätigt, bitte testen');
+    expect(yaml).toContain('destination_address: 0x4002');
+    expect(yaml).toContain('message_type: 0x0d');
+    expect(yaml).toContain('data: [0x1c, 0x41, 0x68]');
+  });
+
+  it('prefers a recorded 0D over the derived one', () => {
+    const result = analyzeSession(
+      sessionFrom({
+        'open:haustuer': [['[1016 > 4002] Type: 0D Data: 1C 41 68', '[4002 > 1016] Type: 8D Data: 1C 41 68']],
+      }),
+    );
+    expect(result.opens.haustuer?.derived).toBeUndefined();
   });
 });
