@@ -136,6 +136,15 @@ export const doorCardStyles = css`
     cursor: pointer;
     --mdc-icon-size: 18px;
   }
+  .mini:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .mini.asking {
+    background: var(--door-accent);
+    border-color: var(--door-accent);
+    color: var(--door-on-accent);
+  }
   .camera {
     width: 100%;
     aspect-ratio: 16 / 9;

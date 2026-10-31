@@ -76,6 +76,20 @@ const DOOR_SCHEMA = [
       },
     ],
   },
+  {
+    name: 'controls',
+    selector: {
+      select: {
+        multiple: true,
+        mode: 'list',
+        options: [
+          { value: 'lock', label: 'Abschließen (wenn offen)' },
+          { value: 'unlock', label: 'Aufschließen (wenn abgeschlossen)' },
+          { value: 'open', label: 'Öffnen / Falle ziehen' },
+        ],
+      },
+    },
+  },
   { name: 'camera', selector: { entity: { domain: 'camera' } } },
   {
     name: 'camera_view',
@@ -101,6 +115,7 @@ const LABELS: Record<string, string> = {
   doorbell: 'Klingel-Sensor (optional)',
   confirm: 'Öffnen bestätigen durch (leer = passend zur Darstellung)',
   action: 'Aktion',
+  controls: 'Zusätzliche Knöpfe (leer = Abschließen)',
   camera: 'Kamera (optional)',
   camera_view: 'Kamerabild zeigen',
 };
@@ -108,7 +123,9 @@ const LABELS: Record<string, string> = {
 const HELPERS: Record<string, string> = {
   lock: 'Schloss aus dem ABB-Welcome-Wizard oder jedes andere, z. B. Aqara.',
   doorbell: 'z. B. binary_sensor.klingel_tor – hebt die Tür beim Klingeln hervor.',
-  action: '„Öffnen“ nur für Schlösser mit Falle (z. B. Nuki „Tür aufziehen“).',
+  action: '„Öffnen“ nur für Schlösser mit Falle (z. B. Nuki „Tür aufziehen“, Aqara U200).',
+  controls:
+    'Smart Locks wie Aqara U200: Aktion „Öffnen“ plus Abschließen und Aufschließen. Knöpfe erscheinen nur, wenn sie zum Zustand passen.',
 };
 
 /** Visual editor: card options plus a list of doors with add / move / remove. */
@@ -178,7 +195,7 @@ export class AbbWelcomeDoorCardEditor extends LitElement {
   private clean<T extends object>(value: T): T {
     const copy = { ...value } as Record<string, unknown>;
     for (const [key, v] of Object.entries(copy))
-      if (v === '' || v === undefined || v === null) delete copy[key];
+      if (v === '' || v === undefined || v === null || (Array.isArray(v) && v.length === 0)) delete copy[key];
     return copy as T;
   }
 

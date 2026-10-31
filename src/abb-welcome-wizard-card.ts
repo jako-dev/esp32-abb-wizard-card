@@ -110,7 +110,7 @@ type Editing =
   | { kind: 'outdoor'; door: string; value: string; error?: string }
   | { kind: 'ring'; door: string; rows: ConditionDraft[]; errors: FieldErrors<ConditionDraft>[] }
   | { kind: 'open'; door: string; draft: OpenDraft; errors: FieldErrors<OpenDraft> };
-const VERSION = '0.8.3';
+const VERSION = '0.9.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */

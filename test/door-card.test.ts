@@ -225,6 +225,78 @@ describe('abb-welcome-door-card', () => {
     expect(root.querySelectorAll('button.chip')).toHaveLength(2);
   });
 
+  it('shows only "verriegeln" by default when an opener stays unlocked', async () => {
+    const { root } = await mount({ doors: [{ name: 'Tor', lock: 'lock.tor' }] }, [
+      entity('lock.tor', 'unlocked'),
+    ]);
+    const minis = [...root.querySelectorAll('button.mini')];
+    expect(minis.map((b) => b.getAttribute('title'))).toEqual(['Tor verriegeln']);
+  });
+
+  it('offers aufschließen for a locked smart lock and needs a second tap', async () => {
+    const smart = [{ name: 'Wohnungstür', lock: 'lock.aqara', action: 'open', controls: ['lock', 'unlock'] }];
+    const { root, card, callService } = await mount({ doors: smart, layout: 'rows' });
+    expect(text(root)).toContain('Abgeschlossen');
+    const unlock = root.querySelector<HTMLButtonElement>('button.mini')!;
+    expect(unlock.getAttribute('title')).toBe('Wohnungstür aufschließen');
+    unlock.click();
+    await card.updateComplete;
+    expect(callService).not.toHaveBeenCalled();
+    expect(text(root)).toContain('Zum Aufschließen nochmal tippen');
+    expect(root.querySelector('button.mini.asking')).not.toBeNull();
+    root.querySelector<HTMLButtonElement>('button.mini')!.click();
+    await vi.waitFor(() =>
+      expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.aqara' }),
+    );
+  });
+
+  it('locks a smart lock again with one tap and waits for the lock to confirm', async () => {
+    const smart = [{ name: 'Wohnungstür', lock: 'lock.aqara', action: 'open', controls: ['lock', 'unlock'] }];
+    const { root, card, hass, callService } = await mount({ doors: smart, layout: 'rows' }, [
+      entity('lock.aqara', 'unlocked'),
+    ]);
+    expect(text(root)).toContain('Aufgeschlossen');
+    const minis = [...root.querySelectorAll<HTMLButtonElement>('button.mini')];
+    expect(minis.map((b) => b.getAttribute('title'))).toEqual(['Wohnungstür abschließen']);
+    minis[0].click();
+    await vi.waitFor(() =>
+      expect(callService).toHaveBeenCalledWith('lock', 'lock', { entity_id: 'lock.aqara' }),
+    );
+    await card.updateComplete;
+    expect(text(root)).toContain('Warte auf Tür');
+    card.hass = {
+      ...hass,
+      states: { ...hass.states, 'lock.aqara': entity('lock.aqara', 'locked') },
+    } as never;
+    await card.updateComplete;
+    expect(text(root)).toContain('Abgeschlossen');
+    expect(root.querySelector('.slider.done, .press.done')).not.toBeNull();
+  });
+
+  it('pulls the latch with the main action of a smart lock', async () => {
+    const smart = [
+      {
+        name: 'Wohnungstür',
+        lock: 'lock.aqara',
+        action: 'open',
+        controls: ['lock', 'unlock'],
+        confirm: 'tap',
+      },
+    ];
+    const { root, callService } = await mount({ doors: smart, layout: 'rows' });
+    root.querySelector<HTMLButtonElement>('button.press')!.click();
+    await vi.waitFor(() =>
+      expect(callService).toHaveBeenCalledWith('lock', 'open', { entity_id: 'lock.aqara' }),
+    );
+  });
+
+  it('offers "öffnen" as an extra button when unlocking is the main action', async () => {
+    const door = [{ name: 'Haustür', lock: 'lock.tor', controls: ['open'] }];
+    const { root } = await mount({ doors: door, layout: 'rows' });
+    const minis = [...root.querySelectorAll('button.mini')];
+    expect(minis.map((b) => b.getAttribute('title'))).toEqual(['Haustür öffnen']);
+  });
+
   it('lets Home Assistant set its own layout property', async () => {
     // hui-card assigns element.layout (e.g. "grid" in sections views); a getter-only
     // "layout" made that throw and Home Assistant hid the whole section.

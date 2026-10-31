@@ -7,6 +7,8 @@ import {
   isOpening,
   lockStatus,
   normalizeDoorCardConfig,
+  visibleControls,
+  wordingFor,
   ringRemaining,
   sortDoors,
 } from '../src/door-card/door-config';
@@ -91,6 +93,40 @@ describe('door card config', () => {
     expect(lockStatus(undefined).label).toBe('Nicht gefunden');
     expect(isOpening('unlocking') && isOpening('open') && !isOpening('locked')).toBe(true);
     expect(canLockAgain('unlocked') && !canLockAgain('unlocking')).toBe(true);
+  });
+
+  it('validates and dedupes the extra lock buttons', () => {
+    const config = normalizeDoorCardConfig({
+      doors: [{ name: 'A', lock: 'lock.a', controls: ['unlock', 'lock', 'unlock'] }],
+    });
+    expect(config.doors[0].controls).toEqual(['unlock', 'lock']);
+    expect(() => normalizeDoorCardConfig({ doors: [{ lock: 'lock.a', controls: ['kick'] }] })).toThrow(
+      'controls',
+    );
+  });
+
+  it('shows extra lock buttons only when they fit the state', () => {
+    const smart = {
+      name: 'W',
+      lock: 'lock.w',
+      action: 'open' as const,
+      controls: ['lock', 'unlock', 'open'] as never,
+    };
+    expect(visibleControls(smart, 'locked')).toEqual(['unlock']);
+    expect(visibleControls(smart, 'unlocked')).toEqual(['lock']);
+    expect(visibleControls(smart, 'unavailable')).toEqual([]);
+    const opener = { name: 'H', lock: 'lock.h', controls: ['open'] as never };
+    expect(visibleControls(opener, 'locked')).toEqual(['open']);
+    expect(visibleControls({ name: 'T', lock: 'lock.t' }, 'open')).toEqual(['lock']);
+    expect(visibleControls({ name: 'K', doorbell: 'binary_sensor.k' }, 'locked')).toEqual([]);
+  });
+
+  it('names states of smart locks abgeschlossen / aufgeschlossen', () => {
+    expect(wordingFor({ name: 'W', lock: 'lock.w', controls: ['unlock'] })).toBe('lock');
+    expect(wordingFor({ name: 'H', lock: 'lock.h' })).toBe('opener');
+    expect(lockStatus('locked', 'lock').label).toBe('Abgeschlossen');
+    expect(lockStatus('unlocked', 'lock').label).toBe('Aufgeschlossen');
+    expect(lockStatus('unlocked').label).toBe('Entriegelt');
   });
 
   it('counts down the doorbell highlight', () => {
