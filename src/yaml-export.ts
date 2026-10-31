@@ -9,8 +9,6 @@ export interface ExportOptions {
   debugSensorId?: string | null;
   /** How long a lock shows UNLOCKING after a confirmed open, in seconds. */
   unlockSeconds?: number;
-  /** Apartment number shown in the header comment. */
-  apartment?: number;
   /** Generate a complete device configuration (based on Mat931's demo firmware) instead of a snippet. */
   device?: DeviceOptions;
 }
@@ -151,8 +149,7 @@ function writeHeader(w: YamlWriter, result: WizardResult, options: ExportOptions
   const { indoor, threeByte } = result;
   w.comment(0, 'ABB-Welcome Wizard – generierte ESPHome-Konfiguration');
   if (indoor) {
-    const apartment = options.apartment !== undefined ? `, Wohnung ${options.apartment}` : '';
-    w.comment(0, `Innenstation: ${formatAddress(indoor.address, threeByte)}${apartment}`);
+    w.comment(0, `Innenstation: ${formatAddress(indoor.address, threeByte)}`);
   }
   w.comment(0, `Adresslänge: ${threeByte ? '3 Byte (three_byte_address: true)' : '2 Byte'}`);
   w.comment(0, '');

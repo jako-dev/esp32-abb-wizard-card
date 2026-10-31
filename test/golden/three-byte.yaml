@@ -1,5 +1,5 @@
 # ABB-Welcome Wizard – generierte ESPHome-Konfiguration
-# Innenstation: 0x000110, Wohnung 16
+# Innenstation: 0x000110
 # Adresslänge: 3 Byte (three_byte_address: true)
 #
 # Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
@@ -27,13 +27,13 @@ remote_receiver:
   # pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration
   on_abbwelcome:
     then:
-      # Klingel Tor – Außenstation #1 (0x000201)
+      # Klingel Tor – Außenstation (0x000201)
       - if:
           condition:
             or:
-              # Typ 01: Außenstation #1 (0x000201) > Innenstation #16 (0x000110) (2/2 Aufnahmen)
+              # Typ 01: Außenstation (0x000201) > Innenstation (0x000110) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x000201) && (x.get_destination_address() == 0x000110);'
-              # Typ 81: Innenstation #16 (0x000110) > Außenstation #1 (0x000201) (2/2 Aufnahmen)
+              # Typ 81: Innenstation (0x000110) > Außenstation (0x000201) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x000110) && (x.get_destination_address() == 0x000201);'
           then:
             - binary_sensor.template.publish:

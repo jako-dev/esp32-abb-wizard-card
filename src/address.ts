@@ -56,25 +56,52 @@ const ROLE_LABELS: Record<DeviceRole, string> = {
 };
 
 export function describeAddress(address: number, threeByte: boolean): string {
-  const role = addressRole(address, threeByte);
-  const label = ROLE_LABELS[role];
+  const label = ROLE_LABELS[addressRole(address, threeByte)];
   const hex = formatAddress(address, threeByte);
-  if (role === 'indoor' || role === 'outdoor') return `${label} #${address & 0xff} (${hex})`;
   return `${label} (${hex})`;
 }
 
-/** Apartment number from the X10 / X1 dials, undefined if incomplete. */
-export function apartmentFromDials(dials: DialSettings): number | undefined {
+export type DialReading = 'digits' | 'decimal';
+
+export interface DialCandidate {
+  reading: DialReading;
+  address: number;
+}
+
+export const DIAL_READING_LABELS: Record<DialReading, string> = {
+  digits: 'Ziffern direkt',
+  decimal: 'dezimal → hex',
+};
+
+function dialDigits(dials: DialSettings): [number, number] | undefined {
   const { x10, x1 } = dials;
   if (x10 === undefined || x1 === undefined) return undefined;
   if (!Number.isInteger(x10) || !Number.isInteger(x1) || x10 < 0 || x10 > 9 || x1 < 0 || x1 > 9)
     return undefined;
-  return x10 * 10 + x1;
+  return [x10, x1];
 }
 
-/** Expected indoor station address: apartment number (decimal) in the low byte. */
-export function expectedIndoorAddress(apartment: number, threeByte: boolean): number {
-  return (threeByte ? 0x000100 : 0x1000) | (apartment & 0xff);
+/**
+ * Indoor station addresses the X10 / X1 dials can stand for. Systems differ: some take the dial digits
+ * directly as hex digits (1/6 → 0x1016), others convert the decimal number (1/6 = 16 → 0x1010).
+ * Identical readings (e.g. 0/7) are returned once.
+ */
+export function dialCandidates(dials: DialSettings, threeByte: boolean): DialCandidate[] {
+  const digits = dialDigits(dials);
+  if (!digits) return [];
+  const base = threeByte ? 0x000100 : 0x1000;
+  const [x10, x1] = digits;
+  const candidates: DialCandidate[] = [
+    { reading: 'digits', address: base | (x10 << 4) | x1 },
+    { reading: 'decimal', address: base | (x10 * 10 + x1) },
+  ];
+  return candidates[0].address === candidates[1].address ? [candidates[0]] : candidates;
+}
+
+/** "X10=1, X1=6" for messages. */
+export function describeDials(dials: DialSettings): string | undefined {
+  const digits = dialDigits(dials);
+  return digits ? `X10=${digits[0]}, X1=${digits[1]}` : undefined;
 }
 
 /** Big-endian bytes of an address. */

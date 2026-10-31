@@ -1,5 +1,5 @@
 # ABB-Welcome Wizard – generierte ESPHome-Konfiguration
-# Innenstation: 0x1007, Wohnung 7
+# Innenstation: 0x1007
 # Adresslänge: 2 Byte
 #
 # Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
@@ -35,13 +35,13 @@ remote_receiver:
     then:
       # Debug-Textsensor (id ggf. an eure Firmware anpassen)
       - lambda: 'char buf[192]; x.format_to(buf, 192); id(doorbell_intercom).publish_state(buf);'
-      # Klingel Haustür – Außenstation #1 (0x2001)
+      # Klingel Haustür – Außenstation (0x2001)
       - if:
           condition:
             or:
-              # Typ 01: Außenstation #1 (0x2001) > Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              # Typ 01: Außenstation (0x2001) > Innenstation (0x1007) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x1007);'
-              # Typ 81: Innenstation #7 (0x1007) > Außenstation #1 (0x2001) (2/2 Aufnahmen)
+              # Typ 81: Innenstation (0x1007) > Außenstation (0x2001) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1007) && (x.get_destination_address() == 0x2001);'
           then:
             - binary_sensor.template.publish:
@@ -50,13 +50,13 @@ remote_receiver:
             - binary_sensor.template.publish:
                 id: klingel_haustuer
                 state: OFF
-      # Klingel Garage – Außenstation #3 (0x2003)
+      # Klingel Garage – Außenstation (0x2003)
       - if:
           condition:
             or:
-              # Typ 01: Außenstation #3 (0x2003) > Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              # Typ 01: Außenstation (0x2003) > Innenstation (0x1007) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2003) && (x.get_destination_address() == 0x1007);'
-              # Typ 81: Innenstation #7 (0x1007) > Außenstation #3 (0x2003) (2/2 Aufnahmen)
+              # Typ 81: Innenstation (0x1007) > Außenstation (0x2003) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1007) && (x.get_destination_address() == 0x2003);'
           then:
             - binary_sensor.template.publish:
@@ -69,9 +69,9 @@ remote_receiver:
       - if:
           condition:
             or:
-              # Typ 11, Quelle: Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              # Typ 11, Quelle: Innenstation (0x1007) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x11) && (x.get_source_address() == 0x1007);'
-              # Typ 91, Ziel: Innenstation #7 (0x1007) (2/2 Aufnahmen)
+              # Typ 91, Ziel: Innenstation (0x1007) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1007);'
           then:
             - binary_sensor.template.publish:

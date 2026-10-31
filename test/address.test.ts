@@ -1,9 +1,9 @@
 import {
   addressRole,
-  apartmentFromDials,
   dataContainsAddress,
   describeAddress,
-  expectedIndoorAddress,
+  dialCandidates,
+  describeDials,
   formatAddress,
   involvesAddress,
 } from '../src/address';
@@ -40,17 +40,21 @@ describe('address helpers', () => {
   it('formats addresses', () => {
     expect(formatAddress(0x100c, false)).toBe('0x100c');
     expect(formatAddress(0x110, true)).toBe('0x000110');
-    expect(describeAddress(0x1010, false)).toBe('Innenstation #16 (0x1010)');
+    expect(describeAddress(0x1016, false)).toBe('Innenstation (0x1016)');
     expect(describeAddress(0x4001, false)).toBe('Türsteuergerät (0x4001)');
   });
 
-  it('computes the expected address from the dials', () => {
-    expect(apartmentFromDials({ station: 2, x10: 1, x1: 6 })).toBe(16);
-    expect(apartmentFromDials({ x10: 1 })).toBeUndefined();
-    expect(apartmentFromDials({ x10: 10, x1: 0 })).toBeUndefined();
-    expect(expectedIndoorAddress(16, false)).toBe(0x1010);
-    expect(expectedIndoorAddress(12, false)).toBe(0x100c);
-    expect(expectedIndoorAddress(16, true)).toBe(0x000110);
+  it('offers both readings of the dials', () => {
+    expect(dialCandidates({ station: 2, x10: 1, x1: 6 }, false)).toEqual([
+      { reading: 'digits', address: 0x1016 },
+      { reading: 'decimal', address: 0x1010 },
+    ]);
+    expect(dialCandidates({ x10: 1, x1: 2 }, false).map((c) => c.address)).toEqual([0x1012, 0x100c]);
+    expect(dialCandidates({ x10: 1, x1: 6 }, true).map((c) => c.address)).toEqual([0x000116, 0x000110]);
+    expect(dialCandidates({ x10: 0, x1: 7 }, false)).toEqual([{ reading: 'digits', address: 0x1007 }]);
+    expect(dialCandidates({ x10: 1 }, false)).toEqual([]);
+    expect(dialCandidates({ x10: 10, x1: 0 }, false)).toEqual([]);
+    expect(describeDials({ x10: 1, x1: 6 })).toBe('X10=1, X1=6');
   });
 
   it('finds addresses in data', () => {

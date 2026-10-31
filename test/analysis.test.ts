@@ -41,8 +41,11 @@ describe('analyzeSession – Mat931 example system', () => {
       address: 0x100c,
       method: 'open',
       count: 2,
-      expected: 0x100c,
-      matchesExpected: true,
+      dialCandidates: [
+        { reading: 'digits', address: 0x1012 },
+        { reading: 'decimal', address: 0x100c },
+      ],
+      dialMatch: 'decimal',
     });
     expect(result.threeByte).toBe(false);
   });
@@ -86,8 +89,7 @@ describe('analyzeSession – two outdoor stations with neighbours', () => {
     expect(result.indoor).toMatchObject({
       address: 0x1010,
       method: 'open',
-      expected: 0x1010,
-      matchesExpected: true,
+      dialMatch: 'decimal',
     });
   });
 
@@ -152,7 +154,7 @@ describe('analyzeSession – three-byte addresses', () => {
 
   it('detects three-byte addressing', () => {
     expect(result.threeByte).toBe(true);
-    expect(result.indoor).toMatchObject({ address: 0x000110, expected: 0x000110, matchesExpected: true });
+    expect(result.indoor).toMatchObject({ address: 0x000110, dialMatch: 'decimal' });
     expect(result.rings.tor.outdoorAddress).toBe(0x000201);
     expect(result.opens.haustuer).toMatchObject({
       destination: 0x000401,
@@ -183,7 +185,10 @@ describe('analyzeSession – edge cases', () => {
     const result = analyzeSession(
       sessionFrom({ 'open:haustuer': [['[1011 > 4001] Type: 0D Data: 01 02 03']] }, { x10: 1, x1: 6 }),
     );
-    expect(result.indoor).toMatchObject({ address: 0x1011, expected: 0x1010, matchesExpected: false });
+    expect(result.indoor).toMatchObject({ address: 0x1011, dialMatch: null });
+    expect(result.warnings.find((w) => w.code === 'indoor_mismatch')?.message).toContain(
+      '0x1016 (Ziffern direkt) oder 0x1010 (dezimal → hex)',
+    );
     expect(codes(result)).toContain('indoor_mismatch');
   });
 
@@ -295,7 +300,7 @@ describe('analyzeSession – custom doors without gate', () => {
   it('analyses every configured door', () => {
     expect(Object.keys(result.rings)).toEqual(['haustuer', 'garage', 'wohnung_oben']);
     expect(Object.keys(result.opens)).toEqual(['haustuer']);
-    expect(result.indoor).toMatchObject({ address: 0x1007, matchesExpected: true });
+    expect(result.indoor).toMatchObject({ address: 0x1007, dialMatch: 'digits' });
   });
 
   it('keeps doors apart by their outdoor stations', () => {
@@ -361,5 +366,22 @@ describe('derived open command', () => {
       }),
     );
     expect(result.opens.haustuer?.derived).toBeUndefined();
+  });
+});
+
+describe('dial readings', () => {
+  it('matches dials whose digits are taken directly (1/6 → 0x1016)', () => {
+    const result = analyzeSession(
+      sessionFrom({ 'open:haustuer': [['[1016 > 4002] Type: 0D Data: 1C 41 68']] }, { x10: 1, x1: 6 }),
+    );
+    expect(result.indoor).toMatchObject({ address: 0x1016, dialMatch: 'digits' });
+    expect(codes(result)).not.toContain('indoor_mismatch');
+  });
+
+  it('prefers a dial reading when the frequency is tied', () => {
+    const result = analyzeSession(
+      sessionFrom({ 'ring:tor': [['[2001 > 1010] Type: 01', '[2001 > 1016] Type: 01']] }, { x10: 1, x1: 6 }),
+    );
+    expect(result.indoor?.address).toBe(0x1010);
   });
 });

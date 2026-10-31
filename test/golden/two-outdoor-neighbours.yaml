@@ -1,5 +1,5 @@
 # ABB-Welcome Wizard – generierte ESPHome-Konfiguration
-# Innenstation: 0x1010, Wohnung 16
+# Innenstation: 0x1010
 # Adresslänge: 2 Byte
 #
 # Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:
@@ -38,13 +38,13 @@ remote_receiver:
     then:
       # Debug-Textsensor (id ggf. an eure Firmware anpassen)
       - lambda: 'char buf[192]; x.format_to(buf, 192); id(doorbell_intercom).publish_state(buf);'
-      # Klingel Tor – Außenstation #1 (0x2001)
+      # Klingel Tor – Außenstation (0x2001)
       - if:
           condition:
             or:
-              # Typ 01: Außenstation #1 (0x2001) > Innenstation #16 (0x1010) (3/3 Aufnahmen)
+              # Typ 01: Außenstation (0x2001) > Innenstation (0x1010) (3/3 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x1010);'
-              # Typ 0A: Außenstation #1 (0x2001) > Gateway (0x3001), Data: 01 10 10 (3/3 Aufnahmen)
+              # Typ 0A: Außenstation (0x2001) > Gateway (0x3001), Data: 01 10 10 (3/3 Aufnahmen)
               - lambda: 'std::vector<uint8_t> d = {0x01, 0x10, 0x10}; return (x.get_message_type() == 0x0a) && (x.get_source_address() == 0x2001) && (x.get_destination_address() == 0x3001) && (x.get_data() == d);'
           then:
             - binary_sensor.template.publish:
@@ -53,13 +53,13 @@ remote_receiver:
             - binary_sensor.template.publish:
                 id: klingel_tor
                 state: OFF
-      # Klingel Haustür – Außenstation #2 (0x2002)
+      # Klingel Haustür – Außenstation (0x2002)
       - if:
           condition:
             or:
-              # Typ 01: Außenstation #2 (0x2002) > Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              # Typ 01: Außenstation (0x2002) > Innenstation (0x1010) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x01) && (x.get_source_address() == 0x2002) && (x.get_destination_address() == 0x1010);'
-              # Typ 81: Innenstation #16 (0x1010) > Außenstation #2 (0x2002) (2/2 Aufnahmen)
+              # Typ 81: Innenstation (0x1010) > Außenstation (0x2002) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x81) && (x.get_source_address() == 0x1010) && (x.get_destination_address() == 0x2002);'
           then:
             - binary_sensor.template.publish:
@@ -72,9 +72,9 @@ remote_receiver:
       - if:
           condition:
             or:
-              # Typ 11, Quelle: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              # Typ 11, Quelle: Innenstation (0x1010) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x11) && (x.get_source_address() == 0x1010);'
-              # Typ 91, Ziel: Innenstation #16 (0x1010) (2/2 Aufnahmen)
+              # Typ 91, Ziel: Innenstation (0x1010) (2/2 Aufnahmen)
               - lambda: 'return (x.get_message_type() == 0x91) && (x.get_destination_address() == 0x1010);'
           then:
             - binary_sensor.template.publish:
@@ -146,7 +146,7 @@ lock:
     unlock_action:
       - remote_transmitter.transmit_abbwelcome:
           source_address: 0x1010 # Innenstation
-          destination_address: 0x2001 # Außenstation #1 (0x2001)
+          destination_address: 0x2001 # Außenstation (0x2001)
           three_byte_address: false
           message_type: 0x0d # Türöffner
           data: [0x12, 0x34, 0x56] # TÜRCODE – nicht öffentlich teilen!

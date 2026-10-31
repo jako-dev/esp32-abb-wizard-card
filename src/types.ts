@@ -143,8 +143,10 @@ export interface IndoorResult {
   address: number;
   method: 'manual' | 'open' | 'frequency';
   count: number;
-  expected?: number;
-  matchesExpected?: boolean;
+  /** Addresses the X10 / X1 dials can stand for (both readings), if the dials were entered. */
+  dialCandidates?: { reading: 'digits' | 'decimal'; address: number }[];
+  /** The reading that matches the address; null if none does. */
+  dialMatch?: 'digits' | 'decimal' | null;
 }
 
 export interface AnalysisStats {

@@ -1,8 +1,9 @@
 import {
-  apartmentFromDials,
   dataContainsAddress,
   describeAddress,
-  expectedIndoorAddress,
+  describeDials,
+  dialCandidates,
+  DIAL_READING_LABELS,
   formatAddress,
   formatBytesPlain,
   involvesAddress,
@@ -42,8 +43,6 @@ type ParsedSteps = Record<StepId, Frame[][]>;
 const capturesOf = (steps: ParsedSteps, id: StepId): Frame[][] => steps[id] ?? [];
 
 export interface AnalysisOptions {
-  /** Overrides the apartment number derived from the session's dial settings. */
-  expectedApartment?: number;
   /** Manually configured indoor station address; skips auto-detection. */
   indoorAddress?: number;
 }
@@ -96,8 +95,8 @@ function parseSteps(session: Session, unparsed: string[]): { steps: ParsedSteps;
 function determineIndoor(
   steps: ParsedSteps,
   doors: readonly Door[],
-  preferred?: number,
-): Omit<IndoorResult, 'expected'> | null {
+  preferred: number[] = [],
+): IndoorResult | null {
   const byOpen = new Map<number, number>();
   const byReply = new Map<number, number>();
   for (const door of doors.filter((d) => d.open)) {
@@ -109,7 +108,8 @@ function determineIndoor(
     }
   }
   // Ties: prefer the address matching the dials, then the lowest address (deterministic).
-  const tieBreak = (a: number, b: number) => (a === preferred ? -1 : b === preferred ? 1 : a - b);
+  const tieBreak = (a: number, b: number) =>
+    preferred.includes(a) !== preferred.includes(b) ? (preferred.includes(a) ? -1 : 1) : a - b;
   // Without a recorded 0D/0E the 8D/8E confirmation addressed to the indoor station identifies it as well.
   const open = mostFrequent(byOpen, tieBreak) ?? mostFrequent(byReply, tieBreak);
   if (open) return { address: open[0], method: 'open', count: open[1] };
@@ -450,9 +450,8 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
   };
 
   const allFrames = Object.values(steps).flat(2);
-  const apartment = options.expectedApartment ?? apartmentFromDials(session.dials);
   const majorityThreeByte = allFrames.filter((f) => f.threeByte).length * 2 > allFrames.length;
-  const preferred = apartment !== undefined ? expectedIndoorAddress(apartment, majorityThreeByte) : undefined;
+  const preferred = dialCandidates(session.dials, majorityThreeByte).map((c) => c.address);
 
   if (unparsed.length > 0) {
     warnings.push({
@@ -463,7 +462,7 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
   }
 
   const manual = options.indoorAddress ?? session.indoorAddress;
-  const found: Omit<IndoorResult, 'expected'> | null =
+  const found: IndoorResult | null =
     manual !== undefined
       ? { address: manual, method: 'manual', count: 0 }
       : determineIndoor(steps, session.doors, preferred);
@@ -507,14 +506,18 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
   result.threeByte = threeByte;
 
   const indoor: IndoorResult = { ...found };
-  if (apartment !== undefined) {
-    indoor.expected = expectedIndoorAddress(apartment, threeByte);
-    indoor.matchesExpected = indoor.expected === found.address;
-    if (!indoor.matchesExpected) {
+  const candidates = dialCandidates(session.dials, threeByte);
+  if (candidates.length > 0) {
+    indoor.dialCandidates = candidates;
+    indoor.dialMatch = candidates.find((c) => c.address === found.address)?.reading ?? null;
+    if (indoor.dialMatch === null) {
+      const readings = candidates
+        .map((c) => `${formatAddress(c.address, threeByte)} (${DIAL_READING_LABELS[c.reading]})`)
+        .join(' oder ');
       warnings.push({
         code: 'indoor_mismatch',
         severity: 'warning',
-        message: `Ermittelte Innenstation ${formatAddress(found.address, threeByte)} weicht von der erwarteten Adresse ${formatAddress(indoor.expected, threeByte)} (Wohnung ${apartment}) ab. Drehregler prüfen.`,
+        message: `Ermittelte Innenstation ${formatAddress(found.address, threeByte)} passt nicht zu den Drehreglern ${describeDials(session.dials)} – erwartet ${readings}. Drehregler prüfen.`,
       });
     }
   }

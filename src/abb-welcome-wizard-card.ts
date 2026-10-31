@@ -1,9 +1,10 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import {
-  apartmentFromDials,
   describeAddress,
-  expectedIndoorAddress,
+  DIAL_READING_LABELS,
+  dialCandidates,
+  describeDials,
   formatAddress,
   formatAddressPlain,
   formatBytesPlain,
@@ -402,12 +403,11 @@ export class AbbWelcomeWizardCard extends LitElement {
     return result;
   }
 
-  /** Address used to highlight own frames: detected, manual or expected from the dials. */
-  private get highlightAddress(): number | undefined {
+  /** Addresses used to highlight own frames: detected or manual, otherwise those the dials stand for. */
+  private get highlightAddresses(): number[] {
     const detected = this.result.indoor?.address;
-    if (detected !== undefined) return detected;
-    const apartment = apartmentFromDials(this.session.dials);
-    return apartment !== undefined ? expectedIndoorAddress(apartment, false) : undefined;
+    if (detected !== undefined) return [detected];
+    return dialCandidates(this.session.dials, false).map((c) => c.address);
   }
 
   private exportSession(): void {
@@ -651,9 +651,9 @@ export class AbbWelcomeWizardCard extends LitElement {
   private renderStart(): TemplateResult {
     const entity = this.config!.entity;
     const stateObj = this.hass?.states[entity];
-    const apartment = apartmentFromDials(this.session.dials);
     const threeByte = this.result.threeByte;
-    const expected = apartment !== undefined ? expectedIndoorAddress(apartment, threeByte) : undefined;
+    const candidates = dialCandidates(this.session.dials, threeByte);
+    const measured = this.result.indoor?.method === 'manual' ? undefined : this.result.indoor?.address;
     const indoorInvalid = this.indoorInput.trim() !== '' && parseAddressInput(this.indoorInput) === undefined;
     const configIndoor = this.configIndoor;
 
@@ -702,8 +702,9 @@ export class AbbWelcomeWizardCard extends LitElement {
       <div class="panel">
         <h3>2 · Drehregler der Innenstation (optional)</h3>
         <p class="muted small">
-          Auf der Rückseite deiner Innenstation. X10 und X1 ergeben die Wohnungsnummer – daraus folgt die
-          erwartete Adresse. Sie dient nur zur Kontrolle, die echte Adresse wird aus den Frames ermittelt.
+          Auf der Rückseite deiner Innenstation. Je nach Anlage stehen X10/X1 direkt als Ziffern in der
+          Adresse (1/6 → 0x1016) oder werden dezimal umgerechnet (16 → 0x1010). Beides wird mit der gemessenen
+          Adresse verglichen – nur zur Kontrolle, die echte Adresse kommt aus den Frames.
         </p>
         <div class="fields">
           ${(['station', 'x10', 'x1'] as const).map(
@@ -723,11 +724,27 @@ export class AbbWelcomeWizardCard extends LitElement {
           )}
         </div>
         ${
-          expected !== undefined
-            ? html`<p class="small">
-                Wohnung <b>${apartment}</b> → erwartete Innenstationsadresse
-                <span class="badge accent">${formatAddress(expected, threeByte)}</span>
-              </p>`
+          candidates.length > 0
+            ? html`<div class="small" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                ${describeDials(this.session.dials)} →
+                ${candidates.map((c) => {
+                  const match = measured === c.address;
+                  const other = measured !== undefined && !match;
+                  return html`<span
+                    class="badge ${match ? 'ok' : other ? '' : 'accent'}"
+                    title=${match ? 'passt zur gemessenen Adresse' : DIAL_READING_LABELS[c.reading]}
+                    >${match ? html`<ha-icon icon="mdi:check"></ha-icon>` : nothing}${formatAddress(c.address, threeByte)}
+                    · ${DIAL_READING_LABELS[c.reading]}</span
+                  >`;
+                })}
+                ${
+                  measured !== undefined && !candidates.some((c) => c.address === measured)
+                    ? html`<span class="badge warning"
+                        >gemessen ${formatAddress(measured, threeByte)} – passt zu keiner</span
+                      >`
+                    : nothing
+                }
+              </div>`
             : nothing
         }
       </div>
@@ -902,7 +919,7 @@ export class AbbWelcomeWizardCard extends LitElement {
 
   private renderFrames(lines: RecordedLine[], emptyText: string): TemplateResult {
     if (lines.length === 0) return html`<div class="empty">${emptyText}</div>`;
-    const own = this.highlightAddress;
+    const own = this.highlightAddresses;
     return html`
       <div class="frames" role="log">
         ${lines.map((entry) => {
@@ -914,8 +931,8 @@ export class AbbWelcomeWizardCard extends LitElement {
             </div>`;
           }
           const f = parsed.frame;
-          const mine = own !== undefined && involvesAddress(f, own);
-          const cls = own === undefined ? '' : mine ? 'own' : 'foreign';
+          const mine = own.some((address) => involvesAddress(f, address));
+          const cls = own.length === 0 ? '' : mine ? 'own' : 'foreign';
           return html`<div class="frame ${cls}" title=${entry.line}>
             <span class="time">${timeOf(entry.time)}</span>
             <span class="route"
@@ -1193,11 +1210,9 @@ export class AbbWelcomeWizardCard extends LitElement {
   private renderResult(): TemplateResult {
     const result = this.result;
     const { indoor, threeByte } = result;
-    const apartment = apartmentFromDials(this.session.dials);
     const device = this.device;
     const yaml = generateYaml(result, this.session.doors, {
       maskDoorCode: this.maskDoorCode,
-      apartment,
       device: this.exportMode === 'full' ? device : undefined,
     });
     const recorded = Object.values(this.session.steps).some((s) => s.captures.length > 0);
@@ -1228,16 +1243,14 @@ export class AbbWelcomeWizardCard extends LitElement {
                         : html`<span class="badge warning">nach Häufigkeit</span>`
                   }
                   ${
-                    indoor.expected !== undefined
-                      ? indoor.matchesExpected
-                        ? html`<span class="badge ok"
-                            ><ha-icon icon="mdi:check"></ha-icon>passt zu Wohnung ${apartment}</span
-                          >`
-                        : html`<span class="badge warning"
-                            >erwartet ${formatAddress(indoor.expected, threeByte)} (Wohnung
-                            ${apartment})</span
-                          >`
-                      : nothing
+                    indoor.dialMatch
+                      ? html`<span class="badge ok"
+                          ><ha-icon icon="mdi:check"></ha-icon>passt zu den Drehreglern
+                          (${DIAL_READING_LABELS[indoor.dialMatch]})</span
+                        >`
+                      : indoor.dialMatch === null
+                        ? html`<span class="badge warning">passt nicht zu den Drehreglern</span>`
+                        : nothing
                   }
                 </span>`
               : nothing

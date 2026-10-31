@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { analyzeSession } from '../src/analysis';
-import { apartmentFromDials } from '../src/address';
 import { createSession, parseSession } from '../src/session';
 import { deviceNameFromFriendly, generateYaml, type ExportOptions } from '../src/yaml-export';
 
@@ -11,7 +10,7 @@ const update = process.env.UPDATE_GOLDEN === '1';
 function exportFixture(name: string, options: ExportOptions = {}): string {
   const session = parseSession(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), 'utf8'));
   const result = analyzeSession(session);
-  return generateYaml(result, session.doors, { apartment: apartmentFromDials(session.dials), ...options });
+  return generateYaml(result, session.doors, options);
 }
 
 function expectGolden(actual: string, file: string): void {
