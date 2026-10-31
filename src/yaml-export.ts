@@ -83,6 +83,10 @@ export function checkDeviceName(device: DeviceOptions, registered: RegisteredDev
   const suffix = macSuffix(registered.mac);
   const exported = effectiveDeviceName(device, registered.mac);
   if (exported === expected) return undefined;
+  // Home Assistant shows the friendly name for devices that have one: then the registry name says nothing
+  // about esphome.name. Factory firmware uses the friendly name without the MAC suffix of the node name.
+  if (expected === deviceNameFromFriendly(device.friendlyName)) return undefined;
+  if (suffix && exported === `${expected}-${suffix}`) return undefined;
   if (suffix && expected.endsWith(`-${suffix}`)) {
     const base = expected.slice(0, -suffix.length - 1);
     return device.name === base && !device.nameAddMacSuffix

@@ -313,4 +313,17 @@ describe('device name', () => {
       { platform: 'esphome', encryption: { allow_plaintext_upload: true } },
     ]);
   });
+
+  it('does not mistake the friendly name in Home Assistant for the node name', () => {
+    const mac = 'e8:6b:ea:a7:d7:f8';
+    const device = { name: 'abb-welcome-demo-factory-a7d7f8', friendlyName: 'Gegensprechanlage' };
+    // Before flashing: Home Assistant still shows the factory friendly name (node name without suffix).
+    expect(checkDeviceName(device, { name: 'ABB Welcome Demo (Factory)', mac })).toBeUndefined();
+    // After flashing: Home Assistant shows the new friendly name.
+    expect(checkDeviceName(device, { name: 'Gegensprechanlage', mac })).toBeUndefined();
+    // A really different device name still warns.
+    expect(
+      checkDeviceName({ ...device, name: 'klingel' }, { name: 'ABB Welcome Demo (Factory)', mac }),
+    ).toContain('passt nicht');
+  });
 });
