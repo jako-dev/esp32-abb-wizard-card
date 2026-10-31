@@ -4,6 +4,9 @@ export const DOOR_CARD_TAG = 'abb-welcome-door-card';
 
 export type ConfirmMode = 'slide' | 'hold' | 'tap' | 'dialog';
 export type OpenAction = 'unlock' | 'open';
+/** Extra lock buttons next to the main action: abschließen, aufschließen, öffnen (Falle ziehen). */
+export type LockControl = 'lock' | 'unlock' | 'open';
+export const LOCK_CONTROLS: readonly LockControl[] = ['lock', 'unlock', 'open'];
 export type DoorCardLayout = 'tiles' | 'rows' | 'buttons' | 'bar';
 export type CameraView = 'ring' | 'always';
 
@@ -20,6 +23,13 @@ export interface DoorCardDoor {
   confirm?: ConfirmMode;
   /** lock.unlock (default) or lock.open for locks with a latch (e.g. "Tür aufziehen"). */
   action?: OpenAction;
+  /**
+   * Small extra buttons, shown when they make sense for the lock state: `lock` (abschließen, when unlocked or
+   * open), `unlock` (aufschließen without pulling the latch, when locked), `open` (Falle ziehen, unless that is
+   * already the main action). Default: `[lock]`. For smart locks such as the Aqara U200: `[lock, unlock]` with
+   * `action: open`.
+   */
+  controls?: LockControl[];
   /** Home Assistant user ids allowed to open; everybody if empty. */
   users?: string[];
 }
@@ -87,6 +97,13 @@ export function normalizeDoorCardConfig(raw: unknown): DoorCardConfig {
         action: oneOf(d.action, ['unlock', 'open'] as const, 'action'),
       };
       if (typeof d.icon === 'string' && d.icon !== '') door.icon = d.icon;
+      if (d.controls !== undefined && d.controls !== null) {
+        const list = typeof d.controls === 'string' ? [d.controls] : d.controls;
+        if (!Array.isArray(list))
+          throw new Error(`"controls" muss eine Liste sein (${LOCK_CONTROLS.join(', ')}).`);
+        const controls = list.map((c) => oneOf(c, LOCK_CONTROLS, 'controls') as LockControl);
+        door.controls = [...new Set(controls)];
+      }
       if (d.users !== undefined) {
         if (!Array.isArray(d.users) || d.users.some((u) => typeof u !== 'string')) {
           throw new Error('"users" muss eine Liste von Benutzer-IDs sein.');
@@ -151,18 +168,48 @@ export function discoverDoors(states: Record<string, HassEntity>): DoorCardDoor[
 
 export type StatusTone = 'locked' | 'busy' | 'open' | 'problem' | 'unavailable';
 
-export function lockStatus(state: string | undefined): { label: string; tone: StatusTone } {
+/**
+ * How lock states are named: `opener` for door openers (ABB-Welcome: verriegelt / entriegelt), `lock` for
+ * smart locks that can be locked and unlocked separately (abgeschlossen / aufgeschlossen).
+ */
+export type LockWording = 'opener' | 'lock';
+
+export const controlsFor = (door: DoorCardDoor): LockControl[] => door.controls ?? ['lock'];
+
+export const wordingFor = (door: DoorCardDoor): LockWording =>
+  controlsFor(door).includes('unlock') ? 'lock' : 'opener';
+
+/** The extra buttons that fit the current lock state, in the configured order. */
+export function visibleControls(door: DoorCardDoor, state: string | undefined): LockControl[] {
+  if (!door.lock) return [];
+  return controlsFor(door).filter((control) => {
+    switch (control) {
+      case 'lock':
+        return canLockAgain(state);
+      case 'unlock':
+        return state === 'locked';
+      case 'open':
+        return (door.action ?? DEFAULTS.action) !== 'open' && (state === 'locked' || state === 'unlocked');
+    }
+  });
+}
+
+export function lockStatus(
+  state: string | undefined,
+  wording: LockWording = 'opener',
+): { label: string; tone: StatusTone } {
+  const smart = wording === 'lock';
   switch (state) {
     case 'locked':
-      return { label: 'Verriegelt', tone: 'locked' };
+      return { label: smart ? 'Abgeschlossen' : 'Verriegelt', tone: 'locked' };
     case 'unlocking':
-      return { label: 'Wird entriegelt …', tone: 'busy' };
+      return { label: smart ? 'Wird aufgeschlossen …' : 'Wird entriegelt …', tone: 'busy' };
     case 'locking':
-      return { label: 'Wird verriegelt …', tone: 'busy' };
+      return { label: smart ? 'Wird abgeschlossen …' : 'Wird verriegelt …', tone: 'busy' };
     case 'opening':
       return { label: 'Wird geöffnet …', tone: 'busy' };
     case 'unlocked':
-      return { label: 'Entriegelt', tone: 'open' };
+      return { label: smart ? 'Aufgeschlossen' : 'Entriegelt', tone: 'open' };
     case 'open':
       return { label: 'Offen', tone: 'open' };
     case 'jammed':
@@ -177,6 +224,9 @@ export function lockStatus(state: string | undefined): { label: string; tone: St
 /** The lock reports that it is (being) opened – used as confirmation after sending the command. */
 export const isOpening = (state: string | undefined): boolean =>
   state === 'unlocking' || state === 'unlocked' || state === 'opening' || state === 'open';
+
+/** The lock reports that it is (being) locked – confirmation after "abschließen". */
+export const isLocking = (state: string | undefined): boolean => state === 'locking' || state === 'locked';
 
 /** Locks that stay unlocked (e.g. Aqara) can be locked again from the card. */
 export const canLockAgain = (state: string | undefined): boolean => state === 'unlocked' || state === 'open';

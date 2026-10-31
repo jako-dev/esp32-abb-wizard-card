@@ -36,7 +36,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.3`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.9.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -194,6 +194,11 @@ Dashboard bearbeiten → **Karte hinzufügen** → „ABB-Welcome Türen“. Im 
 - **Öffnen bestätigen:** zum Öffnen schieben, gedrückt halten, mit Rückfrage oder einmal tippen – pro Tür.
   Ohne Angabe passend zur Darstellung (Schieberegler; bei Schlüssel-Knöpfen und Statusleiste gedrückt halten).
 - **Verriegeln:** für Schlösser, die offen bleiben (z. B. Aqara), erscheint ein kleiner Schloss-Knopf.
+- **Smart Locks (z. B. Aqara U200, Nuki):** mit `controls` bekommt eine Tür zusätzliche kleine Knöpfe für
+  **Abschließen**, **Aufschließen** (ohne Falle) und **Öffnen** (Falle ziehen, „Klinke runter“). Jeder Knopf
+  erscheint nur, wenn er zum Zustand passt: Aufschließen nur bei abgeschlossener Tür, Abschließen nur bei
+  offener. Aufschließen und Öffnen brauchen ein zweites Tippen. Mit Aufschließen heißen die Zustände
+  „Abgeschlossen“ / „Aufgeschlossen“ statt „Verriegelt“ / „Entriegelt“.
 - **Kamera (optional):** Bild beim Klingeln oder dauerhaft.
 - **Berechtigung (optional):** Öffnen nur für bestimmte Benutzer. Das ist Bedienkomfort, kein Schutz – wer Zugriff
   auf Home Assistant hat, kann Schlösser auch anders auslösen.
@@ -222,6 +227,10 @@ doors:
     doorbell: binary_sensor.abb_welcome_demo_klingel_wohnungstuer
     confirm: dialog # slide | hold | dialog | tap
     # action: open    # lock.open statt lock.unlock (Schlösser mit Falle)
+  - name: Wohnungstür (Smart Lock)
+    lock: lock.aqara_u200_wohnungstuer
+    action: open # Hauptregler zieht die Falle: Tür lässt sich aufdrücken
+    controls: [lock, unlock] # kleine Knöpfe: abschließen / aufschließen
     # camera: camera.flur
     # camera_view: ring # ring | always
     # users: [abc123] # Benutzer-IDs, die öffnen dürfen
@@ -234,6 +243,14 @@ doors:
 | `ring_window` | `60`     | Wie lange eine Tür nach dem Klingeln hervorgehoben wird (s)        |
 | `hold_time`   | `800`    | Wie lange gedrückt gehalten werden muss (ms)                       |
 | `doors`       | –        | Liste der Türen: `name`, `lock` und/oder `doorbell`, Rest optional |
+
+Optionen je Tür (Auswahl):
+
+| Option     | Standard | Beschreibung                                                                             |
+| ---------- | -------- | ---------------------------------------------------------------------------------------- |
+| `action`   | `unlock` | Hauptaktion: `unlock` (`lock.unlock`) oder `open` (`lock.open`, Falle ziehen)            |
+| `controls` | `[lock]` | Zusätzliche Knöpfe: `lock` (abschließen), `unlock` (aufschließen), `open` (Falle ziehen) |
+| `confirm`  | je nach  | Hauptaktion bestätigen: `slide`, `hold`, `dialog`, `tap`                                 |
 
 ## Datenschutz: Türcode
 

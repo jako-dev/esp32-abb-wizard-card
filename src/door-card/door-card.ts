@@ -3,22 +3,25 @@ import { customElement, state } from 'lit/decorators.js';
 import type { HomeAssistant } from '../ha-types';
 import { fetchHistory, lastOnTimes } from '../history';
 import {
-  canLockAgain,
   canOperate,
   confirmModeFor,
   DEFAULTS,
   discoverDoors,
   DOOR_CARD_TAG,
   formatAgo,
+  isLocking,
   isOpening,
   lockStatus,
   normalizeDoorCardConfig,
   ringRemaining,
   sortDoors,
+  visibleControls,
+  wordingFor,
   type ConfirmMode,
   type DoorCardConfig,
   type DoorCardDoor,
   type DoorCardLayout,
+  type LockControl,
   type StatusTone,
 } from './door-config';
 import { DOOR_EDITOR_TAG } from './door-card-editor';
@@ -30,9 +33,9 @@ type HassWithServices = HomeAssistant & {
 };
 
 type Pending =
-  | { phase: 'sending' }
-  | { phase: 'sent'; at: number }
-  | { phase: 'done'; at: number }
+  | { phase: 'sending'; service?: string }
+  | { phase: 'sent'; at: number; service?: string }
+  | { phase: 'done'; at: number; service?: string }
   | { phase: 'noresponse'; at: number }
   | { phase: 'error'; at: number; message: string };
 
@@ -57,6 +60,13 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * 48;
 
 const icon = (name: string) => html`<ha-icon icon=${name}></ha-icon>`;
 
+/** Extra lock buttons: icon, label and whether a second tap is needed (everything that opens the door). */
+const CONTROL_INFO: Record<LockControl, { icon: string; label: string; confirm: boolean }> = {
+  lock: { icon: 'mdi:lock', label: 'Abschließen', confirm: false },
+  unlock: { icon: 'mdi:lock-open-variant', label: 'Aufschließen', confirm: true },
+  open: { icon: 'mdi:door-open', label: 'Öffnen', confirm: true },
+};
+
 /** Daily-use card: open / lock the doors set up with the wizard (or any other lock). */
 @customElement(DOOR_CARD_TAG)
 export class AbbWelcomeDoorCard extends LitElement {
@@ -71,6 +81,8 @@ export class AbbWelcomeDoorCard extends LitElement {
   @state() private holding?: number;
   @state() private drag?: { id: string; x: number; max: number; start: number };
   @state() private confirming?: { index: number; until: number };
+  /** Extra button waiting for its second tap ("Aufschließen?"). */
+  @state() private confirmingControl?: { index: number; control: LockControl; until: number };
   @state() private hint?: { index: number; text: string; until: number };
 
   private _hass?: HassWithServices;
@@ -176,6 +188,7 @@ export class AbbWelcomeDoorCard extends LitElement {
   private tick(): void {
     this.now = Date.now();
     if (this.confirming && this.now > this.confirming.until) this.confirming = undefined;
+    if (this.confirmingControl && this.now > this.confirmingControl.until) this.confirmingControl = undefined;
     if (this.hint && this.now > this.hint.until) this.hint = undefined;
     let changed = false;
     const pending = { ...this.pending };
@@ -197,8 +210,9 @@ export class AbbWelcomeDoorCard extends LitElement {
     let changed = false;
     const pending = { ...this.pending };
     this.config.doors.forEach((door, index) => {
-      if (pending[index]?.phase === 'sent' && door.lock && isOpening(hass.states[door.lock]?.state)) {
-        pending[index] = { phase: 'done', at: Date.now() };
+      const p = pending[index];
+      if (p?.phase === 'sent' && door.lock && this.confirms(p.service, hass.states[door.lock]?.state)) {
+        pending[index] = { phase: 'done', at: Date.now(), service: p.service };
         this.haptic('success');
         changed = true;
       }
@@ -220,15 +234,23 @@ export class AbbWelcomeDoorCard extends LitElement {
 
   // ---- Opening ---------------------------------------------------------------------------------------
 
+  /** Does the lock state confirm the command? */
+  private confirms(service: string | undefined, state: string | undefined): boolean {
+    return service === 'lock' ? isLocking(state) : isOpening(state);
+  }
+
   private async callLock(index: number, door: DoorCardDoor, service: string): Promise<void> {
     if (!this._hass || !door.lock) return;
-    this.pending = { ...this.pending, [index]: { phase: 'sending' } };
+    this.confirmingControl = undefined;
+    this.pending = { ...this.pending, [index]: { phase: 'sending', service } };
     try {
       await this._hass.callService('lock', service, { entity_id: door.lock });
-      const confirmed = service === 'lock' || isOpening(this._hass.states[door.lock]?.state);
+      const confirmed = this.confirms(service, this._hass.states[door.lock]?.state);
       this.pending = {
         ...this.pending,
-        [index]: confirmed ? { phase: 'done', at: Date.now() } : { phase: 'sent', at: Date.now() },
+        [index]: confirmed
+          ? { phase: 'done', at: Date.now(), service }
+          : { phase: 'sent', at: Date.now(), service },
       };
       if (confirmed) this.haptic('success');
     } catch (err) {
@@ -375,7 +397,7 @@ export class AbbWelcomeDoorCard extends LitElement {
 
   private stateLine(door: DoorCardDoor, short = false): string {
     const parts: string[] = [];
-    if (door.lock) parts.push(lockStatus(this.lockState(door)).label);
+    if (door.lock) parts.push(lockStatus(this.lockState(door), wordingFor(door)).label);
     if (this.remaining(door) > 0) parts.push('klingelt');
     else if (!short) {
       const ring = this.lastRing(door);
@@ -387,13 +409,14 @@ export class AbbWelcomeDoorCard extends LitElement {
 
   /** Label for the action, reflecting a running or finished command. */
   private actionLabel(index: number, idle: string): string {
-    switch (this.pending[index]?.phase) {
+    const pending = this.pending[index];
+    switch (pending?.phase) {
       case 'sending':
         return 'Wird gesendet …';
       case 'sent':
         return 'Warte auf Tür …';
       case 'done':
-        return 'Geöffnet';
+        return this.doneLabel(index, pending.service);
       case 'noresponse':
         return 'Gesendet – keine Rückmeldung';
       case 'error':
@@ -401,6 +424,14 @@ export class AbbWelcomeDoorCard extends LitElement {
       default:
         return this.confirming?.index === index ? 'Wirklich öffnen?' : idle;
     }
+  }
+
+  private doneLabel(index: number, service: string | undefined): string {
+    const door = this.config?.doors[index];
+    const smart = door ? wordingFor(door) === 'lock' : false;
+    if (service === 'lock') return smart ? 'Abgeschlossen' : 'Verriegelt';
+    if (service === 'unlock' && smart) return 'Aufgeschlossen';
+    return 'Geöffnet';
   }
 
   private feedbackClass(index: number): string {
@@ -450,16 +481,41 @@ export class AbbWelcomeDoorCard extends LitElement {
     </div>`;
   }
 
-  private renderLockAgain(door: DoorCardDoor, index: number): TemplateResult | typeof nothing {
-    if (!this.operable(door) || !canLockAgain(this.lockState(door))) return nothing;
-    return html`<button
-      class="mini"
-      title="${door.name} verriegeln"
-      aria-label="${door.name} verriegeln"
-      @click=${() => this.callLock(index, door, 'lock')}
-    >
-      ${icon('mdi:lock')}
-    </button>`;
+  /** Small extra lock buttons (abschließen / aufschließen / öffnen) that fit the current state. */
+  private renderControls(door: DoorCardDoor, index: number): TemplateResult | typeof nothing {
+    if (!this.operable(door)) return nothing;
+    const controls = visibleControls(door, this.lockState(door));
+    if (controls.length === 0) return nothing;
+    const smart = wordingFor(door) === 'lock';
+    return html`${controls.map((control) => {
+      const info = CONTROL_INFO[control];
+      const label = control === 'lock' && !smart ? 'Verriegeln' : info.label;
+      const asking = this.confirmingControl?.index === index && this.confirmingControl.control === control;
+      return html`<button
+        class="mini ${asking ? 'asking' : ''}"
+        title="${door.name} ${label.toLowerCase()}"
+        aria-label="${door.name} ${label.toLowerCase()}${asking ? ' – zum Bestätigen nochmal tippen' : ''}"
+        ?disabled=${this.isBusy(index)}
+        @click=${() => this.pressControl(index, door, control)}
+      >
+        ${icon(info.icon)}
+      </button>`;
+    })}`;
+  }
+
+  private pressControl(index: number, door: DoorCardDoor, control: LockControl): void {
+    const asking = this.confirmingControl?.index === index && this.confirmingControl.control === control;
+    if (CONTROL_INFO[control].confirm && !asking) {
+      this.confirmingControl = { index, control, until: Date.now() + DIALOG_MS };
+      this.hint = {
+        index,
+        text: `Zum ${CONTROL_INFO[control].label} nochmal tippen`,
+        until: Date.now() + DIALOG_MS,
+      };
+      this.haptic('light');
+      return;
+    }
+    void this.callLock(index, door, control);
   }
 
   private renderHint(door: DoorCardDoor, index: number): TemplateResult | typeof nothing {
@@ -549,7 +605,7 @@ export class AbbWelcomeDoorCard extends LitElement {
       ${entries.map(({ door, index }) => {
         const ringing = this.remaining(door) > 0;
         return html`<div class="tile ${ringing ? 'ringing' : ''}">
-          ${this.renderHead(door, ringing, this.renderLockAgain(door, index) as TemplateResult)}
+          ${this.renderHead(door, ringing, this.renderControls(door, index) as TemplateResult)}
           ${this.renderCamera(door, ringing)} ${this.renderAction(door, index, { filled: ringing })}
           ${this.renderHint(door, index)}
         </div>`;
@@ -562,7 +618,7 @@ export class AbbWelcomeDoorCard extends LitElement {
     return html`<div class="rows">
       ${entries.map(({ door, index }) => {
         const ringing = this.remaining(door) > 0;
-        const extra = html`${this.renderLockAgain(door, index)}
+        const extra = html`${this.renderControls(door, index)}
         ${ringing ? nothing : this.renderAction(door, index, { size: 'small' })}`;
         return html`<div class="row ${ringing ? 'ringing' : ''}">
           ${this.renderHead(door, ringing, extra)} ${this.renderCamera(door, ringing)}
@@ -618,7 +674,7 @@ export class AbbWelcomeDoorCard extends LitElement {
                   >`
               : html`<span class="face idle">${icon(this.doorIcon(door, ringing))}</span>`
           }
-          ${this.renderLockAgain(door, index)} ${this.renderHint(door, index)}
+          ${this.renderControls(door, index)} ${this.renderHint(door, index)}
         </div>`;
       })}
     </div>`;
