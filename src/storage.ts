@@ -3,20 +3,46 @@ import { parseSession, serializeSession } from './session';
 import type { Session } from './types';
 
 // The session (including door codes) only ever lives in this browser's localStorage and in files the user exports.
-const key = (entity: string) => `abb-welcome-wizard-card:session:${entity}`;
+// The key stays the same across versions; old sessions are migrated when read (see parseSession).
+export const sessionKey = (entity: string) => `abb-welcome-wizard-card:session:${entity}`;
+export const backupKey = (entity: string) => `abb-welcome-wizard-card:backup:${entity}`;
 
+/**
+ * Load the stored session. If it cannot be read (corrupt, or written by a newer version), its raw text is
+ * copied to a backup key first, so the new session that replaces it does not destroy the recordings.
+ */
 export function loadStoredSession(entity: string): Session | undefined {
+  let raw: string | null = null;
   try {
-    const raw = window.localStorage.getItem(key(entity));
-    return raw ? parseSession(raw) : undefined;
+    raw = window.localStorage.getItem(sessionKey(entity));
   } catch {
     return undefined;
+  }
+  if (!raw) return undefined;
+  try {
+    return parseSession(raw);
+  } catch (err) {
+    console.warn('abb-welcome-wizard-card: stored session could not be read, keeping a backup', err);
+    try {
+      window.localStorage.setItem(backupKey(entity), raw);
+    } catch {
+      // ignore
+    }
+    return undefined;
+  }
+}
+
+export function hasBackup(entity: string): boolean {
+  try {
+    return window.localStorage.getItem(backupKey(entity)) !== null;
+  } catch {
+    return false;
   }
 }
 
 export function storeSession(session: Session): void {
   try {
-    window.localStorage.setItem(key(session.entity), serializeSession(session));
+    window.localStorage.setItem(sessionKey(session.entity), serializeSession(session));
   } catch {
     // Storage unavailable (private mode, quota): the session still works in memory.
   }
@@ -24,7 +50,7 @@ export function storeSession(session: Session): void {
 
 export function clearStoredSession(entity: string): void {
   try {
-    window.localStorage.removeItem(key(entity));
+    window.localStorage.removeItem(sessionKey(entity));
   } catch {
     // ignore
   }

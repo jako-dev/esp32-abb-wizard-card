@@ -65,17 +65,55 @@ export interface DialSettings {
   x1?: number;
 }
 
+/** A doorbell condition entered by hand: message type plus the fields that have to match. */
+export interface RingCondition {
+  type: number;
+  src?: number;
+  dst?: number;
+  data?: number[];
+}
+
+/** An open command entered by hand (the source is always the indoor station). */
+export interface OpenOverride {
+  destination: number;
+  messageType: number;
+  data: number[];
+}
+
+/**
+ * Values entered in the result step. They replace the analysis and survive new captures and re-analysis;
+ * removing an entry returns to the analysed value.
+ */
+export interface Overrides {
+  indoorAddress?: number;
+  threeByte?: boolean;
+  /** Per door key. `conditions` replaces the detected doorbell candidates. */
+  rings?: Record<string, { outdoorAddress?: number; conditions?: RingCondition[] }>;
+  /** Per door key with an opener. */
+  opens?: Record<string, OpenOverride>;
+}
+
+/** Settings of the ESPHome export, kept with the session. */
+export interface ExportSettings {
+  mode?: 'full' | 'snippet';
+  name?: string;
+  friendlyName?: string;
+  debugSensorName?: string;
+  nameAddMacSuffix?: boolean;
+}
+
 export interface Session {
   format: 'abb-welcome-wizard-session';
-  version: 2;
+  /** Schema version; older sessions are migrated by parseSession(). */
+  version: 3;
   entity: string;
   createdAt: string;
   updatedAt: string;
   dials: DialSettings;
-  /** Manually set indoor station address (overrides auto-detection). */
-  indoorAddress?: number;
   doors: Door[];
   steps: Record<StepId, StepRecord>;
+  overrides: Overrides;
+  exportSettings: ExportSettings;
 }
 
 export type Severity = 'info' | 'warning' | 'error';

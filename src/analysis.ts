@@ -461,7 +461,7 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
     });
   }
 
-  const manual = options.indoorAddress ?? session.indoorAddress;
+  const manual = options.indoorAddress ?? session.overrides.indoorAddress;
   const found: IndoorResult | null =
     manual !== undefined
       ? { address: manual, method: 'manual', count: 0 }

@@ -9,7 +9,9 @@ import {
   serializeSession,
   setDials,
   setDoors,
+  setExportSettings,
   setIndoorAddress,
+  setOverrides,
   setSkipped,
   stepRecord,
 } from '../src/session';
@@ -52,7 +54,7 @@ describe('session', () => {
     s = setIndoorAddress(s, 0x1010, now);
     s = addCapture(s, 'open:haustuer', capture('2026-10-30T12:05:00Z', '[1010 > 4001] Type: 0D'), now);
     expect(parseSession(serializeSession(s))).toEqual(s);
-    expect(setIndoorAddress(s, undefined, now).indoorAddress).toBeUndefined();
+    expect(setIndoorAddress(s, undefined, now).overrides.indoorAddress).toBeUndefined();
   });
 
   it('keeps captures of remaining doors when the doors change', () => {
@@ -93,7 +95,7 @@ describe('session', () => {
         },
       }),
     );
-    expect(s.version).toBe(2);
+    expect(s.version).toBe(3);
     expect(s.doors.map((d) => d.key)).toEqual(['tor', 'haustuer', 'wohnung']);
     expect(s.steps['ring:tor'].captures[0].lines).toEqual([{ time: '', line: 'a' }]);
     expect(s.steps['open:haustuer'].skipped).toBe(true);
@@ -136,5 +138,65 @@ describe('session', () => {
     s = addCapture(s, 'open:haustuer', capture('2026-10-30T12:08:00Z'), now);
     s = addCapture(s, 'baseline', capture('2026-10-30T12:09:00Z'), now);
     expect(lastRingTime(s)?.toISOString()).toBe('2026-10-30T12:03:00.000Z');
+  });
+
+  it('round-trips manual values and export settings', () => {
+    let s = createSession('sensor.x', undefined, now);
+    s = setOverrides(s, {
+      indoorAddress: 0x1016,
+      threeByte: false,
+      rings: { tor: { outdoorAddress: 0x2001, conditions: [{ type: 0x01, src: 0x2001, dst: 0x1016 }] } },
+      opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [0x1c, 0x41, 0x68] } },
+    });
+    s = setExportSettings(s, {
+      mode: 'full',
+      name: 'abb-welcome-demo',
+      nameAddMacSuffix: true,
+      friendlyName: '',
+    });
+    const parsed = parseSession(serializeSession(s));
+    expect(parsed).toEqual(s);
+    expect(parsed.exportSettings).toEqual({ mode: 'full', name: 'abb-welcome-demo', nameAddMacSuffix: true });
+  });
+
+  it('drops manual values of removed doors', () => {
+    let s = setOverrides(createSession('sensor.x', undefined, now), {
+      opens: { tor: { destination: 0x2001, messageType: 0x0d, data: [] } },
+      rings: { tor: { outdoorAddress: 0x2001 } },
+    });
+    s = setDoors(s, [DEFAULT_DOORS[1], DEFAULT_DOORS[2]], now);
+    expect(s.overrides).toEqual({});
+  });
+
+  it('migrates the manual indoor address of version 2 sessions', () => {
+    const s = parseSession(
+      JSON.stringify({
+        format: 'abb-welcome-wizard-session',
+        version: 2,
+        entity: 'sensor.x',
+        indoorAddress: 0x1016,
+      }),
+    );
+    expect(s.overrides).toEqual({ indoorAddress: 0x1016 });
+    expect(s.exportSettings).toEqual({});
+  });
+
+  it('ignores invalid manual values', () => {
+    const s = parseSession(
+      JSON.stringify({
+        format: 'abb-welcome-wizard-session',
+        version: 3,
+        entity: 'sensor.x',
+        overrides: {
+          indoorAddress: 'x',
+          rings: { tor: { conditions: [{ type: 0x01, src: 0x2001 }, { type: 999 }] } },
+          opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [1, 300] } },
+        },
+      }),
+    );
+    expect(s.overrides).toEqual({
+      rings: { tor: { conditions: [{ type: 0x01, src: 0x2001 }] } },
+      opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [] } },
+    });
   });
 });

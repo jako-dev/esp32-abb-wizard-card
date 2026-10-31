@@ -48,6 +48,7 @@ import {
   clearStoredSession,
   copyText,
   downloadText,
+  hasBackup,
   loadActiveCapture,
   loadStoredSession,
   storeActiveCapture,
@@ -166,10 +167,14 @@ export class AbbWelcomeWizardCard extends LitElement {
     this.config = config;
     if (entityChanged) {
       this.resubscribe();
-      this.session = loadStoredSession(config.entity) ?? createSession(config.entity, this.configDoors);
+      const stored = loadStoredSession(config.entity);
+      this.session = stored ?? createSession(config.entity, this.configDoors);
+      if (!stored && hasBackup(config.entity)) {
+        this.showToast('Gespeicherte Sitzung nicht lesbar – eine Sicherung wurde im Browser abgelegt.');
+      }
       this.indoorInput =
-        this.session.indoorAddress !== undefined
-          ? formatAddress(this.session.indoorAddress, this.session.indoorAddress > 0xffff)
+        this.session.overrides.indoorAddress !== undefined
+          ? formatAddress(this.session.overrides.indoorAddress, this.session.overrides.indoorAddress > 0xffff)
           : '';
       this.live = [];
       this.capture = null;
@@ -395,7 +400,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   }
 
   private get result(): WizardResult {
-    const indoor = this.session.indoorAddress ?? this.configIndoor;
+    const indoor = this.session.overrides.indoorAddress ?? this.configIndoor;
     const cache = this.analysisCache;
     if (cache && cache.session === this.session && cache.indoor === indoor) return cache.result;
     const result = analyzeSession(this.session, { indoorAddress: indoor });
@@ -429,8 +434,8 @@ export class AbbWelcomeWizardCard extends LitElement {
       // Keep working on the configured entity, even if the session was recorded with another one.
       this.updateSession({ ...imported, entity: this.config.entity });
       this.indoorInput =
-        imported.indoorAddress !== undefined
-          ? formatAddress(imported.indoorAddress, imported.indoorAddress > 0xffff)
+        imported.overrides.indoorAddress !== undefined
+          ? formatAddress(imported.overrides.indoorAddress, imported.overrides.indoorAddress > 0xffff)
           : '';
       this.page = this.resultPage;
       this.showToast('Sitzung importiert.');
@@ -749,7 +754,7 @@ export class AbbWelcomeWizardCard extends LitElement {
         }
       </div>
 
-      <details ?open=${configIndoor !== undefined || this.session.indoorAddress !== undefined}>
+      <details ?open=${configIndoor !== undefined || this.session.overrides.indoorAddress !== undefined}>
         <summary>Innenstationsadresse manuell festlegen (für Profis)</summary>
         <div class="panel" style="border:none;padding:0">
           <p class="muted small">
