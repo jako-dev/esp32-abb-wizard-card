@@ -9,8 +9,9 @@ in einer Datei, mit einer HACS-Installation:
 - **ABB-Welcome Türen** (`custom:abb-welcome-door-card`) ist die Karte für den Alltag: Türen öffnen und
   verriegeln, mit Klingel-Anzeige – für die eingemessenen Türen und jedes andere Schloss (z. B. Aqara).
 
-> **Der Wizard ist nur lesend:** Er sendet nichts auf den Bus und ruft keine Home-Assistant-Aktionen auf. Türen
-> öffnen sich beim Einmessen nur, wenn du selbst die Schlüssel-Taste an der Innenstation drückst.
+> **Der Wizard liest nur mit:** Beim Einmessen sendet er nichts auf den Bus; Türen öffnen sich nur, wenn du selbst
+> die Schlüssel-Taste drückst. Einzige Ausnahme ist der **„Testen“**-Button im Ergebnis – nur auf deinen Klick,
+> mit Rückfrage und nur für Administratoren.
 
 ## Voraussetzungen
 
@@ -35,7 +36,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.7.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -128,6 +129,18 @@ Außenstationsadressen, Klingel-Bedingungen (Typ / Quelle / Ziel / Data, hinzuf�
 Öffnen-Frame jeder Tür (Ziel, Typ, Data). Eingaben werden als Hex geprüft. Manuelle Werte sind mit „manuell“
 markiert, haben Vorrang vor der Auswertung und bleiben auch bei neuen Aufnahmen erhalten; „Analyse verwenden“ nimmt
 sie wieder zurück. Ein Türöffner lässt sich so auch ganz ohne Aufnahme anlegen, wenn die Werte bekannt sind.
+
+### Öffner live testen
+
+Im Ergebnis hat jeder Türöffner einen Button **„Testen“**. Er sendet genau den angezeigten Öffnen-Frame über die
+Aktion `send_frame` des ESP32 auf den Bus, wartet bis zu 6 s auf die Bestätigung `8D`/`8E` der Tür und zeigt das
+Ergebnis an. So lassen sich auch abgeleitete und manuell eingetragene Werte prüfen, bevor man sich auf das Schloss
+verlässt.
+
+- Nur für Administratoren, mit Rückfrage („… öffnet sich wirklich“).
+- Voraussetzung: Die **komplette Datei** aus dem Export ist auf dem ESP32 – sie enthält die Aktion
+  `send_frame(source, destination, message_type, data, three_byte)` (in Home Assistant
+  `esphome.<gerät>_send_frame`). Fehlt sie, erklärt die Karte, was zu tun ist.
 
 ### Export
 

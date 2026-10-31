@@ -15,6 +15,14 @@ import { EDITOR_TAG } from './editor';
 import { DEFAULT_DOORS, doorIcon, doorsFromConfig, MAX_DOORS, newDoor, openStepId } from './doors';
 import type { CardConfig, HassEvent, HomeAssistant, StateChangedData, Unsubscribe } from './ha-types';
 import { parseFrame } from './parser';
+import {
+  findSendFrameService,
+  isTestReply,
+  REPLY_TIMEOUT_MS,
+  sendFramePayload,
+  sendTestFrame,
+  type SendFramePayload,
+} from './frame-test';
 import { fetchHistoryLines } from './history';
 import {
   applyHistory,
@@ -102,7 +110,7 @@ type Editing =
   | { kind: 'outdoor'; door: string; value: string; error?: string }
   | { kind: 'ring'; door: string; rows: ConditionDraft[]; errors: FieldErrors<ConditionDraft>[] }
   | { kind: 'open'; door: string; draft: OpenDraft; errors: FieldErrors<OpenDraft> };
-const VERSION = '0.7.0';
+const VERSION = '0.8.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */
@@ -135,6 +143,14 @@ export class AbbWelcomeWizardCard extends LitElement {
   @state() private maskDoorCode = false;
   @state() private showDoorCode = false;
   @state() private editing?: Editing;
+  /** Live test of an open frame (the only time the wizard sends something). */
+  @state() private frameTest?: {
+    door: string;
+    phase: 'confirm' | 'sending' | 'waiting' | 'confirmed' | 'noreply' | 'error';
+    payload: SendFramePayload;
+    message?: string;
+  };
+  private frameTestTimer?: number;
   @state() private indoorInput = '';
   @state() private receivedCount = 0;
   /** Per-page override of the step's default capture mode. */
@@ -287,6 +303,19 @@ export class AbbWelcomeWizardCard extends LitElement {
     if (!line) return;
     this.receivedCount++;
     this.live = [line, ...this.live].slice(0, LIVE_LIMIT);
+    const test = this.frameTest;
+    if (test && (test.phase === 'sending' || test.phase === 'waiting')) {
+      const parsed = parseFrame(line.line);
+      if (parsed.ok && isTestReply(parsed.frame, test.payload)) {
+        const { frame } = parsed;
+        this.frameTest = {
+          ...test,
+          phase: 'confirmed',
+          message: `${hex2(frame.type)} von ${formatAddress(frame.src, frame.threeByte)}`,
+        };
+        window.clearTimeout(this.frameTestTimer);
+      }
+    }
     if (this.capture) {
       this.capture = captureLine(this.capture, line, this.captureSeconds, Date.now());
     }
@@ -1824,8 +1853,113 @@ export class AbbWelcomeWizardCard extends LitElement {
           }
         </div>
         ${editing ? this.renderOpenEditor(editing, !!open?.manual) : open ? this.renderOpen(open) : nothing}
+        ${open ? this.renderFrameTest(t, open) : nothing}
       </div>
     </div>`;
+  }
+
+  private async runFrameTest(door: string, service: string, payload: SendFramePayload): Promise<void> {
+    if (!this._hass) return;
+    this.frameTest = { door, phase: 'sending', payload };
+    try {
+      await sendTestFrame(this._hass as unknown as Parameters<typeof sendTestFrame>[0], service, payload);
+      if (this.frameTest?.door === door && this.frameTest.phase === 'sending') {
+        this.frameTest = { ...this.frameTest, phase: 'waiting' };
+      }
+      window.clearTimeout(this.frameTestTimer);
+      this.frameTestTimer = window.setTimeout(() => {
+        if (this.frameTest?.door === door && this.frameTest.phase === 'waiting') {
+          this.frameTest = { ...this.frameTest, phase: 'noreply' };
+        }
+      }, REPLY_TIMEOUT_MS);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : ((err as { message?: string })?.message ?? String(err));
+      this.frameTest = { door, phase: 'error', payload, message };
+    }
+  }
+
+  /** "Testen": send the shown open frame through the firmware's send_frame action, after confirmation. */
+  private renderFrameTest(t: ExportTarget, open: OpenResult): TemplateResult | typeof nothing {
+    const indoor = this.result.indoor;
+    if (!indoor || this.editing) return nothing;
+    const { threeByte } = this.result;
+    if (this._hass?.user?.is_admin !== true) {
+      return html`<p class="muted small">Live-Test nur für Administratoren.</p>`;
+    }
+    const service = findSendFrameService(
+      this._hass.services,
+      effectiveDeviceName(this.device, this.registeredDevice.mac),
+    );
+    if (!service) {
+      return html`<p class="muted small">
+        <button class="btn text small-btn" disabled><ha-icon icon="mdi:send"></ha-icon>Testen</button>
+        Zum Testen die komplette Datei (mit Aktion <code>send_frame</code>) auf den ESP32 spielen – danach
+        erscheint der Test hier.
+      </p>`;
+    }
+    const payload = sendFramePayload(indoor.address, open, threeByte);
+    const test = this.frameTest?.door === t.door.key ? this.frameTest : undefined;
+    const frameText = `[${formatAddressPlain(payload.source, threeByte)} > ${formatAddressPlain(
+      payload.destination,
+      threeByte,
+    )}] ${hex2(payload.message_type)} ${
+      this.showDoorCode ? formatBytesPlain(payload.data) : payload.data.map(() => '••').join(' ')
+    }`;
+    const reset = () => (this.frameTest = undefined);
+    switch (test?.phase) {
+      case 'confirm':
+        return html`<div class="callout warning">
+          <ha-icon icon="mdi:door-open"></ha-icon>
+          <span
+            >Sendet <code>${frameText}</code> auf den Bus – „${t.door.name}“ öffnet sich wirklich.
+            <span class="actions" style="margin-top:8px">
+              <button class="btn primary" @click=${() => this.runFrameTest(t.door.key, service, payload)}>
+                <ha-icon icon="mdi:send"></ha-icon>Senden
+              </button>
+              <button class="btn text" @click=${reset}>Abbrechen</button>
+            </span></span
+          >
+        </div>`;
+      case 'sending':
+      case 'waiting':
+        return html`<div class="callout info" role="status">
+          <ha-icon icon="mdi:timer-sand"></ha-icon><span>Gesendet – warte auf die Bestätigung der Tür …</span>
+        </div>`;
+      case 'confirmed':
+        return html`<div class="callout ok" role="status">
+          <ha-icon icon="mdi:check-circle-outline"></ha-icon>
+          <span
+            >Bestätigt: ${test.message}. Der Öffnen-Frame funktioniert.
+            <button class="btn text small-btn" @click=${reset}>OK</button></span
+          >
+        </div>`;
+      case 'noreply':
+        return html`<div class="callout warning" role="status">
+          <ha-icon icon="mdi:help-circle-outline"></ha-icon>
+          <span
+            >Keine Bestätigung (${hex2(payload.message_type | 0x80)}) empfangen. Ging die Tür trotzdem auf,
+            stimmt der Befehl; sonst Ziel, Typ und Data prüfen.
+            <button class="btn text small-btn" @click=${reset}>OK</button></span
+          >
+        </div>`;
+      case 'error':
+        return html`<div class="callout error" role="status">
+          <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
+          <span
+            >Senden fehlgeschlagen: ${test.message}
+            <button class="btn text small-btn" @click=${reset}>OK</button></span
+          >
+        </div>`;
+      default:
+        return html`<button
+          class="btn small-btn"
+          ?disabled=${!!this.frameTest && ['confirm', 'sending', 'waiting'].includes(this.frameTest.phase)}
+          @click=${() => (this.frameTest = { door: t.door.key, phase: 'confirm', payload })}
+        >
+          <ha-icon icon="mdi:send"></ha-icon>Testen
+        </button>`;
+    }
   }
 
   private renderOpenEditor(editing: Extract<Editing, { kind: 'open' }>, manual: boolean): TemplateResult {

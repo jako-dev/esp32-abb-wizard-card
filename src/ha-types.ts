@@ -41,6 +41,8 @@ export interface HomeAssistant {
     { name?: string | null; name_by_user?: string | null; connections?: [string, string][] }
   >;
   user?: { id?: string; is_admin: boolean; name?: string };
+  /** Available actions per domain (services[domain][action]). */
+  services?: Record<string, Record<string, unknown>>;
 }
 
 export interface CardConfig {

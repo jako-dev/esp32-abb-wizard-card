@@ -335,3 +335,92 @@ describe('result step – manual values', () => {
     expect(text(card)).toContain('binary_sensor.klingel_tor');
   });
 });
+
+describe('result step – live test of an open frame', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.replaceChildren();
+  });
+
+  async function setup(extra: Partial<HomeAssistant>) {
+    localStorage.clear();
+    localStorage.setItem(
+      'abb-welcome-wizard-card:session:sensor.doorbell_intercom',
+      JSON.stringify({
+        format: 'abb-welcome-wizard-session',
+        version: 3,
+        entity: 'sensor.doorbell_intercom',
+        overrides: {
+          indoorAddress: 0x1016,
+          opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [0x1c, 0x41, 0x68] } },
+        },
+      }),
+    );
+    const fake = fakeHass();
+    const callService = vi.fn(async () => undefined);
+    const hass = {
+      ...fake.hass,
+      user: { id: 'admin', is_admin: true },
+      services: { esphome: { abb_welcome_demo_send_frame: {} } },
+      callService,
+      ...extra,
+    } as HomeAssistant;
+    const card = document.createElement('abb-welcome-wizard-card') as AbbWelcomeWizardCard;
+    card.setConfig({ type: 'custom:abb-welcome-wizard-card', entity: 'sensor.doorbell_intercom' });
+    document.body.appendChild(card);
+    card.hass = hass;
+    const internals = card as unknown as { page: number; resultPage: number };
+    internals.page = internals.resultPage;
+    await card.updateComplete;
+    return { card, root: card.shadowRoot!, callService, emit: fake.emit };
+  }
+  const click = (root: ShadowRoot, label: string) =>
+    [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((b) => b.textContent!.trim().endsWith(label))!
+      .click();
+
+  it('sends the open frame only after confirmation and reports the reply', async () => {
+    const { card, root, callService, emit } = await setup({});
+    click(root, 'Testen');
+    await card.updateComplete;
+    expect(text(card)).toContain('öffnet sich wirklich');
+    expect(callService).not.toHaveBeenCalled();
+
+    click(root, 'Senden');
+    await card.updateComplete;
+    expect(callService).toHaveBeenCalledWith('esphome', 'abb_welcome_demo_send_frame', {
+      source: 0x1016,
+      destination: 0x4002,
+      message_type: 0x0d,
+      data: [0x1c, 0x41, 0x68],
+      three_byte: false,
+    });
+    emit('[4002 > 1016] Type: 8D, Data: 1C.41.68');
+    await card.updateComplete;
+    expect(text(card)).toContain('Bestätigt: 8D von 0x4002');
+  });
+
+  it('reports a missing reply', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { card, root } = await setup({});
+    click(root, 'Testen');
+    await card.updateComplete;
+    click(root, 'Senden');
+    await vi.advanceTimersByTimeAsync(7000);
+    await card.updateComplete;
+    expect(text(card)).toContain('Keine Bestätigung (8D) empfangen');
+  });
+
+  it('explains what is needed when the firmware has no send_frame action', async () => {
+    const { card } = await setup({ services: { esphome: {} } });
+    expect(text(card)).toContain('mit Aktion send_frame');
+  });
+
+  it('offers the test to administrators only', async () => {
+    const { card, root } = await setup({ user: { id: 'u', is_admin: false } });
+    expect(text(card)).toContain('Live-Test nur für Administratoren');
+    expect([...root.querySelectorAll('button')].some((b) => b.textContent!.trim().endsWith('Testen'))).toBe(
+      false,
+    );
+  });
+});
