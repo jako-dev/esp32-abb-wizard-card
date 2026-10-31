@@ -93,9 +93,6 @@ export function checkDeviceName(device: DeviceOptions, registered: RegisteredDev
       ? `Das Gerät heißt in Home Assistant „${expected}“ – „name_add_mac_suffix“ aktivieren.`
       : `Das Gerät heißt in Home Assistant „${expected}“ – Gerätename „${base}“ mit „name_add_mac_suffix“ verwenden.`;
   }
-  if (device.nameAddMacSuffix && device.name === expected) {
-    return `Das Gerät heißt in Home Assistant „${expected}“ ohne MAC-Suffix – „name_add_mac_suffix“ ausschalten.`;
-  }
   return `Gerätename „${exported}“ passt nicht zum Gerät „${registered.name}“ in Home Assistant (erwartet „${expected}“). Ein anderer Name ist für ESPHome ein neues Gerät – im ESPHome Device Builder prüfen.`;
 }
 

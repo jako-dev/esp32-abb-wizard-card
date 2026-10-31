@@ -268,9 +268,9 @@ describe('device name', () => {
     const device = { name: 'abb-welcome-demo', friendlyName: 'ABB Welcome Demo' };
     expect(checkDeviceName(device, { name: 'ABB Welcome Demo' })).toBeUndefined();
     expect(checkDeviceName(device, {})).toBeUndefined();
-    expect(checkDeviceName({ ...device, name: 'klingel' }, { name: 'ABB Welcome Demo' })).toContain(
-      'passt nicht zum Gerät',
-    );
+    expect(
+      checkDeviceName({ ...device, name: 'klingel', friendlyName: 'Klingel' }, { name: 'ABB Welcome Demo' }),
+    ).toContain('passt nicht zum Gerät');
     const mac = '24:6f:28:aa:bb:cc';
     expect(checkDeviceName(device, { name: 'ABB Welcome Demo aabbcc', mac })).toContain(
       'name_add_mac_suffix“ aktivieren',
@@ -278,9 +278,10 @@ describe('device name', () => {
     expect(
       checkDeviceName({ ...device, nameAddMacSuffix: true }, { name: 'ABB Welcome Demo aabbcc', mac }),
     ).toBeUndefined();
+    // Home Assistant shows the friendly name here – whether the node uses the suffix cannot be told.
     expect(
       checkDeviceName({ ...device, nameAddMacSuffix: true }, { name: 'ABB Welcome Demo', mac }),
-    ).toContain('ausschalten');
+    ).toBeUndefined();
   });
 
   it('reaches a renamed device through use_address once', () => {
