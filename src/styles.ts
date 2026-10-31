@@ -279,6 +279,59 @@ export const cardStyles = css`
     cursor: pointer;
   }
 
+  /* Manual values */
+  .edit-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  button.icon.edit {
+    width: 28px;
+    height: 28px;
+    --mdc-icon-size: 16px;
+  }
+  .editor {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--wiz-surface);
+  }
+  .condition-row {
+    display: grid;
+    grid-template-columns: 64px repeat(2, minmax(80px, 1fr)) minmax(100px, 1.4fr) auto;
+    gap: 8px;
+    align-items: end;
+  }
+  .condition-row.open-row {
+    grid-template-columns: minmax(90px, 1fr) 64px minmax(120px, 2fr);
+  }
+  @media (max-width: 520px) {
+    .condition-row,
+    .condition-row.open-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .condition-row input {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--wiz-mono);
+  }
+  .field-error {
+    color: var(--wiz-error);
+    font-size: 0.75rem;
+  }
+  button.btn.small-btn {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+    justify-self: start;
+  }
+  .stat select {
+    justify-self: start;
+  }
+
   /* Export */
   .segmented {
     display: inline-flex;

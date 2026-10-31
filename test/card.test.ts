@@ -2,6 +2,7 @@
 import '../src/abb-welcome-wizard-card';
 import type { AbbWelcomeWizardCard } from '../src/abb-welcome-wizard-card';
 import type { HassEvent, HomeAssistant, StateChangedData } from '../src/ha-types';
+import type { Session } from '../src/types';
 
 type Listener = (event: HassEvent<StateChangedData>) => void;
 
@@ -234,5 +235,103 @@ describe('abb-welcome-wizard-card', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(listeners).toHaveLength(0);
+  });
+});
+
+describe('result step – manual values', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  async function resultPage() {
+    const ctx = await mount();
+    const internals = ctx.card as unknown as { page: number; resultPage: number; session: Session };
+    internals.page = internals.resultPage;
+    await ctx.card.updateComplete;
+    return { ...ctx, internals, root: ctx.card.shadowRoot! };
+  }
+  const button = (root: ShadowRoot, label: string) =>
+    [...root.querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => b.getAttribute('aria-label') === label || b.textContent!.includes(label),
+    )!;
+  const type = (input: HTMLInputElement, value: string) => {
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  };
+
+  it('creates an opener without any recording', async () => {
+    const { card, root, internals } = await resultPage();
+    expect(text(card)).toContain('Noch keine Aufnahmen');
+
+    button(root, 'Innenstationsadresse bearbeiten').click();
+    await card.updateComplete;
+    type(root.querySelector<HTMLInputElement>('.editor input')!, '10');
+    await card.updateComplete;
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+    expect(text(card)).toContain('4 oder 6 Hex-Ziffern');
+
+    type(root.querySelector<HTMLInputElement>('.editor input')!, '1016');
+    await card.updateComplete;
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+    expect(internals.session.overrides.indoorAddress).toBe(0x1016);
+
+    button(root, 'Öffnen-Frame Haustür bearbeiten').click();
+    await card.updateComplete;
+    const [dest, msgType, data] = root.querySelectorAll<HTMLInputElement>('.editor input');
+    type(dest, '4002');
+    type(msgType, '0D');
+    type(data, '1C 41 6G');
+    await card.updateComplete;
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+    expect(text(card)).toContain('Data: Hex-Bytes');
+
+    type(root.querySelectorAll<HTMLInputElement>('.editor input')[2], '1C 41 68');
+    await card.updateComplete;
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+    expect(internals.session.overrides.opens?.haustuer).toEqual({
+      destination: 0x4002,
+      messageType: 0x0d,
+      data: [0x1c, 0x41, 0x68],
+    });
+    expect(text(card)).toContain('lock.haustuer');
+    expect(root.querySelector('pre.yaml')!.textContent).toContain('destination_address: 0x4002');
+    // Kept for the next visit.
+    expect(localStorage.getItem('abb-welcome-wizard-card:session:sensor.doorbell_intercom')).toContain(
+      '"opens"',
+    );
+  });
+
+  it('edits doorbell conditions and the address length', async () => {
+    const { card, root, internals } = await resultPage();
+    button(root, 'Innenstationsadresse bearbeiten').click();
+    await card.updateComplete;
+    type(root.querySelector<HTMLInputElement>('.editor input')!, '1016');
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+
+    const select = root.querySelector<HTMLSelectElement>('#three-byte')!;
+    select.value = '2';
+    select.dispatchEvent(new Event('change'));
+    await card.updateComplete;
+    expect(internals.session.overrides.threeByte).toBe(false);
+
+    [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .filter((b) => b.textContent!.includes('Bedingungen bearbeiten'))[0]
+      .click();
+    await card.updateComplete;
+    button(root, 'Bedingung hinzufügen').click();
+    await card.updateComplete;
+    const inputs = root.querySelectorAll<HTMLInputElement>('.condition-row input');
+    type(inputs[1], '2001');
+    type(inputs[2], '1016');
+    await card.updateComplete;
+    button(root, 'Übernehmen').click();
+    await card.updateComplete;
+    expect(internals.session.overrides.rings?.tor?.conditions).toEqual([
+      { type: 0x01, src: 0x2001, dst: 0x1016 },
+    ]);
+    expect(text(card)).toContain('binary_sensor.klingel_tor');
   });
 });

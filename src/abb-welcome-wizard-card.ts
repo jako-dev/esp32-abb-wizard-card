@@ -41,6 +41,7 @@ import {
   setDoors,
   doorCaptureCount,
   setIndoorAddress,
+  setOverrides,
   setSkipped,
 } from './session';
 import { buildSteps, OPEN_DEFAULT_PAUSE_MINUTES, type StepDefinition } from './steps';
@@ -58,6 +59,7 @@ import { cardStyles } from './styles';
 import type {
   DialSettings,
   Door,
+  Overrides,
   OpenResult,
   RecordedLine,
   RingCandidate,
@@ -73,9 +75,28 @@ import {
   lockTargets,
   ringTargets,
   type DeviceOptions,
+  type ExportTarget,
 } from './yaml-export';
+import {
+  conditionDraft,
+  hexAddress,
+  openDraft,
+  parseBusAddress,
+  parseConditionDraft,
+  parseOpenDraft,
+  type ConditionDraft,
+  type FieldErrors,
+  type OpenDraft,
+} from './manual';
 
 const CARD_TAG = 'abb-welcome-wizard-card';
+
+/** The value being edited in the result step. */
+type Editing =
+  | { kind: 'indoor'; value: string; error?: string }
+  | { kind: 'outdoor'; door: string; value: string; error?: string }
+  | { kind: 'ring'; door: string; rows: ConditionDraft[]; errors: FieldErrors<ConditionDraft>[] }
+  | { kind: 'open'; door: string; draft: OpenDraft; errors: FieldErrors<OpenDraft> };
 const VERSION = '0.6.0';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
@@ -109,6 +130,7 @@ export class AbbWelcomeWizardCard extends LitElement {
   @state() private maskDoorCode = false;
   @state() private showDoorCode = false;
   @state() private exportMode: 'full' | 'snippet' = 'full';
+  @state() private editing?: Editing;
   /** Device settings edited by the user; unset fields are suggested from Home Assistant. */
   @state() private deviceEdits: Partial<DeviceOptions> = {};
   @state() private indoorInput = '';
@@ -1221,22 +1243,42 @@ export class AbbWelcomeWizardCard extends LitElement {
       device: this.exportMode === 'full' ? device : undefined,
     });
     const recorded = Object.values(this.session.steps).some((s) => s.captures.length > 0);
-
-    if (!recorded) {
-      return html`<h2><ha-icon icon="mdi:file-code-outline"></ha-icon>Ergebnis</h2>
-        <div class="callout info">
-          <ha-icon icon="mdi:information-outline"></ha-icon>
-          <span>Noch keine Aufnahmen. Geh die Schritte durch oder importiere eine gespeicherte Sitzung.</span>
-        </div>`;
-    }
+    const overrides = this.session.overrides;
 
     return html`
       <h2><ha-icon icon="mdi:file-code-outline"></ha-icon>Ergebnis</h2>
+      ${
+        recorded
+          ? nothing
+          : html`<div class="callout info">
+              <ha-icon icon="mdi:information-outline"></ha-icon>
+              <span
+                >Noch keine Aufnahmen. Geh die Schritte durch, importiere eine Sitzung – oder trag die Werte
+                unten mit dem Stift von Hand ein.</span
+              >
+            </div>`
+      }
 
       <div class="grid">
         <div class="panel stat">
-          <span class="muted small">Innenstation</span>
-          <span class="value">${indoor ? formatAddress(indoor.address, threeByte) : '—'}</span>
+          <span class="muted small edit-head"
+            >Innenstation
+            ${this.editButton('Innenstationsadresse bearbeiten', () =>
+              this.startEdit({
+                kind: 'indoor',
+                value: indoor ? hexAddress(indoor.address, threeByte) : '',
+              }),
+            )}</span
+          >
+          ${
+            this.editing?.kind === 'indoor'
+              ? this.renderAddressEditor(
+                  this.editing.value,
+                  this.editing.error,
+                  overrides.indoorAddress !== undefined,
+                )
+              : html`<span class="value">${indoor ? formatAddress(indoor.address, threeByte) : '—'}</span>`
+          }
           ${
             indoor
               ? html`<span class="small">
@@ -1258,13 +1300,29 @@ export class AbbWelcomeWizardCard extends LitElement {
                         : nothing
                   }
                 </span>`
-              : nothing
+              : html`<span class="muted small">Ohne Innenstation kein Export – bitte eintragen.</span>`
           }
         </div>
         <div class="panel stat">
-          <span class="muted small">Adresslänge</span>
-          <span class="value">${threeByte ? '3 Byte' : '2 Byte'}</span>
-          <span class="muted small">${threeByte ? 'three_byte_address: true' : 'Standard'}</span>
+          <label class="muted small edit-head" for="three-byte">Adresslänge</label>
+          <select
+            id="three-byte"
+            @change=${(ev: Event) => {
+              const value = (ev.target as HTMLSelectElement).value;
+              this.updateOverrides({
+                ...overrides,
+                threeByte: value === 'auto' ? undefined : value === '3',
+              });
+            }}
+          >
+            <option value="auto" ?selected=${overrides.threeByte === undefined}>Automatisch</option>
+            <option value="2" ?selected=${overrides.threeByte === false}>2 Byte (XXXX)</option>
+            <option value="3" ?selected=${overrides.threeByte === true}>3 Byte (XXXXXX)</option>
+          </select>
+          <span class="small">
+            <span class="value" style="font-size:1rem">${threeByte ? '3 Byte' : '2 Byte'}</span>
+            ${result.threeByteManual ? html`<span class="badge accent">manuell</span>` : nothing}
+          </span>
         </div>
       </div>
 
@@ -1272,34 +1330,7 @@ export class AbbWelcomeWizardCard extends LitElement {
 
       <div class="panel">
         <h3>Klingeln</h3>
-        ${ringTargets(this.session.doors).map((t) => {
-          const ring = result.rings[t.door.key];
-          const ok = ring.selected.length > 0;
-          return html`<div class="result-row">
-            <ha-icon icon=${doorIcon(t.door)}></ha-icon>
-            <div>
-              <div class="row-head">
-                <b>${t.name}</b>
-                ${
-                  ring.outdoorAddress !== undefined
-                    ? html`<span class="muted small"
-                        >${describeAddress(ring.outdoorAddress, threeByte)}</span
-                      >`
-                    : nothing
-                }
-                <span class="spacer"></span>
-                ${
-                  ok
-                    ? html`<span class="badge ok">binary_sensor.${t.id}</span>`
-                    : html`<span class="badge ${ring.captures ? 'warning' : ''}"
-                        >${ring.captures ? 'nicht erkannt' : 'nicht aufgenommen'}</span
-                      >`
-                }
-              </div>
-              ${ring.candidates.length > 0 ? this.renderCandidates(ring) : nothing}
-            </div>
-          </div>`;
-        })}
+        ${ringTargets(this.session.doors).map((t) => this.renderRingResult(t, result))}
       </div>
 
       <div class="panel">
@@ -1313,27 +1344,7 @@ export class AbbWelcomeWizardCard extends LitElement {
             <ha-icon icon=${this.showDoorCode ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}></ha-icon>
           </button>
         </h3>
-        ${lockTargets(this.session.doors).map((t) => {
-          const open = result.opens[t.door.key];
-          const recorded = stepRecord(this.session, openStepId(t.door)).captures.length > 0;
-          return html`<div class="result-row">
-            <ha-icon icon=${t.icon}></ha-icon>
-            <div>
-              <div class="row-head">
-                <b>${t.name}</b>
-                <span class="spacer"></span>
-                ${
-                  open
-                    ? html`<span class="badge ok">lock.${t.id}</span>`
-                    : html`<span class="badge ${recorded ? 'warning' : ''}"
-                        >${recorded ? 'nicht erkannt' : 'nicht aufgenommen'}</span
-                      >`
-                }
-              </div>
-              ${open ? this.renderOpen(open) : nothing}
-            </div>
-          </div>`;
-        })}
+        ${lockTargets(this.session.doors).map((t) => this.renderOpenResult(t, result))}
         ${this.renderDoorsWithoutOpener()}
       </div>
 
@@ -1469,6 +1480,351 @@ export class AbbWelcomeWizardCard extends LitElement {
     this.showToast(
       (await copyText(yaml)) ? 'YAML kopiert.' : 'Kopieren nicht möglich – bitte manuell markieren.',
     );
+  }
+
+  // ---- Manual values ----------------------------------------------------------------------------
+
+  private updateOverrides(overrides: Overrides): void {
+    this.updateSession(setOverrides(this.session, overrides));
+    const indoor = this.session.overrides.indoorAddress;
+    this.indoorInput = indoor !== undefined ? formatAddress(indoor, indoor > 0xffff) : '';
+  }
+
+  private startEdit(editing: Editing): void {
+    this.editing = editing;
+  }
+
+  private editButton(label: string, onClick: () => void): TemplateResult {
+    return html`<button class="icon edit" title=${label} aria-label=${label} @click=${onClick}>
+      <ha-icon icon="mdi:pencil-outline"></ha-icon>
+    </button>`;
+  }
+
+  private editActions(onSave: () => void, onReset?: () => void): TemplateResult {
+    return html`<div class="actions">
+      <button class="btn primary" @click=${onSave}><ha-icon icon="mdi:check"></ha-icon>Übernehmen</button>
+      <button class="btn text" @click=${() => (this.editing = undefined)}>Abbrechen</button>
+      ${
+        onReset
+          ? html`<button class="btn text danger" @click=${onReset}>
+              <ha-icon icon="mdi:restore"></ha-icon>Analyse verwenden
+            </button>`
+          : nothing
+      }
+    </div>`;
+  }
+
+  /** Inline editor for the indoor station or an outdoor station address. */
+  private renderAddressEditor(value: string, error: string | undefined, manual: boolean): TemplateResult {
+    const cur = () => this.editing as Extract<Editing, { kind: 'indoor' | 'outdoor' }>;
+    const editing = cur();
+    const save = () => {
+      const address = parseBusAddress(cur().value);
+      if (address === undefined) {
+        this.editing = { ...cur(), error: '4 oder 6 Hex-Ziffern, z. B. 1016' };
+        return;
+      }
+      const overrides = this.session.overrides;
+      if (editing.kind === 'indoor') this.updateOverrides({ ...overrides, indoorAddress: address });
+      else {
+        const ring = overrides.rings?.[editing.door] ?? {};
+        this.updateOverrides({
+          ...overrides,
+          rings: { ...overrides.rings, [editing.door]: { ...ring, outdoorAddress: address } },
+        });
+      }
+      this.editing = undefined;
+    };
+    const reset = () => {
+      const overrides = this.session.overrides;
+      if (editing.kind === 'indoor') this.updateOverrides({ ...overrides, indoorAddress: undefined });
+      else {
+        const ring = { ...(overrides.rings?.[editing.door] ?? {}) };
+        delete ring.outdoorAddress;
+        this.updateOverrides({ ...overrides, rings: { ...overrides.rings, [editing.door]: ring } });
+      }
+      this.editing = undefined;
+    };
+    return html`<div class="editor">
+      <label class="field"
+        >Adresse (hex)
+        <input
+          type="text"
+          class=${error ? 'invalid' : ''}
+          placeholder="1016"
+          .value=${value}
+          @input=${(ev: Event) =>
+            (this.editing = { ...cur(), value: (ev.target as HTMLInputElement).value, error: undefined })}
+          @keydown=${(ev: KeyboardEvent) => ev.key === 'Enter' && save()}
+        />
+        ${error ? html`<span class="field-error">${error}</span>` : nothing}
+      </label>
+      ${this.editActions(save, manual ? reset : undefined)}
+    </div>`;
+  }
+
+  private renderRingResult(t: ExportTarget, result: WizardResult): TemplateResult {
+    const ring = result.rings[t.door.key];
+    const { threeByte } = result;
+    const ok = ring.selected.length > 0;
+    const editing = this.editing;
+    const editingRing = editing?.kind === 'ring' && editing.door === t.door.key ? editing : undefined;
+    const editingOutdoor = editing?.kind === 'outdoor' && editing.door === t.door.key ? editing : undefined;
+    const outdoor = t.door.type === 'outdoor';
+    return html`<div class="result-row">
+      <ha-icon icon=${doorIcon(t.door)}></ha-icon>
+      <div>
+        <div class="row-head">
+          <b>${t.name}</b>
+          ${
+            outdoor && ring.outdoorAddress !== undefined && !editingOutdoor
+              ? html`<span class="muted small">${describeAddress(ring.outdoorAddress, threeByte)}</span>`
+              : nothing
+          }
+          ${ring.outdoorManual ? html`<span class="badge accent">manuell</span>` : nothing}
+          ${
+            outdoor && !editingOutdoor
+              ? this.editButton(`Außenstation ${t.door.name} bearbeiten`, () =>
+                  this.startEdit({
+                    kind: 'outdoor',
+                    door: t.door.key,
+                    value:
+                      ring.outdoorAddress !== undefined ? hexAddress(ring.outdoorAddress, threeByte) : '',
+                  }),
+                )
+              : nothing
+          }
+          <span class="spacer"></span>
+          ${ring.manual ? html`<span class="badge accent">manuell</span>` : nothing}
+          ${
+            ok
+              ? html`<span class="badge ok">binary_sensor.${t.id}</span>`
+              : html`<span class="badge ${ring.captures ? 'warning' : ''}"
+                  >${ring.captures ? 'nicht erkannt' : 'nicht aufgenommen'}</span
+                >`
+          }
+        </div>
+        ${
+          editingOutdoor
+            ? this.renderAddressEditor(
+                editingOutdoor.value,
+                editingOutdoor.error,
+                this.session.overrides.rings?.[t.door.key]?.outdoorAddress !== undefined,
+              )
+            : nothing
+        }
+        ${
+          editingRing
+            ? this.renderRingEditor(editingRing, ring)
+            : html`${
+                  ring.manual
+                    ? this.renderManualConditions(ring)
+                    : ring.candidates.length > 0
+                      ? this.renderCandidates(ring)
+                      : nothing
+                }
+                <button
+                  class="btn text small-btn"
+                  @click=${() =>
+                    this.startEdit({
+                      kind: 'ring',
+                      door: t.door.key,
+                      rows: ring.selected.map((c) => conditionDraft(c, threeByte)),
+                      errors: [],
+                    })}
+                >
+                  <ha-icon icon="mdi:pencil-outline"></ha-icon>Bedingungen bearbeiten
+                </button>`
+        }
+      </div>
+    </div>`;
+  }
+
+  private renderManualConditions(ring: RingResult): TemplateResult {
+    const { threeByte } = this.result;
+    return html`<div class="candidates">
+      ${ring.selected.map(
+        (c) =>
+          html`<div class="candidate">
+            <code
+              >Typ ${hex2(c.type)} ${c.src !== undefined ? `von ${formatAddressPlain(c.src, threeByte)}` : ''}
+              ${c.dst !== undefined ? `an ${formatAddressPlain(c.dst, threeByte)}` : ''}
+              ${c.data ? `· ${formatBytesPlain(c.data)}` : ''}</code
+            >
+            <span class="badge accent">manuell</span>
+          </div>`,
+      )}
+    </div>`;
+  }
+
+  private renderRingEditor(editing: Extract<Editing, { kind: 'ring' }>, ring: RingResult): TemplateResult {
+    // Handlers read the current draft: several inputs can fire before the next render.
+    const cur = () => this.editing as Extract<Editing, { kind: 'ring' }>;
+    const update = (rows: ConditionDraft[]) => (this.editing = { ...cur(), rows, errors: [] });
+    const save = () => {
+      const parsed = cur().rows.map(parseConditionDraft);
+      if (parsed.some((p) => !p.condition)) {
+        this.editing = { ...cur(), errors: parsed.map((p) => p.errors) };
+        return;
+      }
+      const overrides = this.session.overrides;
+      const current = overrides.rings?.[editing.door] ?? {};
+      this.updateOverrides({
+        ...overrides,
+        rings: {
+          ...overrides.rings,
+          [editing.door]: { ...current, conditions: parsed.map((p) => p.condition!) },
+        },
+      });
+      this.editing = undefined;
+    };
+    const reset = () => {
+      const overrides = this.session.overrides;
+      const current = { ...(overrides.rings?.[editing.door] ?? {}) };
+      delete current.conditions;
+      this.updateOverrides({ ...overrides, rings: { ...overrides.rings, [editing.door]: current } });
+      this.editing = undefined;
+    };
+    const field = (
+      row: ConditionDraft,
+      index: number,
+      key: keyof ConditionDraft,
+      label: string,
+      hint: string,
+    ) => {
+      const error = editing.errors[index]?.[key];
+      return html`<label class="field"
+        >${label}
+        <input
+          type="text"
+          class=${error ? 'invalid' : ''}
+          placeholder=${hint}
+          .value=${row[key]}
+          @input=${(ev: Event) =>
+            update(
+              cur().rows.map((r, i) =>
+                i === index ? { ...r, [key]: (ev.target as HTMLInputElement).value } : r,
+              ),
+            )}
+        />
+        ${error ? html`<span class="field-error">${error}</span>` : nothing}
+      </label>`;
+    };
+    return html`<div class="editor">
+      <p class="muted small">
+        Eine Bedingung passt, wenn Typ und alle ausgefüllten Felder übereinstimmen; leer = beliebig. Der
+        Klingel-Sensor löst aus, wenn irgendeine Bedingung passt.
+      </p>
+      ${editing.rows.map(
+        (row, index) =>
+          html`<div class="condition-row">
+            ${field(row, index, 'type', 'Typ', '01')} ${field(row, index, 'src', 'Quelle', 'beliebig')}
+            ${field(row, index, 'dst', 'Ziel', 'beliebig')} ${field(row, index, 'data', 'Data', 'beliebig')}
+            <button
+              class="icon"
+              title="Bedingung entfernen"
+              aria-label="Bedingung entfernen"
+              @click=${() => update(cur().rows.filter((_, i) => i !== index))}
+            >
+              <ha-icon icon="mdi:delete-outline"></ha-icon>
+            </button>
+          </div>`,
+      )}
+      <button
+        class="btn text small-btn"
+        @click=${() => update([...cur().rows, { type: '01', src: '', dst: '', data: '' }])}
+      >
+        <ha-icon icon="mdi:plus"></ha-icon>Bedingung hinzufügen
+      </button>
+      ${this.editActions(save, ring.manual ? reset : undefined)}
+    </div>`;
+  }
+
+  private renderOpenResult(t: ExportTarget, result: WizardResult): TemplateResult {
+    const open = result.opens[t.door.key];
+    const recorded = stepRecord(this.session, openStepId(t.door)).captures.length > 0;
+    const editing =
+      this.editing?.kind === 'open' && this.editing.door === t.door.key ? this.editing : undefined;
+    return html`<div class="result-row">
+      <ha-icon icon=${t.icon}></ha-icon>
+      <div>
+        <div class="row-head">
+          <b>${t.name}</b>
+          ${open?.manual ? html`<span class="badge accent">manuell</span>` : nothing}
+          ${
+            !editing
+              ? this.editButton(`Öffnen-Frame ${t.door.name} bearbeiten`, () =>
+                  this.startEdit({
+                    kind: 'open',
+                    door: t.door.key,
+                    draft: openDraft(open ?? undefined, result.threeByte),
+                    errors: {},
+                  }),
+                )
+              : nothing
+          }
+          <span class="spacer"></span>
+          ${
+            open
+              ? html`<span class="badge ok">lock.${t.id}</span>`
+              : html`<span class="badge ${recorded ? 'warning' : ''}"
+                  >${recorded ? 'nicht erkannt' : 'nicht aufgenommen'}</span
+                >`
+          }
+        </div>
+        ${editing ? this.renderOpenEditor(editing, !!open?.manual) : open ? this.renderOpen(open) : nothing}
+      </div>
+    </div>`;
+  }
+
+  private renderOpenEditor(editing: Extract<Editing, { kind: 'open' }>, manual: boolean): TemplateResult {
+    const cur = () => this.editing as Extract<Editing, { kind: 'open' }>;
+    const save = () => {
+      const parsed = parseOpenDraft(cur().draft);
+      if (!parsed.open) {
+        this.editing = { ...cur(), errors: parsed.errors };
+        return;
+      }
+      const overrides = this.session.overrides;
+      this.updateOverrides({ ...overrides, opens: { ...overrides.opens, [editing.door]: parsed.open } });
+      this.editing = undefined;
+    };
+    const reset = () => {
+      const opens = { ...this.session.overrides.opens };
+      delete opens[editing.door];
+      this.updateOverrides({ ...this.session.overrides, opens });
+      this.editing = undefined;
+    };
+    const field = (key: keyof OpenDraft, label: string, hint: string) => {
+      const error = editing.errors[key];
+      return html`<label class="field"
+        >${label}
+        <input
+          type="text"
+          class=${error ? 'invalid' : ''}
+          placeholder=${hint}
+          .value=${editing.draft[key]}
+          @input=${(ev: Event) =>
+            (this.editing = {
+              ...cur(),
+              draft: { ...cur().draft, [key]: (ev.target as HTMLInputElement).value },
+              errors: {},
+            })}
+        />
+        ${error ? html`<span class="field-error">${error}</span>` : nothing}
+      </label>`;
+    };
+    return html`<div class="editor">
+      <p class="muted small">
+        Der Befehl, den die Innenstation zum Öffnen sendet (Quelle ist immer die Innenstation). Data ist der
+        Türcode – nicht öffentlich teilen.
+      </p>
+      <div class="condition-row open-row">
+        ${field('destination', 'Ziel', '4002')} ${field('type', 'Typ', '0D')}
+        ${field('data', 'Data', '1C 41 68')}
+      </div>
+      ${this.editActions(save, manual ? reset : undefined)}
+    </div>`;
   }
 
   private renderWarnings(result: WizardResult): TemplateResult | typeof nothing {

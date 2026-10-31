@@ -3,18 +3,18 @@
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const be = globalThis, Ve = be.ShadowRoot && (be.ShadyCSS === void 0 || be.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, qe = Symbol(), ct = /* @__PURE__ */ new WeakMap();
-let Ht = class {
+const ke = globalThis, Ye = ke.ShadowRoot && (ke.ShadyCSS === void 0 || ke.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype, Je = Symbol(), bt = /* @__PURE__ */ new WeakMap();
+let Zt = class {
   constructor(t, n, i) {
-    if (this._$cssResult$ = !0, i !== qe) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
+    if (this._$cssResult$ = !0, i !== Je) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
     this.cssText = t, this.t = n;
   }
   get styleSheet() {
     let t = this.o;
     const n = this.t;
-    if (Ve && t === void 0) {
+    if (Ye && t === void 0) {
       const i = n !== void 0 && n.length === 1;
-      i && (t = ct.get(n)), t === void 0 && ((this.o = t = new CSSStyleSheet()).replaceSync(this.cssText), i && ct.set(n, t));
+      i && (t = bt.get(n)), t === void 0 && ((this.o = t = new CSSStyleSheet()).replaceSync(this.cssText), i && bt.set(n, t));
     }
     return t;
   }
@@ -22,33 +22,33 @@ let Ht = class {
     return this.cssText;
   }
 };
-const ln = (e) => new Ht(typeof e == "string" ? e : e + "", void 0, qe), Ye = (e, ...t) => {
+const En = (e) => new Zt(typeof e == "string" ? e : e + "", void 0, Je), Qe = (e, ...t) => {
   const n = e.length === 1 ? e[0] : t.reduce((i, s, r) => i + ((o) => {
     if (o._$cssResult$ === !0) return o.cssText;
     if (typeof o == "number") return o;
     throw Error("Value passed to 'css' function must be a 'css' function result: " + o + ". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.");
   })(s) + e[r + 1], e[0]);
-  return new Ht(n, e, qe);
-}, un = (e, t) => {
-  if (Ve) e.adoptedStyleSheets = t.map((n) => n instanceof CSSStyleSheet ? n : n.styleSheet);
+  return new Zt(n, e, Je);
+}, Dn = (e, t) => {
+  if (Ye) e.adoptedStyleSheets = t.map((n) => n instanceof CSSStyleSheet ? n : n.styleSheet);
   else for (const n of t) {
-    const i = document.createElement("style"), s = be.litNonce;
+    const i = document.createElement("style"), s = ke.litNonce;
     s !== void 0 && i.setAttribute("nonce", s), i.textContent = n.cssText, e.appendChild(i);
   }
-}, lt = Ve ? (e) => e : (e) => e instanceof CSSStyleSheet ? ((t) => {
+}, vt = Ye ? (e) => e : (e) => e instanceof CSSStyleSheet ? ((t) => {
   let n = "";
   for (const i of t.cssRules) n += i.cssText;
-  return ln(n);
+  return En(n);
 })(e) : e;
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const { is: pn, defineProperty: hn, getOwnPropertyDescriptor: fn, getOwnPropertyNames: mn, getOwnPropertySymbols: gn, getPrototypeOf: bn } = Object, ze = globalThis, ut = ze.trustedTypes, vn = ut ? ut.emptyScript : "", yn = ze.reactiveElementPolyfillSupport, Y = (e, t) => e, $e = { toAttribute(e, t) {
+const { is: Tn, defineProperty: Cn, getOwnPropertyDescriptor: On, getOwnPropertyNames: Bn, getOwnPropertySymbols: In, getPrototypeOf: Rn } = Object, Re = globalThis, yt = Re.trustedTypes, Mn = yt ? yt.emptyScript : "", Fn = Re.reactiveElementPolyfillSupport, ie = (e, t) => e, Ae = { toAttribute(e, t) {
   switch (t) {
     case Boolean:
-      e = e ? vn : null;
+      e = e ? Mn : null;
       break;
     case Object:
     case Array:
@@ -73,23 +73,23 @@ const { is: pn, defineProperty: hn, getOwnPropertyDescriptor: fn, getOwnProperty
       }
   }
   return n;
-} }, Ze = (e, t) => !pn(e, t), pt = { attribute: !0, type: String, converter: $e, reflect: !1, useDefault: !1, hasChanged: Ze };
-Symbol.metadata ??= Symbol("metadata"), ze.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
-let L = class extends HTMLElement {
+} }, et = (e, t) => !Tn(e, t), $t = { attribute: !0, type: String, converter: Ae, reflect: !1, useDefault: !1, hasChanged: et };
+Symbol.metadata ??= Symbol("metadata"), Re.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
+let W = class extends HTMLElement {
   static addInitializer(t) {
     this._$Ei(), (this.l ??= []).push(t);
   }
   static get observedAttributes() {
     return this.finalize(), this._$Eh && [...this._$Eh.keys()];
   }
-  static createProperty(t, n = pt) {
+  static createProperty(t, n = $t) {
     if (n.state && (n.attribute = !1), this._$Ei(), this.prototype.hasOwnProperty(t) && ((n = Object.create(n)).wrapped = !0), this.elementProperties.set(t, n), !n.noAccessor) {
       const i = Symbol(), s = this.getPropertyDescriptor(t, i, n);
-      s !== void 0 && hn(this.prototype, t, s);
+      s !== void 0 && Cn(this.prototype, t, s);
     }
   }
   static getPropertyDescriptor(t, n, i) {
-    const { get: s, set: r } = fn(this.prototype, t) ?? { get() {
+    const { get: s, set: r } = On(this.prototype, t) ?? { get() {
       return this[n];
     }, set(o) {
       this[n] = o;
@@ -100,17 +100,17 @@ let L = class extends HTMLElement {
     }, configurable: !0, enumerable: !0 };
   }
   static getPropertyOptions(t) {
-    return this.elementProperties.get(t) ?? pt;
+    return this.elementProperties.get(t) ?? $t;
   }
   static _$Ei() {
-    if (this.hasOwnProperty(Y("elementProperties"))) return;
-    const t = bn(this);
+    if (this.hasOwnProperty(ie("elementProperties"))) return;
+    const t = Rn(this);
     t.finalize(), t.l !== void 0 && (this.l = [...t.l]), this.elementProperties = new Map(t.elementProperties);
   }
   static finalize() {
-    if (this.hasOwnProperty(Y("finalized"))) return;
-    if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(Y("properties"))) {
-      const n = this.properties, i = [...mn(n), ...gn(n)];
+    if (this.hasOwnProperty(ie("finalized"))) return;
+    if (this.finalized = !0, this._$Ei(), this.hasOwnProperty(ie("properties"))) {
+      const n = this.properties, i = [...Bn(n), ...In(n)];
       for (const s of i) this.createProperty(s, n[s]);
     }
     const t = this[Symbol.metadata];
@@ -129,8 +129,8 @@ let L = class extends HTMLElement {
     const n = [];
     if (Array.isArray(t)) {
       const i = new Set(t.flat(1 / 0).reverse());
-      for (const s of i) n.unshift(lt(s));
-    } else t !== void 0 && n.push(lt(t));
+      for (const s of i) n.unshift(vt(s));
+    } else t !== void 0 && n.push(vt(t));
     return n;
   }
   static _$Eu(t, n) {
@@ -156,7 +156,7 @@ let L = class extends HTMLElement {
   }
   createRenderRoot() {
     const t = this.shadowRoot ?? this.attachShadow(this.constructor.shadowRootOptions);
-    return un(t, this.constructor.elementStyles), t;
+    return Dn(t, this.constructor.elementStyles), t;
   }
   connectedCallback() {
     this.renderRoot ??= this.createRenderRoot(), this.enableUpdating(!0), this._$EO?.forEach((t) => t.hostConnected?.());
@@ -172,14 +172,14 @@ let L = class extends HTMLElement {
   _$ET(t, n) {
     const i = this.constructor.elementProperties.get(t), s = this.constructor._$Eu(t, i);
     if (s !== void 0 && i.reflect === !0) {
-      const r = (i.converter?.toAttribute !== void 0 ? i.converter : $e).toAttribute(n, i.type);
+      const r = (i.converter?.toAttribute !== void 0 ? i.converter : Ae).toAttribute(n, i.type);
       this._$Em = t, r == null ? this.removeAttribute(s) : this.setAttribute(s, r), this._$Em = null;
     }
   }
   _$AK(t, n) {
     const i = this.constructor, s = i._$Eh.get(t);
     if (s !== void 0 && this._$Em !== s) {
-      const r = i.getPropertyOptions(s), o = typeof r.converter == "function" ? { fromAttribute: r.converter } : r.converter?.fromAttribute !== void 0 ? r.converter : $e;
+      const r = i.getPropertyOptions(s), o = typeof r.converter == "function" ? { fromAttribute: r.converter } : r.converter?.fromAttribute !== void 0 ? r.converter : Ae;
       this._$Em = s;
       const a = o.fromAttribute(n, r.type);
       this[s] = a ?? this._$Ej?.get(s) ?? a, this._$Em = null;
@@ -188,7 +188,7 @@ let L = class extends HTMLElement {
   requestUpdate(t, n, i, s = !1, r) {
     if (t !== void 0) {
       const o = this.constructor;
-      if (s === !1 && (r = this[t]), i ??= o.getPropertyOptions(t), !((i.hasChanged ?? Ze)(r, n) || i.useDefault && i.reflect && r === this._$Ej?.get(t) && !this.hasAttribute(o._$Eu(t, i)))) return;
+      if (s === !1 && (r = this[t]), i ??= o.getPropertyOptions(t), !((i.hasChanged ?? et)(r, n) || i.useDefault && i.reflect && r === this._$Ej?.get(t) && !this.hasAttribute(o._$Eu(t, i)))) return;
       this.C(t, n, i);
     }
     this.isUpdatePending === !1 && (this._$ES = this._$EP());
@@ -256,75 +256,75 @@ let L = class extends HTMLElement {
   firstUpdated(t) {
   }
 };
-L.elementStyles = [], L.shadowRootOptions = { mode: "open" }, L[Y("elementProperties")] = /* @__PURE__ */ new Map(), L[Y("finalized")] = /* @__PURE__ */ new Map(), yn?.({ ReactiveElement: L }), (ze.reactiveElementVersions ??= []).push("2.1.2");
+W.elementStyles = [], W.shadowRootOptions = { mode: "open" }, W[ie("elementProperties")] = /* @__PURE__ */ new Map(), W[ie("finalized")] = /* @__PURE__ */ new Map(), Fn?.({ ReactiveElement: W }), (Re.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Je = globalThis, ht = (e) => e, we = Je.trustedTypes, ft = we ? we.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, Kt = "$lit$", I = `lit$${Math.random().toFixed(9).slice(2)}$`, jt = "?" + I, $n = `<${jt}>`, M = document, Q = () => M.createComment(""), ee = (e) => e === null || typeof e != "object" && typeof e != "function", Xe = Array.isArray, wn = (e) => Xe(e) || typeof e?.[Symbol.iterator] == "function", Ce = `[ 	
-\f\r]`, V = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, mt = /-->/g, gt = />/g, F = RegExp(`>|${Ce}(?:([^\\s"'>=/]+)(${Ce}*=${Ce}*(?:[^ 	
-\f\r"'\`<>=]|("|')|))|$)`, "g"), bt = /'/g, vt = /"/g, Ut = /^(?:script|style|textarea|title)$/i, Wt = (e) => (t, ...n) => ({ _$litType$: e, strings: t, values: n }), c = Wt(1), kn = Wt(2), W = Symbol.for("lit-noChange"), m = Symbol.for("lit-nothing"), yt = /* @__PURE__ */ new WeakMap(), P = M.createTreeWalker(M, 129);
-function Gt(e, t) {
-  if (!Xe(e) || !e.hasOwnProperty("raw")) throw Error("invalid template strings array");
-  return ft !== void 0 ? ft.createHTML(t) : t;
+const tt = globalThis, wt = (e) => e, Se = tt.trustedTypes, kt = Se ? Se.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, qt = "$lit$", M = `lit$${Math.random().toFixed(9).slice(2)}$`, Xt = "?" + M, Pn = `<${Xt}>`, U = document, ae = () => U.createComment(""), de = (e) => e === null || typeof e != "object" && typeof e != "function", nt = Array.isArray, Nn = (e) => nt(e) || typeof e?.[Symbol.iterator] == "function", Ne = `[ 	
+\f\r]`, Q = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, xt = /-->/g, _t = />/g, L = RegExp(`>|${Ne}(?:([^\\s"'>=/]+)(${Ne}*=${Ne}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g"), At = /'/g, St = /"/g, Yt = /^(?:script|style|textarea|title)$/i, Jt = (e) => (t, ...n) => ({ _$litType$: e, strings: t, values: n }), c = Jt(1), Ln = Jt(2), X = Symbol.for("lit-noChange"), f = Symbol.for("lit-nothing"), zt = /* @__PURE__ */ new WeakMap(), j = U.createTreeWalker(U, 129);
+function Qt(e, t) {
+  if (!nt(e) || !e.hasOwnProperty("raw")) throw Error("invalid template strings array");
+  return kt !== void 0 ? kt.createHTML(t) : t;
 }
-const xn = (e, t) => {
+const Hn = (e, t) => {
   const n = e.length - 1, i = [];
-  let s, r = t === 2 ? "<svg>" : t === 3 ? "<math>" : "", o = V;
+  let s, r = t === 2 ? "<svg>" : t === 3 ? "<math>" : "", o = Q;
   for (let a = 0; a < n; a++) {
     const d = e[a];
-    let l, h, u = -1, f = 0;
-    for (; f < d.length && (o.lastIndex = f, h = o.exec(d), h !== null); ) f = o.lastIndex, o === V ? h[1] === "!--" ? o = mt : h[1] !== void 0 ? o = gt : h[2] !== void 0 ? (Ut.test(h[2]) && (s = RegExp("</" + h[2], "g")), o = F) : h[3] !== void 0 && (o = F) : o === F ? h[0] === ">" ? (o = s ?? V, u = -1) : h[1] === void 0 ? u = -2 : (u = o.lastIndex - h[2].length, l = h[1], o = h[3] === void 0 ? F : h[3] === '"' ? vt : bt) : o === vt || o === bt ? o = F : o === mt || o === gt ? o = V : (o = F, s = void 0);
-    const b = o === F && e[a + 1].startsWith("/>") ? " " : "";
-    r += o === V ? d + $n : u >= 0 ? (i.push(l), d.slice(0, u) + Kt + d.slice(u) + I + b) : d + I + (u === -2 ? a : b);
+    let u, p, l = -1, m = 0;
+    for (; m < d.length && (o.lastIndex = m, p = o.exec(d), p !== null); ) m = o.lastIndex, o === Q ? p[1] === "!--" ? o = xt : p[1] !== void 0 ? o = _t : p[2] !== void 0 ? (Yt.test(p[2]) && (s = RegExp("</" + p[2], "g")), o = L) : p[3] !== void 0 && (o = L) : o === L ? p[0] === ">" ? (o = s ?? Q, l = -1) : p[1] === void 0 ? l = -2 : (l = o.lastIndex - p[2].length, u = p[1], o = p[3] === void 0 ? L : p[3] === '"' ? St : At) : o === St || o === At ? o = L : o === xt || o === _t ? o = Q : (o = L, s = void 0);
+    const b = o === L && e[a + 1].startsWith("/>") ? " " : "";
+    r += o === Q ? d + Pn : l >= 0 ? (i.push(u), d.slice(0, l) + qt + d.slice(l) + M + b) : d + M + (l === -2 ? a : b);
   }
-  return [Gt(e, r + (e[n] || "<?>") + (t === 2 ? "</svg>" : t === 3 ? "</math>" : "")), i];
+  return [Qt(e, r + (e[n] || "<?>") + (t === 2 ? "</svg>" : t === 3 ? "</math>" : "")), i];
 };
-class te {
+class ce {
   constructor({ strings: t, _$litType$: n }, i) {
     let s;
     this.parts = [];
     let r = 0, o = 0;
-    const a = t.length - 1, d = this.parts, [l, h] = xn(t, n);
-    if (this.el = te.createElement(l, i), P.currentNode = this.el.content, n === 2 || n === 3) {
-      const u = this.el.content.firstChild;
-      u.replaceWith(...u.childNodes);
+    const a = t.length - 1, d = this.parts, [u, p] = Hn(t, n);
+    if (this.el = ce.createElement(u, i), j.currentNode = this.el.content, n === 2 || n === 3) {
+      const l = this.el.content.firstChild;
+      l.replaceWith(...l.childNodes);
     }
-    for (; (s = P.nextNode()) !== null && d.length < a; ) {
+    for (; (s = j.nextNode()) !== null && d.length < a; ) {
       if (s.nodeType === 1) {
-        if (s.hasAttributes()) for (const u of s.getAttributeNames()) if (u.endsWith(Kt)) {
-          const f = h[o++], b = s.getAttribute(u).split(I), p = /([.?@])?(.*)/.exec(f);
-          d.push({ type: 1, index: r, name: p[2], strings: b, ctor: p[1] === "." ? An : p[1] === "?" ? Sn : p[1] === "@" ? zn : Ee }), s.removeAttribute(u);
-        } else u.startsWith(I) && (d.push({ type: 6, index: r }), s.removeAttribute(u));
-        if (Ut.test(s.tagName)) {
-          const u = s.textContent.split(I), f = u.length - 1;
-          if (f > 0) {
-            s.textContent = we ? we.emptyScript : "";
-            for (let b = 0; b < f; b++) s.append(u[b], Q()), P.nextNode(), d.push({ type: 2, index: ++r });
-            s.append(u[f], Q());
+        if (s.hasAttributes()) for (const l of s.getAttributeNames()) if (l.endsWith(qt)) {
+          const m = p[o++], b = s.getAttribute(l).split(M), h = /([.?@])?(.*)/.exec(m);
+          d.push({ type: 1, index: r, name: h[2], strings: b, ctor: h[1] === "." ? Kn : h[1] === "?" ? Un : h[1] === "@" ? Wn : Me }), s.removeAttribute(l);
+        } else l.startsWith(M) && (d.push({ type: 6, index: r }), s.removeAttribute(l));
+        if (Yt.test(s.tagName)) {
+          const l = s.textContent.split(M), m = l.length - 1;
+          if (m > 0) {
+            s.textContent = Se ? Se.emptyScript : "";
+            for (let b = 0; b < m; b++) s.append(l[b], ae()), j.nextNode(), d.push({ type: 2, index: ++r });
+            s.append(l[m], ae());
           }
         }
-      } else if (s.nodeType === 8) if (s.data === jt) d.push({ type: 2, index: r });
+      } else if (s.nodeType === 8) if (s.data === Xt) d.push({ type: 2, index: r });
       else {
-        let u = -1;
-        for (; (u = s.data.indexOf(I, u + 1)) !== -1; ) d.push({ type: 7, index: r }), u += I.length - 1;
+        let l = -1;
+        for (; (l = s.data.indexOf(M, l + 1)) !== -1; ) d.push({ type: 7, index: r }), l += M.length - 1;
       }
       r++;
     }
   }
   static createElement(t, n) {
-    const i = M.createElement("template");
+    const i = U.createElement("template");
     return i.innerHTML = t, i;
   }
 }
-function G(e, t, n = e, i) {
-  if (t === W) return t;
+function Y(e, t, n = e, i) {
+  if (t === X) return t;
   let s = i !== void 0 ? n._$Co?.[i] : n._$Cl;
-  const r = ee(t) ? void 0 : t._$litDirective$;
-  return s?.constructor !== r && (s?._$AO?.(!1), r === void 0 ? s = void 0 : (s = new r(e), s._$AT(e, n, i)), i !== void 0 ? (n._$Co ??= [])[i] = s : n._$Cl = s), s !== void 0 && (t = G(e, s._$AS(e, t.values), s, i)), t;
+  const r = de(t) ? void 0 : t._$litDirective$;
+  return s?.constructor !== r && (s?._$AO?.(!1), r === void 0 ? s = void 0 : (s = new r(e), s._$AT(e, n, i)), i !== void 0 ? (n._$Co ??= [])[i] = s : n._$Cl = s), s !== void 0 && (t = Y(e, s._$AS(e, t.values), s, i)), t;
 }
-class _n {
+class jn {
   constructor(t, n) {
     this._$AV = [], this._$AN = void 0, this._$AD = t, this._$AM = n;
   }
@@ -335,29 +335,29 @@ class _n {
     return this._$AM._$AU;
   }
   u(t) {
-    const { el: { content: n }, parts: i } = this._$AD, s = (t?.creationScope ?? M).importNode(n, !0);
-    P.currentNode = s;
-    let r = P.nextNode(), o = 0, a = 0, d = i[0];
+    const { el: { content: n }, parts: i } = this._$AD, s = (t?.creationScope ?? U).importNode(n, !0);
+    j.currentNode = s;
+    let r = j.nextNode(), o = 0, a = 0, d = i[0];
     for (; d !== void 0; ) {
       if (o === d.index) {
-        let l;
-        d.type === 2 ? l = new oe(r, r.nextSibling, this, t) : d.type === 1 ? l = new d.ctor(r, d.name, d.strings, this, t) : d.type === 6 && (l = new En(r, this, t)), this._$AV.push(l), d = i[++a];
+        let u;
+        d.type === 2 ? u = new me(r, r.nextSibling, this, t) : d.type === 1 ? u = new d.ctor(r, d.name, d.strings, this, t) : d.type === 6 && (u = new Gn(r, this, t)), this._$AV.push(u), d = i[++a];
       }
-      o !== d?.index && (r = P.nextNode(), o++);
+      o !== d?.index && (r = j.nextNode(), o++);
     }
-    return P.currentNode = M, s;
+    return j.currentNode = U, s;
   }
   p(t) {
     let n = 0;
     for (const i of this._$AV) i !== void 0 && (i.strings !== void 0 ? (i._$AI(t, i, n), n += i.strings.length - 2) : i._$AI(t[n])), n++;
   }
 }
-class oe {
+class me {
   get _$AU() {
     return this._$AM?._$AU ?? this._$Cv;
   }
   constructor(t, n, i, s) {
-    this.type = 2, this._$AH = m, this._$AN = void 0, this._$AA = t, this._$AB = n, this._$AM = i, this.options = s, this._$Cv = s?.isConnected ?? !0;
+    this.type = 2, this._$AH = f, this._$AN = void 0, this._$AA = t, this._$AB = n, this._$AM = i, this.options = s, this._$Cv = s?.isConnected ?? !0;
   }
   get parentNode() {
     let t = this._$AA.parentNode;
@@ -371,7 +371,7 @@ class oe {
     return this._$AB;
   }
   _$AI(t, n = this) {
-    t = G(this, t, n), ee(t) ? t === m || t == null || t === "" ? (this._$AH !== m && this._$AR(), this._$AH = m) : t !== this._$AH && t !== W && this._(t) : t._$litType$ !== void 0 ? this.$(t) : t.nodeType !== void 0 ? this.T(t) : wn(t) ? this.k(t) : this._(t);
+    t = Y(this, t, n), de(t) ? t === f || t == null || t === "" ? (this._$AH !== f && this._$AR(), this._$AH = f) : t !== this._$AH && t !== X && this._(t) : t._$litType$ !== void 0 ? this.$(t) : t.nodeType !== void 0 ? this.T(t) : Nn(t) ? this.k(t) : this._(t);
   }
   O(t) {
     return this._$AA.parentNode.insertBefore(t, this._$AB);
@@ -380,38 +380,38 @@ class oe {
     this._$AH !== t && (this._$AR(), this._$AH = this.O(t));
   }
   _(t) {
-    this._$AH !== m && ee(this._$AH) ? this._$AA.nextSibling.data = t : this.T(M.createTextNode(t)), this._$AH = t;
+    this._$AH !== f && de(this._$AH) ? this._$AA.nextSibling.data = t : this.T(U.createTextNode(t)), this._$AH = t;
   }
   $(t) {
-    const { values: n, _$litType$: i } = t, s = typeof i == "number" ? this._$AC(t) : (i.el === void 0 && (i.el = te.createElement(Gt(i.h, i.h[0]), this.options)), i);
+    const { values: n, _$litType$: i } = t, s = typeof i == "number" ? this._$AC(t) : (i.el === void 0 && (i.el = ce.createElement(Qt(i.h, i.h[0]), this.options)), i);
     if (this._$AH?._$AD === s) this._$AH.p(n);
     else {
-      const r = new _n(s, this), o = r.u(this.options);
+      const r = new jn(s, this), o = r.u(this.options);
       r.p(n), this.T(o), this._$AH = r;
     }
   }
   _$AC(t) {
-    let n = yt.get(t.strings);
-    return n === void 0 && yt.set(t.strings, n = new te(t)), n;
+    let n = zt.get(t.strings);
+    return n === void 0 && zt.set(t.strings, n = new ce(t)), n;
   }
   k(t) {
-    Xe(this._$AH) || (this._$AH = [], this._$AR());
+    nt(this._$AH) || (this._$AH = [], this._$AR());
     const n = this._$AH;
     let i, s = 0;
-    for (const r of t) s === n.length ? n.push(i = new oe(this.O(Q()), this.O(Q()), this, this.options)) : i = n[s], i._$AI(r), s++;
+    for (const r of t) s === n.length ? n.push(i = new me(this.O(ae()), this.O(ae()), this, this.options)) : i = n[s], i._$AI(r), s++;
     s < n.length && (this._$AR(i && i._$AB.nextSibling, s), n.length = s);
   }
   _$AR(t = this._$AA.nextSibling, n) {
     for (this._$AP?.(!1, !0, n); t !== this._$AB; ) {
-      const i = ht(t).nextSibling;
-      ht(t).remove(), t = i;
+      const i = wt(t).nextSibling;
+      wt(t).remove(), t = i;
     }
   }
   setConnected(t) {
     this._$AM === void 0 && (this._$Cv = t, this._$AP?.(t));
   }
 }
-class Ee {
+class Me {
   get tagName() {
     return this.element.tagName;
   }
@@ -419,53 +419,53 @@ class Ee {
     return this._$AM._$AU;
   }
   constructor(t, n, i, s, r) {
-    this.type = 1, this._$AH = m, this._$AN = void 0, this.element = t, this.name = n, this._$AM = s, this.options = r, i.length > 2 || i[0] !== "" || i[1] !== "" ? (this._$AH = Array(i.length - 1).fill(new String()), this.strings = i) : this._$AH = m;
+    this.type = 1, this._$AH = f, this._$AN = void 0, this.element = t, this.name = n, this._$AM = s, this.options = r, i.length > 2 || i[0] !== "" || i[1] !== "" ? (this._$AH = Array(i.length - 1).fill(new String()), this.strings = i) : this._$AH = f;
   }
   _$AI(t, n = this, i, s) {
     const r = this.strings;
     let o = !1;
-    if (r === void 0) t = G(this, t, n, 0), o = !ee(t) || t !== this._$AH && t !== W, o && (this._$AH = t);
+    if (r === void 0) t = Y(this, t, n, 0), o = !de(t) || t !== this._$AH && t !== X, o && (this._$AH = t);
     else {
       const a = t;
-      let d, l;
-      for (t = r[0], d = 0; d < r.length - 1; d++) l = G(this, a[i + d], n, d), l === W && (l = this._$AH[d]), o ||= !ee(l) || l !== this._$AH[d], l === m ? t = m : t !== m && (t += (l ?? "") + r[d + 1]), this._$AH[d] = l;
+      let d, u;
+      for (t = r[0], d = 0; d < r.length - 1; d++) u = Y(this, a[i + d], n, d), u === X && (u = this._$AH[d]), o ||= !de(u) || u !== this._$AH[d], u === f ? t = f : t !== f && (t += (u ?? "") + r[d + 1]), this._$AH[d] = u;
     }
     o && !s && this.j(t);
   }
   j(t) {
-    t === m ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, t ?? "");
+    t === f ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, t ?? "");
   }
 }
-class An extends Ee {
+class Kn extends Me {
   constructor() {
     super(...arguments), this.type = 3;
   }
   j(t) {
-    this.element[this.name] = t === m ? void 0 : t;
+    this.element[this.name] = t === f ? void 0 : t;
   }
 }
-class Sn extends Ee {
+class Un extends Me {
   constructor() {
     super(...arguments), this.type = 4;
   }
   j(t) {
-    this.element.toggleAttribute(this.name, !!t && t !== m);
+    this.element.toggleAttribute(this.name, !!t && t !== f);
   }
 }
-class zn extends Ee {
+class Wn extends Me {
   constructor(t, n, i, s, r) {
     super(t, n, i, s, r), this.type = 5;
   }
   _$AI(t, n = this) {
-    if ((t = G(this, t, n, 0) ?? m) === W) return;
-    const i = this._$AH, s = t === m && i !== m || t.capture !== i.capture || t.once !== i.once || t.passive !== i.passive, r = t !== m && (i === m || s);
+    if ((t = Y(this, t, n, 0) ?? f) === X) return;
+    const i = this._$AH, s = t === f && i !== f || t.capture !== i.capture || t.once !== i.once || t.passive !== i.passive, r = t !== f && (i === f || s);
     s && this.element.removeEventListener(this.name, this, i), r && this.element.addEventListener(this.name, this, t), this._$AH = t;
   }
   handleEvent(t) {
     typeof this._$AH == "function" ? this._$AH.call(this.options?.host ?? this.element, t) : this._$AH.handleEvent(t);
   }
 }
-class En {
+class Gn {
   constructor(t, n, i) {
     this.element = t, this.type = 6, this._$AN = void 0, this._$AM = n, this.options = i;
   }
@@ -473,17 +473,17 @@ class En {
     return this._$AM._$AU;
   }
   _$AI(t) {
-    G(this, t);
+    Y(this, t);
   }
 }
-const Dn = Je.litHtmlPolyfillSupport;
-Dn?.(te, oe), (Je.litHtmlVersions ??= []).push("3.3.3");
-const Tn = (e, t, n) => {
+const Vn = tt.litHtmlPolyfillSupport;
+Vn?.(ce, me), (tt.litHtmlVersions ??= []).push("3.3.3");
+const Zn = (e, t, n) => {
   const i = n?.renderBefore ?? t;
   let s = i._$litPart$;
   if (s === void 0) {
     const r = n?.renderBefore ?? null;
-    i._$litPart$ = s = new oe(t.insertBefore(Q(), r), r, void 0, n ?? {});
+    i._$litPart$ = s = new me(t.insertBefore(ae(), r), r, void 0, n ?? {});
   }
   return s._$AI(e), s;
 };
@@ -492,8 +492,8 @@ const Tn = (e, t, n) => {
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Qe = globalThis;
-class B extends L {
+const it = globalThis;
+class F extends W {
   constructor() {
     super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
   }
@@ -503,7 +503,7 @@ class B extends L {
   }
   update(t) {
     const n = this.render();
-    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(t), this._$Do = Tn(n, this.renderRoot, this.renderOptions);
+    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(t), this._$Do = Zn(n, this.renderRoot, this.renderOptions);
   }
   connectedCallback() {
     super.connectedCallback(), this._$Do?.setConnected(!0);
@@ -512,19 +512,19 @@ class B extends L {
     super.disconnectedCallback(), this._$Do?.setConnected(!1);
   }
   render() {
-    return W;
+    return X;
   }
 }
-B._$litElement$ = !0, B.finalized = !0, Qe.litElementHydrateSupport?.({ LitElement: B });
-const Cn = Qe.litElementPolyfillSupport;
-Cn?.({ LitElement: B });
-(Qe.litElementVersions ??= []).push("4.2.2");
+F._$litElement$ = !0, F.finalized = !0, it.litElementHydrateSupport?.({ LitElement: F });
+const qn = it.litElementPolyfillSupport;
+qn?.({ LitElement: F });
+(it.litElementVersions ??= []).push("4.2.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const De = (e) => (t, n) => {
+const Fe = (e) => (t, n) => {
   n !== void 0 ? n.addInitializer(() => {
     customElements.define(e, t);
   }) : customElements.define(e, t);
@@ -534,7 +534,7 @@ const De = (e) => (t, n) => {
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const On = { attribute: !0, type: String, converter: $e, reflect: !1, hasChanged: Ze }, In = (e = On, t, n) => {
+const Xn = { attribute: !0, type: String, converter: Ae, reflect: !1, hasChanged: et }, Yn = (e = Xn, t, n) => {
   const { kind: i, metadata: s } = n;
   let r = globalThis.litPropertyMetadata.get(s);
   if (r === void 0 && globalThis.litPropertyMetadata.set(s, r = /* @__PURE__ */ new Map()), i === "setter" && ((e = Object.create(e)).wrapped = !0), r.set(n.name, e), i === "accessor") {
@@ -555,8 +555,8 @@ const On = { attribute: !0, type: String, converter: $e, reflect: !1, hasChanged
   }
   throw Error("Unsupported decorator location: " + i);
 };
-function Bn(e) {
-  return (t, n) => typeof n == "object" ? In(e, t, n) : ((i, s, r) => {
+function Jn(e) {
+  return (t, n) => typeof n == "object" ? Yn(e, t, n) : ((i, s, r) => {
     const o = s.hasOwnProperty(r);
     return s.constructor.createProperty(r, i), o ? Object.getOwnPropertyDescriptor(s, r) : void 0;
   })(e, t, n);
@@ -567,68 +567,82 @@ function Bn(e) {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 function $(e) {
-  return Bn({ ...e, state: !0, attribute: !1 });
+  return Jn({ ...e, state: !0, attribute: !1 });
 }
-const Fn = { 1: "indoor", 2: "outdoor", 3: "gateway", 4: "door" };
-function Rn(e, t) {
+const Qn = { 1: "indoor", 2: "outdoor", 3: "gateway", 4: "door" };
+function ei(e, t) {
   if (t) return e >> 16 === 0 ? e >> 8 & 255 : null;
   if (e > 65535) return null;
   const n = e >> 8;
   return (n & 15) === 0 ? n >> 4 : null;
 }
-function et(e, t) {
-  const n = Rn(e, t);
-  return n !== null && Fn[n] || "unknown";
+function st(e, t) {
+  const n = ei(e, t);
+  return n !== null && Qn[n] || "unknown";
 }
-const Oe = (e, t) => et(e, t) === "indoor", Pn = (e, t) => et(e, t) === "outdoor";
-function w(e, t) {
+const be = (e, t) => st(e, t) === "indoor", ti = (e, t) => st(e, t) === "outdoor";
+function k(e, t) {
   return "0x" + e.toString(16).padStart(t ? 6 : 4, "0");
 }
-function Ie(e, t) {
+function ee(e, t) {
   return e.toString(16).toUpperCase().padStart(t ? 6 : 4, "0");
 }
-function Z(e) {
+function se(e) {
   return "0x" + e.toString(16).padStart(2, "0");
 }
-function J(e) {
+function G(e) {
   return e.map((t) => t.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 }
-const Mn = {
+const ni = {
   indoor: "Innenstation",
   outdoor: "Außenstation",
   gateway: "Gateway",
   door: "Türsteuergerät",
   unknown: "Gerät"
 };
-function E(e, t) {
-  const n = et(e, t), i = Mn[n], s = w(e, t);
-  return n === "indoor" || n === "outdoor" ? `${i} #${e & 255} (${s})` : `${i} (${s})`;
+function T(e, t) {
+  const n = ni[st(e, t)], i = k(e, t);
+  return `${n} (${i})`;
 }
-function ve(e) {
+const xe = {
+  digits: "Ziffern direkt",
+  decimal: "dezimal → hex"
+};
+function en(e) {
   const { x10: t, x1: n } = e;
   if (!(t === void 0 || n === void 0) && !(!Number.isInteger(t) || !Number.isInteger(n) || t < 0 || t > 9 || n < 0 || n > 9))
-    return t * 10 + n;
+    return [t, n];
 }
-function ke(e, t) {
-  return (t ? 256 : 4096) | e & 255;
+function ze(e, t) {
+  const n = en(e);
+  if (!n) return [];
+  const i = t ? 256 : 4096, [s, r] = n, o = [
+    { reading: "digits", address: i | s << 4 | r },
+    { reading: "decimal", address: i | s * 10 + r }
+  ];
+  return o[0].address === o[1].address ? [o[0]] : o;
 }
-function Ln(e, t) {
+function tn(e) {
+  const t = en(e);
+  return t ? `X10=${t[0]}, X1=${t[1]}` : void 0;
+}
+function ii(e, t) {
   return t ? [e >> 16 & 255, e >> 8 & 255, e & 255] : [e >> 8 & 255, e & 255];
 }
-function Nn(e, t) {
+function si(e, t) {
   e: for (let n = 0; n + t.length <= e.length; n++) {
     for (let i = 0; i < t.length; i++) if (e[n + i] !== t[i]) continue e;
     return !0;
   }
   return !1;
 }
-function Vt(e, t) {
-  return Nn(e.data, Ln(t, e.threeByte));
+function nn(e, t) {
+  return si(e.data, ii(t, e.threeByte));
 }
-function tt(e, t) {
-  return e.src === t || e.dst === t || Vt(e, t);
+function rt(e, t) {
+  return e.src === t || e.dst === t || nn(e, t);
 }
-const ne = 8, nt = [
+const le = 8, ot = [
   { key: "tor", name: "Tor", type: "outdoor", open: !0, default: !1, icon: "mdi:gate" },
   { key: "haustuer", name: "Haustür", type: "outdoor", open: !0, default: !0, icon: "mdi:door" },
   {
@@ -639,41 +653,41 @@ const ne = 8, nt = [
     default: !1,
     icon: "mdi:door-closed"
   }
-], K = "baseline", C = (e) => `ring:${typeof e == "string" ? e : e.key}`, O = (e) => `open:${typeof e == "string" ? e : e.key}`;
-function xe(e) {
+], Z = "baseline", C = (e) => `ring:${typeof e == "string" ? e : e.key}`, O = (e) => `open:${typeof e == "string" ? e : e.key}`;
+function Ee(e) {
   const t = e.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   return t === "" ? "tuer" : /^[0-9]/.test(t) ? `tuer_${t}` : t;
 }
-function it(e, t) {
+function at(e, t) {
   let n = e;
   for (let i = 2; t.has(n); i++) n = `${e}_${i}`;
   return t.add(n), n;
 }
-function qt(e) {
+function sn(e) {
   const t = /* @__PURE__ */ new Set(), n = {};
-  for (const i of e) n[i.key] = it(i.id ? xe(i.id) : xe(i.name), t);
+  for (const i of e) n[i.key] = at(i.id ? Ee(i.id) : Ee(i.name), t);
   return n;
 }
-function Hn(e) {
+function ri(e) {
   return e === "floor" ? "mdi:door-closed" : "mdi:door";
 }
-function _e(e) {
-  return e.icon ?? Hn(e.type);
+function De(e) {
+  return e.icon ?? ri(e.type);
 }
-function ae(e) {
+function ge(e) {
   let t = !1;
   return e.map((n) => {
     const i = n.type === "outdoor" && n.open, s = i && n.default && !t;
     return s && (t = !0), { ...n, open: i, default: s };
   });
 }
-function Kn(e, t = "Neue Tür", n = "outdoor") {
-  return { key: it(xe(t), new Set(e.map((s) => s.key))), name: t, type: n, open: n === "outdoor", default: !1 };
+function oi(e, t = "Neue Tür", n = "outdoor") {
+  return { key: at(Ee(t), new Set(e.map((s) => s.key))), name: t, type: n, open: n === "outdoor", default: !1 };
 }
-function $t(e) {
+function Et(e) {
   if (!Array.isArray(e) || e.length === 0)
     throw new Error('"doors" muss eine Liste mit mindestens einer Tür sein.');
-  if (e.length > ne) throw new Error(`Höchstens ${ne} Türen möglich.`);
+  if (e.length > le) throw new Error(`Höchstens ${le} Türen möglich.`);
   const t = /* @__PURE__ */ new Set(), n = e.map((i, s) => {
     if (typeof i != "object" || i === null || typeof i.name != "string" || i.name.trim() === "")
       throw new Error(`Tür ${s + 1}: "name" fehlt.`);
@@ -681,7 +695,7 @@ function $t(e) {
     if (r !== "outdoor" && r !== "floor")
       throw new Error(`Tür "${i.name}": "type" muss outdoor (Außentür) oder floor (Etagenruf) sein.`);
     const o = i.name.trim(), a = {
-      key: it(xe(typeof i.id == "string" ? i.id : o), t),
+      key: at(Ee(typeof i.id == "string" ? i.id : o), t),
       name: o,
       type: r,
       open: r === "outdoor" && i.open !== !1,
@@ -690,12 +704,12 @@ function $t(e) {
     return typeof i.id == "string" && i.id.trim() !== "" && (a.id = i.id.trim()), typeof i.icon == "string" && i.icon.trim() !== "" && (a.icon = i.icon.trim()), a;
   });
   if (n.filter((i) => i.default).length > 1) throw new Error('Nur eine Tür kann "default: true" haben.');
-  return ae(n);
+  return ge(n);
 }
-function jn(e) {
+function ai(e) {
   if (!Array.isArray(e)) return;
   const t = /* @__PURE__ */ new Set(), n = [];
-  for (const i of e.slice(0, ne)) {
+  for (const i of e.slice(0, le)) {
     if (typeof i != "object" || i === null) continue;
     const s = i;
     if (typeof s.key != "string" || !/^[a-z0-9_]+$/.test(s.key) || t.has(s.key) || typeof s.name != "string" || s.type !== "outdoor" && s.type !== "floor") continue;
@@ -709,10 +723,10 @@ function jn(e) {
     };
     typeof s.id == "string" && (r.id = s.id), typeof s.icon == "string" && (r.icon = s.icon), n.push(r);
   }
-  return n.length > 0 ? ae(n) : void 0;
+  return n.length > 0 ? ge(n) : void 0;
 }
-const Un = /\[\s*([0-9a-f]{4}|[0-9a-f]{6})\s*(»|Â»|>>|>)\s*([0-9a-f]{4}|[0-9a-f]{6})\s*\]/i, Wn = /^\s*,?\s*type\s*[:=]?\s*(?:0x)?([0-9a-f]{1,2})(?![0-9a-f])/i, Gn = /^\s*,?\s*data\s*[:=]?\s*(.*?)\s*$/i, Vn = /((?:[0-9a-f]{2}[.:\s]){2,}[0-9a-f]{2})\s*(?:\(\s*(\d+)\s*\))?\s*$/i;
-function qn(e) {
+const di = /\[\s*([0-9a-f]{4}|[0-9a-f]{6})\s*(»|Â»|>>|>)\s*([0-9a-f]{4}|[0-9a-f]{6})\s*\]/i, ci = /^\s*,?\s*type\s*[:=]?\s*(?:0x)?([0-9a-f]{1,2})(?![0-9a-f])/i, li = /^\s*,?\s*data\s*[:=]?\s*(.*?)\s*$/i, ui = /((?:[0-9a-f]{2}[.:\s]){2,}[0-9a-f]{2})\s*(?:\(\s*(\d+)\s*\))?\s*$/i;
+function pi(e) {
   const t = e.trim();
   if (t === "") return [];
   const n = t.split(/[\s.,:;-]+/).filter((s) => s !== ""), i = [];
@@ -727,83 +741,87 @@ function qn(e) {
   }
   return i;
 }
-function Yt(e) {
-  const t = (f) => ({ ok: !1, line: e, reason: f });
+function rn(e) {
+  const t = (m) => ({ ok: !1, line: e, reason: m });
   if (typeof e != "string") return t("not a string");
-  const n = Un.exec(e);
+  const n = di.exec(e);
   if (!n) return t("no address block");
-  const [, i, s, r] = n, o = e.slice(n.index + n[0].length), a = Wn.exec(o);
+  const [, i, s, r] = n, o = e.slice(n.index + n[0].length), a = ci.exec(o);
   if (!a) return t("no message type");
   const d = o.slice(a[0].length);
-  let l = [];
+  let u = [];
   if (d.trim() !== "") {
-    const f = Gn.exec(d);
-    if (!f) return t("unexpected text after type");
-    const b = qn(f[1]);
+    const m = li.exec(d);
+    if (!m) return t("unexpected text after type");
+    const b = pi(m[1]);
     if (!b) return t("invalid data bytes");
-    l = b;
+    u = b;
   }
-  const h = {
+  const p = {
     src: parseInt(i, 16),
     dst: parseInt(r, 16),
     type: parseInt(a[1], 16),
-    data: l,
+    data: u,
     threeByte: i.length === 6 || r.length === 6,
     retransmission: s !== ">"
-  }, u = Vn.exec(e.slice(0, n.index));
-  return u && (h.raw = u[1].toUpperCase().replace(/[:\s]/g, "."), u[2] !== void 0 && (h.rawLength = parseInt(u[2], 10))), { ok: !0, frame: h };
+  }, l = ui.exec(e.slice(0, n.index));
+  return l && (p.raw = l[1].toUpperCase().replace(/[:\s]/g, "."), l[2] !== void 0 && (p.rawLength = parseInt(l[2], 10))), { ok: !0, frame: p };
 }
-const wt = 1, Yn = 10, kt = 17, Zt = 13, Jt = 14, Me = 128, xt = [1, 129, 10, 17, 145], Zn = (e) => `Klingel „${e.name}“`, Le = (e) => `Öffnen „${e.name}“`, ie = (e, t) => e[t] ?? [], Ne = (e) => e.toString(16).toUpperCase().padStart(2, "0"), ye = (e) => `${e.src}|${e.dst}|${e.type}|${e.data.join(",")}`;
-function Jn(e) {
+const Te = 1, hi = 10, Dt = 17, on = 13, an = 14, P = 128, Tt = [1, 129, 10, 17, 145], fi = (e) => `Klingel „${e.name}“`, We = (e) => `Öffnen „${e.name}“`, ue = (e, t) => e[t] ?? [], Ce = (e) => e.toString(16).toUpperCase().padStart(2, "0"), _e = (e) => `${e.src}|${e.dst}|${e.type}|${e.data.join(",")}`;
+function dn(e) {
   const t = (n) => n === void 0 ? "*" : n.toString(16);
-  return `${Ne(e.type)}|${t(e.src)}|${t(e.dst)}|${e.data ? e.data.map(Ne).join("") : "*"}`;
+  return `${Ce(e.type)}|${t(e.src)}|${t(e.dst)}|${e.data ? e.data.map(Ce).join("") : "*"}`;
 }
-function Ae(e, t) {
+function re(e, t) {
   let n = null;
   for (const i of e)
     (!n || i[1] > n[1] || i[1] === n[1] && t && t(i[0], n[0]) < 0) && (n = i);
   return n;
 }
-function j(e, t, n = 1) {
+function K(e, t, n = 1) {
   e.set(t, (e.get(t) ?? 0) + n);
 }
-function Xn(e, t) {
+function mi(e, t) {
   let n = 0;
   const i = {};
   for (const [s, r] of Object.entries(e.steps))
     i[s] = r.captures.map(
       (o) => o.lines.flatMap((a) => {
         n++;
-        const d = Yt(a.line);
+        const d = rn(a.line);
         return d.ok ? [d.frame] : (t.push(a.line), []);
       })
     );
   return { steps: i, total: n };
 }
-function Qn(e, t, n) {
-  const i = /* @__PURE__ */ new Map();
-  for (const d of t.filter((l) => l.open))
-    for (const l of ie(e, O(d)))
-      for (const h of l)
-        (h.type === Zt || h.type === Jt) && Oe(h.src, h.threeByte) && j(i, h.src);
-  const s = (d, l) => d === n ? -1 : l === n ? 1 : d - l, r = Ae(i, s);
-  if (r) return { address: r[0], method: "open", count: r[1] };
-  const o = /* @__PURE__ */ new Map();
-  for (const d of Object.values(e))
-    for (const l of d)
-      for (const h of l)
-        Oe(h.src, h.threeByte) && j(o, h.src), Oe(h.dst, h.threeByte) && h.dst !== h.src && j(o, h.dst);
-  const a = Ae(o, s);
-  return a ? { address: a[0], method: "frequency", count: a[1] } : null;
+function gi(e, t, n = []) {
+  const i = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map();
+  for (const u of t.filter((p) => p.open))
+    for (const p of ue(e, O(u)))
+      for (const l of p)
+        cn(l) && be(l.src, l.threeByte) && K(i, l.src), ln(l) && be(l.dst, l.threeByte) && K(s, l.dst);
+  const r = (u, p) => n.includes(u) !== n.includes(p) ? n.includes(u) ? -1 : 1 : u - p, o = re(i, r) ?? re(s, r);
+  if (o) return { address: o[0], method: "open", count: o[1] };
+  const a = /* @__PURE__ */ new Map();
+  for (const u of Object.values(e))
+    for (const p of u)
+      for (const l of p)
+        be(l.src, l.threeByte) && K(a, l.src), be(l.dst, l.threeByte) && l.dst !== l.src && K(a, l.dst);
+  const d = re(a, r);
+  return d ? { address: d[0], method: "frequency", count: d[1] } : null;
 }
-function ei(e, t, n) {
-  const i = (s) => Pn(s, t.threeByte) ? s : void 0;
-  return e === "floor" ? t.type === kt && t.src === n ? { type: t.type, src: t.src } : t.type === (kt | Me) && t.dst === n ? { type: t.type, dst: t.dst } : null : t.type === wt && t.dst === n ? { type: t.type, src: t.src, dst: t.dst, outdoor: i(t.src) } : t.type === (wt | Me) && t.src === n ? { type: t.type, src: t.src, dst: t.dst, outdoor: i(t.dst) } : t.type === Yn && Vt(t, n) ? { type: t.type, src: t.src, dst: t.dst, data: [...t.data], outdoor: i(t.src) } : null;
+const cn = (e) => e.type === on || e.type === an, ln = (e) => e.type === (on | P) || e.type === (an | P);
+function bi(e) {
+  return { ...e, src: e.dst, dst: e.src, type: e.type & ~P, data: [...e.data] };
 }
-function ti(e, t) {
-  return t.score - e.score || xt.indexOf(e.type) - xt.indexOf(t.type) || (e.key < t.key ? -1 : e.key > t.key ? 1 : 0);
+function vi(e, t, n) {
+  const i = (s) => ti(s, t.threeByte) ? s : void 0;
+  return e === "floor" ? t.type === Dt && t.src === n ? { type: t.type, src: t.src } : t.type === (Dt | P) && t.dst === n ? { type: t.type, dst: t.dst } : null : t.type === Te && t.dst === n ? { type: t.type, src: t.src, dst: t.dst, outdoor: i(t.src) } : t.type === (Te | P) && t.src === n ? { type: t.type, src: t.src, dst: t.dst, outdoor: i(t.dst) } : t.type === hi && nn(t, n) ? { type: t.type, src: t.src, dst: t.dst, data: [...t.data], outdoor: i(t.src) } : null;
 }
-function Xt(e, t, n) {
+function yi(e, t) {
+  return t.score - e.score || Tt.indexOf(e.type) - Tt.indexOf(t.type) || (e.key < t.key ? -1 : e.key > t.key ? 1 : 0);
+}
+function un(e, t, n) {
   const i = e.session.steps[t]?.skipped === !0;
   e.warnings.push({
     code: i ? "step_skipped" : "step_missing",
@@ -812,53 +830,53 @@ function Xt(e, t, n) {
     message: `${n}: ${i ? "übersprungen" : "keine Aufnahme vorhanden"}.`
   });
 }
-function ni(e, t) {
-  const n = C(t), i = Zn(t), s = ie(e.steps, n), r = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
-  s.forEach((l, h) => {
-    for (const u of l) {
-      if (e.baseline.has(ye(u))) {
+function $i(e, t) {
+  const n = C(t), i = fi(t), s = ue(e.steps, n), r = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
+  s.forEach((u, p) => {
+    for (const l of u) {
+      if (e.baseline.has(_e(l))) {
         e.stats.baselineFiltered++;
         continue;
       }
-      if (!tt(u, e.indoor)) {
+      if (!rt(l, e.indoor)) {
         e.stats.neighbourFiltered++;
         continue;
       }
-      const f = ei(t.type, u, e.indoor);
-      if (!f) {
-        o.has(ye(u)) || o.set(ye(u), u);
+      const m = vi(t.type, l, e.indoor);
+      if (!m) {
+        o.has(_e(l)) || o.set(_e(l), l);
         continue;
       }
-      const b = Jn(f), p = r.get(b) ?? { match: f, in: /* @__PURE__ */ new Set() };
-      p.in.add(h), r.set(b, p);
+      const b = dn(m), h = r.get(b) ?? { match: m, in: /* @__PURE__ */ new Set() };
+      h.in.add(p), r.set(b, h);
     }
   });
-  const a = [...r].map(([l, { match: h, in: u }]) => ({
-    key: l,
-    ...h,
-    occurrences: u.size,
-    score: u.size / s.length,
-    reliable: u.size === s.length
+  const a = [...r].map(([u, { match: p, in: l }]) => ({
+    key: u,
+    ...p,
+    occurrences: l.size,
+    score: l.size / s.length,
+    reliable: l.size === s.length
   }));
-  a.sort(ti);
-  let d = a.filter((l) => l.reliable);
+  a.sort(yi);
+  let d = a.filter((u) => u.reliable);
   if (s.length === 0)
-    Xt(e, n, i);
+    un(e, n, i);
   else if (a.length === 0)
     e.warnings.push({
       code: "no_ring_candidates",
       severity: "warning",
       step: n,
-      message: `${i}: keine passenden Frames gefunden (erwartet: ${t.type === "floor" ? "Typ 11/91" : "Typ 01/81/0A"} mit Bezug zu ${w(e.indoor, e.threeByte)}).`
+      message: `${i}: keine passenden Frames gefunden (erwartet: ${t.type === "floor" ? "Typ 11/91" : "Typ 01/81/0A"} mit Bezug zu ${k(e.indoor, e.threeByte)}).`
     });
   else {
     if (d.length === 0) {
-      const l = a[0].score;
-      d = a.filter((h) => h.score === l), e.warnings.push({
+      const u = a[0].score;
+      d = a.filter((p) => p.score === u), e.warnings.push({
         code: "unstable_candidates",
         severity: "warning",
         step: n,
-        message: `${i}: kein Kandidat kam in allen ${s.length} Aufnahmen vor; verwende die besten (${Math.round(l * 100)} %).`
+        message: `${i}: kein Kandidat kam in allen ${s.length} Aufnahmen vor; verwende die besten (${Math.round(u * 100)} %).`
       });
     }
     s.length === 1 && e.warnings.push({
@@ -873,33 +891,33 @@ function ni(e, t) {
     captures: s.length,
     candidates: a,
     selected: d,
-    outdoorAddress: Qt(d),
+    outdoorAddress: pn(d),
     otherFrames: [...o.values()]
   };
 }
-function Qt(e) {
+function pn(e) {
   const t = /* @__PURE__ */ new Map();
-  for (const n of e) n.outdoor !== void 0 && j(t, n.outdoor);
-  return Ae(t, (n, i) => n - i)?.[0];
+  for (const n of e) n.outdoor !== void 0 && K(t, n.outdoor);
+  return re(t, (n, i) => n - i)?.[0];
 }
-function ii(e, t, n) {
+function wi(e, t, n) {
   const i = t.filter((d) => d.type === "outdoor" && n[d.key].selected.length > 0), s = /* @__PURE__ */ new Map();
-  for (const d of i) for (const l of n[d.key].selected) j(s, l.key);
-  const r = new Set([...s].filter(([, d]) => d > 1).map(([d]) => d)), o = (d) => n[d.key].selected.filter((l) => !r.has(l.key));
+  for (const d of i) for (const u of n[d.key].selected) K(s, u.key);
+  const r = new Set([...s].filter(([, d]) => d > 1).map(([d]) => d)), o = (d) => n[d.key].selected.filter((u) => !r.has(u.key));
   let a = 0;
   for (let d = 0; d < i.length; d++)
-    for (let l = d + 1; l < i.length; l++) {
-      const [h, u] = [i[d], i[l]], f = n[h.key], b = n[u.key], p = new Set(b.selected.map((x) => x.key)), g = f.selected.some((x) => p.has(x.key)), v = f.outdoorAddress !== void 0 && f.outdoorAddress === b.outdoorAddress;
-      !v && !(g && (o(h).length === 0 || o(u).length === 0)) || (a++, e.warnings.push({
+    for (let u = d + 1; u < i.length; u++) {
+      const [p, l] = [i[d], i[u]], m = n[p.key], b = n[l.key], h = new Set(b.selected.map((w) => w.key)), v = m.selected.some((w) => h.has(w.key)), y = m.outdoorAddress !== void 0 && m.outdoorAddress === b.outdoorAddress;
+      !y && !(v && (o(p).length === 0 || o(l).length === 0)) || (a++, e.warnings.push({
         code: "doors_indistinguishable",
         severity: "warning",
-        message: `„${h.name}“ und „${u.name}“ nicht unterscheidbar: beide Klingeln erzeugen dieselben Frames` + (v ? ` (Außenstation ${w(f.outdoorAddress, e.threeByte)})` : "") + ". Beide Klingel-Sensoren würden gemeinsam auslösen."
+        message: `„${p.name}“ und „${l.name}“ nicht unterscheidbar: beide Klingeln erzeugen dieselben Frames` + (y ? ` (Außenstation ${k(m.outdoorAddress, e.threeByte)})` : "") + ". Beide Klingel-Sensoren würden gemeinsam auslösen."
       }));
     }
   if (!(a > 0 || r.size === 0)) {
     for (const d of i) {
-      const l = n[d.key];
-      l.selected = o(d), l.outdoorAddress = Qt(l.selected);
+      const u = n[d.key];
+      u.selected = o(d), u.outdoorAddress = pn(u.selected);
     }
     e.warnings.push({
       code: "shared_candidates_removed",
@@ -908,150 +926,225 @@ function ii(e, t, n) {
     });
   }
 }
-function si(e, t) {
-  const n = O(t), i = Le(t), s = ie(e.steps, n);
+function ki(e, t) {
+  const n = O(t), i = We(t), s = ue(e.steps, n);
   if (s.length === 0)
-    return Xt(e, n, i), null;
-  const r = /* @__PURE__ */ new Map();
-  s.forEach((p, g) => {
-    for (const v of p) {
-      if (v.src !== e.indoor || v.type !== Zt && v.type !== Jt) continue;
-      const x = `${v.dst}|${v.type}|${v.data.join(",")}`, S = r.get(x) ?? { frame: v, in: /* @__PURE__ */ new Set() };
-      S.in.add(g), r.set(x, S);
-    }
-  });
-  let o;
-  for (const p of r.values()) (!o || p.in.size > o.in.size) && (o = p);
-  if (!o)
+    return un(e, n, i), null;
+  const r = (y) => {
+    const w = /* @__PURE__ */ new Map();
+    return s.forEach((A, g) => {
+      for (const I of A) {
+        const E = y(I);
+        if (!E) continue;
+        const N = `${E.dst}|${E.type}|${E.data.join(",")}`, gt = w.get(N) ?? { frame: E, in: /* @__PURE__ */ new Set() };
+        gt.in.add(g), w.set(N, gt);
+      }
+    }), w;
+  };
+  let o = !1, a = r((y) => y.src === e.indoor && cn(y) ? y : null);
+  a.size === 0 && (a = r((y) => y.dst === e.indoor && ln(y) ? bi(y) : null), o = a.size > 0);
+  let d;
+  for (const y of a.values()) (!d || y.in.size > d.in.size) && (d = y);
+  if (!d)
     return e.warnings.push({
       code: "no_open_frame",
       severity: "warning",
       step: n,
-      message: `${i}: kein 0D/0E-Frame von ${w(e.indoor, e.threeByte)} gefunden.`
+      message: `${i}: kein 0D/0E-Frame von ${k(e.indoor, e.threeByte)} gefunden.`
     }), null;
-  r.size > 1 && e.warnings.push({
+  o && e.warnings.push({
+    code: "derived_open",
+    severity: "warning",
+    step: n,
+    message: `${i}: kein 0D/0E empfangen – Befehl aus der Bestätigung ${Ce(d.frame.type | P)} abgeleitet (unbestätigt, bitte testen).`
+  }), a.size > 1 && e.warnings.push({
     code: "multiple_open_frames",
     severity: "info",
     step: n,
-    message: `${i}: ${r.size} verschiedene Öffnen-Frames gefunden, verwende den häufigsten.`
-  }), o.in.size < s.length && e.warnings.push({
+    message: `${i}: ${a.size} verschiedene Öffnen-Frames gefunden, verwende den häufigsten.`
+  }), d.in.size < s.length && e.warnings.push({
     code: "unstable_open",
     severity: "warning",
     step: n,
-    message: `${i}: Öffnen-Frame nur in ${o.in.size} von ${s.length} Aufnahmen.`
+    message: `${i}: Öffnen-Frame nur in ${d.in.size} von ${s.length} Aufnahmen.`
   });
-  const { frame: a } = o, d = {
+  const { frame: u } = d, p = {
     door: t.key,
     captures: s.length,
-    destination: a.dst,
-    messageType: a.type,
-    data: [...a.data],
-    occurrences: o.in.size,
-    score: o.in.size / s.length
-  }, l = a.type | Me, h = [...o.in].map((p) => s[p].filter((g) => g.type === l)), u = h.some((p) => p.some((g) => g.dst === e.indoor)), f = /* @__PURE__ */ new Map();
-  for (const p of h) {
-    const g = new Set(p.filter((v) => !u || v.dst === e.indoor).map((v) => v.src));
-    for (const v of g) j(f, v);
+    destination: u.dst,
+    messageType: u.type,
+    data: [...u.data],
+    occurrences: d.in.size,
+    score: d.in.size / s.length,
+    ...o ? { derived: !0 } : {}
+  }, l = u.type | P, m = [...d.in].map((y) => s[y].filter((w) => w.type === l)), b = m.some((y) => y.some((w) => w.dst === e.indoor)), h = /* @__PURE__ */ new Map();
+  for (const y of m) {
+    const w = new Set(y.filter((A) => !b || A.dst === e.indoor).map((A) => A.src));
+    for (const A of w) K(h, A);
   }
-  const b = f.has(a.dst) ? [a.dst, f.get(a.dst)] : Ae(f, (p, g) => p - g);
-  return b ? d.confirmation = {
-    source: b[0],
+  const v = h.has(u.dst) ? [u.dst, h.get(u.dst)] : re(h, (y, w) => y - w);
+  return v ? p.confirmation = {
+    source: v[0],
     messageType: l,
-    occurrences: b[1],
-    ...u ? { destination: e.indoor } : {}
+    occurrences: v[1],
+    ...b ? { destination: e.indoor } : {}
   } : e.warnings.push({
     code: "no_confirmation",
     severity: "info",
     step: n,
-    message: `${i}: keine Bestätigung (${Ne(l)}) gefunden – das Schloss meldet dann keinen Status.`
-  }), d;
+    message: `${i}: keine Bestätigung (${Ce(l)}) gefunden – das Schloss meldet dann keinen Status.`
+  }), p;
 }
-function ri(e) {
+function xi(e) {
   return { door: e.key, captures: 0, candidates: [], selected: [], otherFrames: [] };
 }
-function oi(e, t = {}) {
-  const n = [], { steps: i, total: s } = Xn(e, n), r = [], o = {
+function _i(e, t) {
+  const n = [], { steps: i, total: s } = mi(e, n), r = [], o = {
     totalLines: s,
     parsedFrames: s - n.length,
     unparsedLines: n,
     baselineFiltered: 0,
     neighbourFiltered: 0
-  }, a = Object.values(i).flat(2), d = t.expectedApartment ?? ve(e.dials), l = a.filter((y) => y.threeByte).length * 2 > a.length, h = d !== void 0 ? ke(d, l) : void 0;
+  }, a = Object.values(i).flat(2), d = a.filter((g) => g.threeByte).length * 2 > a.length, u = ze(e.dials, d).map((g) => g.address);
   n.length > 0 && r.push({
     code: "unparsed_lines",
     severity: "info",
     message: `${n.length} Zeile(n) konnten nicht als Frame gelesen werden.`
   });
-  const u = t.indoorAddress ?? e.indoorAddress, f = u !== void 0 ? { address: u, method: "manual", count: 0 } : Qn(i, e.doors, h), b = {
+  const p = t.indoorAddress ?? e.overrides.indoorAddress, l = p !== void 0 ? { address: p, method: "manual", count: 0 } : gi(i, e.doors, u), m = {
     indoor: null,
-    threeByte: l,
-    rings: Object.fromEntries(e.doors.map((y) => [y.key, ri(y)])),
-    opens: Object.fromEntries(e.doors.filter((y) => y.open).map((y) => [y.key, null])),
+    threeByte: d,
+    rings: Object.fromEntries(e.doors.map((g) => [g.key, xi(g)])),
+    opens: Object.fromEntries(e.doors.filter((g) => g.open).map((g) => [g.key, null])),
     warnings: r,
     stats: o
   };
-  if (!f)
+  if (!l)
     return r.push({
       code: "no_indoor",
       severity: "error",
       message: "Keine Innenstationsadresse (10XX / 0001XX) gefunden. Wurden Frames aufgenommen?"
-    }), b;
-  const p = a.filter((y) => tt(y, f.address)), g = p.length > 0 ? p.some((y) => y.threeByte) : f.address > 65535 || l;
-  f.method === "manual" && p.length === 0 && a.length > 0 && r.push({
+    }), m;
+  const b = a.filter((g) => rt(g, l.address)), h = b.length > 0 ? b.some((g) => g.threeByte) : l.address > 65535 || d;
+  l.method === "manual" && b.length === 0 && a.length > 0 && r.push({
     code: "manual_indoor_unseen",
     severity: "warning",
-    message: `Die eingestellte Innenstation ${w(f.address, g)} kommt in keinem aufgenommenen Frame vor.`
-  }), p.some((y) => y.threeByte !== g) && r.push({
+    message: `Die eingestellte Innenstation ${k(l.address, h)} kommt in keinem aufgenommenen Frame vor.`
+  }), b.some((g) => g.threeByte !== h) && r.push({
     code: "mixed_address_length",
     severity: "warning",
     message: "Gemischte 2- und 3-Byte-Adressen gefunden – bitte Aufnahmen prüfen."
-  }), b.threeByte = g;
-  const v = { ...f };
-  d !== void 0 && (v.expected = ke(d, g), v.matchesExpected = v.expected === f.address, v.matchesExpected || r.push({
-    code: "indoor_mismatch",
-    severity: "warning",
-    message: `Ermittelte Innenstation ${w(f.address, g)} weicht von der erwarteten Adresse ${w(v.expected, g)} (Wohnung ${d}) ab. Drehregler prüfen.`
-  })), f.method === "frequency" && r.push({
+  }), m.threeByte = h;
+  const v = { ...l }, y = ze(e.dials, h);
+  if (y.length > 0 && (v.dialCandidates = y, v.dialMatch = y.find((g) => g.address === l.address)?.reading ?? null, v.dialMatch === null)) {
+    const g = y.map((I) => `${k(I.address, h)} (${xe[I.reading]})`).join(" oder ");
+    r.push({
+      code: "indoor_mismatch",
+      severity: "warning",
+      message: `Ermittelte Innenstation ${k(l.address, h)} passt nicht zu den Drehreglern ${tn(e.dials)} – erwartet ${g}. Drehregler prüfen.`
+    });
+  }
+  l.method === "frequency" && r.push({
     code: "indoor_by_frequency",
     severity: "info",
-    message: `Innenstation ${E(f.address, g)} nur anhand der Häufigkeit bestimmt (kein Öffnen-Frame aufgenommen).`
-  }), b.indoor = v;
-  const x = {
+    message: `Innenstation ${T(l.address, h)} nur anhand der Häufigkeit bestimmt (kein Öffnen-Frame aufgenommen).`
+  }), m.indoor = v;
+  const w = {
     session: e,
     steps: i,
-    indoor: f.address,
-    threeByte: g,
-    baseline: new Set(ie(i, K).flat().map(ye)),
+    indoor: l.address,
+    threeByte: h,
+    baseline: new Set(ue(i, Z).flat().map(_e)),
     warnings: r,
     stats: o
   };
-  ie(i, K).length === 0 && r.push({
+  ue(i, Z).length === 0 && r.push({
     code: "no_baseline",
     severity: "info",
-    step: K,
+    step: Z,
     message: "Keine Baseline aufgenommen – Frames einer normalen Sprechverbindung können nicht ausgefiltert werden."
   });
-  for (const y of e.doors) b.rings[y.key] = ni(x, y);
-  ii(x, e.doors, b.rings);
-  const S = e.doors.filter((y) => y.open);
-  for (const y of S) b.opens[y.key] = si(x, y);
-  for (let y = 0; y < S.length; y++)
-    for (let de = y + 1; de < S.length; de++) {
-      const ce = b.opens[S[y].key], le = b.opens[S[de].key];
-      ce && le && ce.destination === le.destination && ce.messageType === le.messageType && J(ce.data) === J(le.data) && r.push({
+  for (const g of e.doors) m.rings[g.key] = $i(w, g);
+  wi(w, e.doors, m.rings);
+  const A = e.doors.filter((g) => g.open);
+  for (const g of A) m.opens[g.key] = ki(w, g);
+  for (let g = 0; g < A.length; g++)
+    for (let I = g + 1; I < A.length; I++) {
+      const E = m.opens[A[g].key], N = m.opens[A[I].key];
+      E && N && E.destination === N.destination && E.messageType === N.messageType && G(E.data) === G(N.data) && r.push({
         code: "same_open_frame",
         severity: "warning",
-        message: `${Le(S[y])} und ${Le(S[de])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`
+        message: `${We(A[g])} und ${We(A[I])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`
       });
     }
-  return b;
+  return m;
 }
-var ai = Object.defineProperty, di = Object.getOwnPropertyDescriptor, st = (e, t, n, i) => {
-  for (var s = i > 1 ? void 0 : i ? di(t, n) : t, r = e.length - 1, o; r >= 0; r--)
+const Ai = /* @__PURE__ */ new Set([
+  "no_ring_candidates",
+  "unstable_candidates",
+  "single_capture",
+  "step_missing",
+  "step_skipped"
+]), Si = /* @__PURE__ */ new Set([
+  "no_open_frame",
+  "derived_open",
+  "unstable_open",
+  "multiple_open_frames",
+  "no_confirmation",
+  "step_missing",
+  "step_skipped"
+]);
+function zi(e, t) {
+  const { overrides: n } = t, i = { ...e, rings: { ...e.rings }, opens: { ...e.opens } };
+  let s = [...e.warnings];
+  n.threeByte !== void 0 && (i.threeByte = n.threeByte, i.threeByteManual = !0, s = s.filter((r) => r.code !== "mixed_address_length"));
+  for (const r of t.doors) {
+    const o = n.rings?.[r.key];
+    if (o) {
+      const u = { ...i.rings[r.key] ?? {
+        door: r.key,
+        captures: 0,
+        candidates: [],
+        selected: [],
+        otherFrames: []
+      } };
+      o.conditions && (u.selected = o.conditions.map((p) => ({
+        ...p,
+        key: dn(p),
+        outdoor: p.type === Te ? p.src : p.type === (Te | P) ? p.dst : void 0,
+        occurrences: 0,
+        score: 1,
+        reliable: !0,
+        manual: !0
+      })), u.manual = !0, s = s.filter((p) => !(p.step === C(r) && Ai.has(p.code)))), o.outdoorAddress !== void 0 && (u.outdoorAddress = o.outdoorAddress, u.outdoorManual = !0), i.rings[r.key] = u;
+    }
+    const a = r.open ? n.opens?.[r.key] : void 0;
+    if (a) {
+      const d = e.opens[r.key], u = d && d.destination === a.destination && d.messageType === a.messageType;
+      i.opens[r.key] = {
+        door: r.key,
+        captures: d?.captures ?? 0,
+        destination: a.destination,
+        messageType: a.messageType,
+        data: [...a.data],
+        occurrences: 0,
+        score: 1,
+        manual: !0,
+        ...u && d.confirmation ? { confirmation: d.confirmation } : {}
+      }, s = s.filter((p) => !(p.step === O(r) && Si.has(p.code)));
+    }
+  }
+  return i.warnings = s, i;
+}
+function Ei(e, t = {}) {
+  return zi(_i(e, t), e);
+}
+var Di = Object.defineProperty, Ti = Object.getOwnPropertyDescriptor, dt = (e, t, n, i) => {
+  for (var s = i > 1 ? void 0 : i ? Ti(t, n) : t, r = e.length - 1, o; r >= 0; r--)
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
-  return i && s && ai(t, n, s), s;
+  return i && s && Di(t, n, s), s;
 };
-const en = "abb-welcome-wizard-card-editor", ci = [
+const hn = "abb-welcome-wizard-card-editor", Ci = [
   { name: "entity", required: !0, selector: { entity: { domain: "sensor" } } },
   { name: "title", selector: { text: {} } },
   {
@@ -1065,16 +1158,16 @@ const en = "abb-welcome-wizard-card-editor", ci = [
       { name: "indoor_address", selector: { text: {} } }
     ]
   }
-], li = {
+], Oi = {
   entity: "Debug-Textsensor des ESP32",
   title: "Titel (optional)",
   capture_seconds: "Aufnahmedauer",
   indoor_address: "Innenstationsadresse (optional)"
-}, ui = {
+}, Bi = {
   entity: "Der Sensor, der jeden Bus-Frame anzeigt, z. B. „Doorbell Intercom“.",
   indoor_address: "Nur nötig, wenn die automatische Erkennung danebenliegt, z. B. 0x1010."
 };
-let Se = class extends B {
+let Oe = class extends F {
   setConfig(e) {
     this.config = e;
   }
@@ -1092,33 +1185,33 @@ let Se = class extends B {
       <ha-form
         .hass=${this.hass}
         .data=${this.config}
-        .schema=${ci}
-        .computeLabel=${(e) => li[e.name] ?? e.name}
-        .computeHelper=${(e) => ui[e.name]}
+        .schema=${Ci}
+        .computeLabel=${(e) => Oi[e.name] ?? e.name}
+        .computeHelper=${(e) => Bi[e.name]}
         @value-changed=${this.onValueChanged}
       ></ha-form>
       <p style="color:var(--secondary-text-color);font-size:0.875rem;margin:12px 0 0">
         Die Türen (Namen, Öffner, Standard-Tür) richtest du direkt in der Karte auf der Startseite ein.
       </p>
-    ` : m;
+    ` : f;
   }
 };
-st([
+dt([
   $()
-], Se.prototype, "hass", 2);
-st([
+], Oe.prototype, "hass", 2);
+dt([
   $()
-], Se.prototype, "config", 2);
-Se = st([
-  De(en)
-], Se);
-const pi = /* @__PURE__ */ new Set(["", "unknown", "unavailable"]);
-function tn(e, t) {
+], Oe.prototype, "config", 2);
+Oe = dt([
+  Fe(hn)
+], Oe);
+const Ii = /* @__PURE__ */ new Set(["", "unknown", "unavailable"]);
+function fn(e, t) {
   if (e.event_type !== "state_changed" || e.data?.entity_id !== t) return null;
   const n = e.data.new_state?.state;
-  return typeof n != "string" || pi.has(n.trim()) ? null : { time: e.time_fired || (/* @__PURE__ */ new Date()).toISOString(), line: n };
+  return typeof n != "string" || Ii.has(n.trim()) ? null : { time: e.time_fired || (/* @__PURE__ */ new Date()).toISOString(), line: n };
 }
-function ue(e) {
+function ve(e) {
   if (typeof e == "number")
     return Number.isInteger(e) && e > 0 && e <= 16777215 ? e : void 0;
   if (typeof e != "string") return;
@@ -1126,8 +1219,8 @@ function ue(e) {
   if (/^([0-9a-f]{4}|[0-9a-f]{6})$/i.test(t))
     return parseInt(t, 16);
 }
-const rt = 6e3, X = 2e3;
-function hi(e, t, n, i) {
+const ct = 6e3, oe = 2e3;
+function Ri(e, t, n, i) {
   return n ? { step: e, phase: "armed", armedAt: i, lines: [] } : {
     step: e,
     phase: "recording",
@@ -1137,7 +1230,7 @@ function hi(e, t, n, i) {
     lines: []
   };
 }
-function fi(e, t, n, i) {
+function Mi(e, t, n, i) {
   return e.phase === "armed" ? {
     ...e,
     phase: "recording",
@@ -1146,20 +1239,20 @@ function fi(e, t, n, i) {
     lines: [t]
   } : { ...e, lines: [...e.lines, t] };
 }
-function mi(e, t) {
+function Fi(e, t) {
   return e.phase === "recording" && e.endsAt !== void 0 && t >= e.endsAt && !e.missed;
 }
-function _t(e) {
+function Ct(e) {
   return { ...e, missed: !0, syncAfter: void 0 };
 }
-function At(e, t) {
-  return e.missed ? { ...e, syncAfter: t + rt } : e;
+function Ot(e, t) {
+  return e.missed ? { ...e, syncAfter: t + ct } : e;
 }
-function gi(e, t) {
-  const n = e.phase === "armed" ? e.armedAt : Date.parse(e.startedAt ?? ""), i = e.endsAt !== void 0 ? Math.min(t, e.endsAt + X) : t;
-  return { start: (Number.isNaN(n) ? e.armedAt : n) - X, end: i };
+function Pi(e, t) {
+  const n = e.phase === "armed" ? e.armedAt : Date.parse(e.startedAt ?? ""), i = e.endsAt !== void 0 ? Math.min(t, e.endsAt + oe) : t;
+  return { start: (Number.isNaN(n) ? e.armedAt : n) - oe, end: i };
 }
-function bi(e, t) {
+function Ni(e, t) {
   const n = [...e];
   for (const i of t) {
     const s = Date.parse(i.time);
@@ -1167,28 +1260,28 @@ function bi(e, t) {
   }
   return n.sort((i, s) => Date.parse(i.time) - Date.parse(s.time));
 }
-function vi(e, t, n, i) {
+function Li(e, t, n, i) {
   let s = e;
   if (s.phase === "armed") {
-    const a = t.find((d) => Date.parse(d.time) >= s.armedAt - X);
+    const a = t.find((d) => Date.parse(d.time) >= s.armedAt - oe);
     if (a) {
       const d = Date.parse(a.time);
       s = { ...s, phase: "recording", startedAt: a.time, endsAt: d + n * 1e3 };
     }
   }
   if (s.phase === "recording") {
-    const a = Date.parse(s.startedAt ?? "") - X, d = (s.endsAt ?? i) + X, l = t.filter((h) => {
-      const u = Date.parse(h.time);
-      return u >= a && u <= d;
+    const a = Date.parse(s.startedAt ?? "") - oe, d = (s.endsAt ?? i) + oe, u = t.filter((p) => {
+      const l = Date.parse(p.time);
+      return l >= a && l <= d;
     });
-    s = { ...s, lines: bi(s.lines, l) };
+    s = { ...s, lines: Ni(s.lines, u) };
   }
   const r = s.phase === "recording" && s.endsAt !== void 0 && i >= s.endsAt;
-  return s.syncAfter !== void 0 && i >= s.syncAfter && (!r || i >= (s.endsAt ?? 0) + rt) ? { ...s, missed: !1, syncAfter: void 0 } : s;
+  return s.syncAfter !== void 0 && i >= s.syncAfter && (!r || i >= (s.endsAt ?? 0) + ct) ? { ...s, missed: !1, syncAfter: void 0 } : s;
 }
-function yi(e, t) {
+function Hi(e, t) {
   return (e?.[t] ?? []).flatMap((n) => {
-    const i = tn(
+    const i = fn(
       {
         event_type: "state_changed",
         time_fired: new Date((n.lc ?? n.lu) * 1e3).toISOString(),
@@ -1209,7 +1302,7 @@ function yi(e, t) {
     return i ? [i] : [];
   });
 }
-async function nn(e, t, n, i) {
+async function mn(e, t, n, i) {
   return await e.sendMessagePromise({
     type: "history/history_during_period",
     start_time: new Date(n).toISOString(),
@@ -1221,134 +1314,191 @@ async function nn(e, t, n, i) {
     no_attributes: !0
   }) ?? {};
 }
-async function $i(e, t, n, i) {
-  return yi(await nn(e, [t], n, i), t);
+async function ji(e, t, n, i) {
+  return Hi(await mn(e, [t], n, i), t);
 }
-function wi(e) {
+function Ki(e) {
   const t = {};
   for (const [n, i] of Object.entries(e))
     for (const s of i) s.s === "on" && (t[n] = (s.lc ?? s.lu) * 1e3);
   return t;
 }
-const He = "abb-welcome-wizard-session", Ke = 2, ki = Object.freeze({ skipped: !1, captures: [] }), xi = {
-  baseline: K,
+const Ge = "abb-welcome-wizard-session", Ve = 3, Ui = Object.freeze({ skipped: !1, captures: [] }), Wi = {
+  baseline: Z,
   ring_gate: C("tor"),
   ring_house: C("haustuer"),
   ring_apartment: C("wohnung"),
   open_gate: O("tor"),
   open_house: O("haustuer")
 };
-function St(e, t = nt, n = /* @__PURE__ */ new Date()) {
+function Bt(e, t = ot, n = /* @__PURE__ */ new Date()) {
   const i = n.toISOString();
   return {
-    format: He,
-    version: Ke,
+    format: Ge,
+    version: Ve,
     entity: e,
     createdAt: i,
     updatedAt: i,
     dials: {},
-    doors: ae(t),
-    steps: {}
+    doors: ge(t),
+    steps: {},
+    overrides: {},
+    exportSettings: {}
   };
 }
-function z(e, t) {
-  return e.steps[t] ?? ki;
+function D(e, t) {
+  return e.steps[t] ?? Ui;
 }
-function Te(e, t) {
+function Pe(e, t) {
   return { ...e, updatedAt: t.toISOString() };
 }
-function ot(e, t, n, i) {
-  return Te({ ...e, steps: { ...e.steps, [t]: n(z(e, t)) } }, i);
+function lt(e, t, n, i) {
+  return Pe({ ...e, steps: { ...e.steps, [t]: n(D(e, t)) } }, i);
 }
-function _i(e, t, n, i = /* @__PURE__ */ new Date()) {
-  return ot(e, t, (s) => ({ skipped: !1, captures: [...s.captures, n] }), i);
+function Gi(e, t, n, i = /* @__PURE__ */ new Date()) {
+  return lt(e, t, (s) => ({ skipped: !1, captures: [...s.captures, n] }), i);
 }
-function zt(e, t, n, i = /* @__PURE__ */ new Date()) {
-  return ot(
+function It(e, t, n, i = /* @__PURE__ */ new Date()) {
+  return lt(
     e,
     t,
     (s) => ({ ...s, captures: s.captures.filter((r, o) => o !== n) }),
     i
   );
 }
-function Ai(e, t, n, i = /* @__PURE__ */ new Date()) {
-  return ot(e, t, (s) => ({ ...s, skipped: n }), i);
+function Vi(e, t, n, i = /* @__PURE__ */ new Date()) {
+  return lt(e, t, (s) => ({ ...s, skipped: n }), i);
 }
-function Et(e, t, n = /* @__PURE__ */ new Date()) {
-  const i = Te({ ...e }, n);
-  return t === void 0 ? delete i.indoorAddress : i.indoorAddress = t, i;
+function Rt(e, t, n = /* @__PURE__ */ new Date()) {
+  return gn(e, { ...e.overrides, indoorAddress: t }, n);
 }
-function Si(e, t, n = /* @__PURE__ */ new Date()) {
-  return Te({ ...e, dials: { ...t } }, n);
+function gn(e, t, n = /* @__PURE__ */ new Date()) {
+  return Pe({ ...e, overrides: ut(t) }, n);
 }
-function q(e, t, n = /* @__PURE__ */ new Date()) {
-  const i = ae(t), s = /* @__PURE__ */ new Set([K]);
-  for (const o of i)
-    s.add(C(o)), o.open && s.add(O(o));
-  const r = Object.fromEntries(Object.entries(e.steps).filter(([o]) => s.has(o)));
-  return Te({ ...e, doors: i, steps: r }, n);
+function ut(e) {
+  const t = {};
+  e.indoorAddress !== void 0 && (t.indoorAddress = e.indoorAddress), e.threeByte !== void 0 && (t.threeByte = e.threeByte);
+  const n = Object.entries(e.rings ?? {}).filter(
+    ([, i]) => i.outdoorAddress !== void 0 || i.conditions !== void 0
+  );
+  return n.length > 0 && (t.rings = Object.fromEntries(n)), e.opens && Object.keys(e.opens).length > 0 && (t.opens = { ...e.opens }), t;
 }
-function Dt(e, t) {
-  return z(e, C(t)).captures.length + z(e, O(t)).captures.length;
+function Zi(e, t, n = /* @__PURE__ */ new Date()) {
+  return Pe({ ...e, dials: { ...t } }, n);
 }
-function zi(e) {
+function ne(e, t, n = /* @__PURE__ */ new Date()) {
+  const i = ge(t), s = /* @__PURE__ */ new Set([Z]);
+  for (const l of i)
+    s.add(C(l)), l.open && s.add(O(l));
+  const r = Object.fromEntries(Object.entries(e.steps).filter(([l]) => s.has(l))), o = new Set(i.map((l) => l.key)), a = new Set(i.filter((l) => l.open).map((l) => l.key)), { rings: d, opens: u } = e.overrides, p = ut({
+    ...e.overrides,
+    rings: d && Object.fromEntries(Object.entries(d).filter(([l]) => o.has(l))),
+    opens: u && Object.fromEntries(Object.entries(u).filter(([l]) => a.has(l)))
+  });
+  return Pe({ ...e, doors: i, steps: r, overrides: p }, n);
+}
+function Mt(e, t) {
+  return D(e, C(t)).captures.length + D(e, O(t)).captures.length;
+}
+function qi(e) {
   const t = e.doors.flatMap(
     (i) => i.open && !i.default ? [C(i), O(i)] : [C(i)]
   );
   let n;
   for (const i of t)
-    for (const s of z(e, i).captures) {
+    for (const s of D(e, i).captures) {
       const r = Date.parse(s.endedAt);
       !Number.isNaN(r) && (n === void 0 || r > n) && (n = r);
     }
   return n === void 0 ? void 0 : new Date(n);
 }
-function sn(e) {
+function bn(e) {
   return JSON.stringify(e, null, 2);
 }
-const N = (e) => typeof e == "object" && e !== null, pe = (e) => typeof e == "number" && Number.isInteger(e) ? e : void 0;
-function Ei(e) {
+const S = (e) => typeof e == "object" && e !== null, Le = (e) => typeof e == "number" && Number.isInteger(e) ? e : void 0, J = (e) => typeof e == "number" && Number.isInteger(e) && e >= 0 && e <= 16777215, pt = (e) => typeof e == "number" && Number.isInteger(e) && e >= 0 && e <= 255, vn = (e) => Array.isArray(e) && e.length <= 15 && e.every(pt) ? [...e] : void 0;
+function Xi(e) {
+  if (!S(e) || !pt(e.type)) return;
+  const t = { type: e.type };
+  J(e.src) && (t.src = e.src), J(e.dst) && (t.dst = e.dst);
+  const n = vn(e.data);
+  return n && (t.data = n), t;
+}
+function Yi(e) {
+  if (!(!S(e) || !J(e.destination) || !pt(e.messageType)))
+    return { destination: e.destination, messageType: e.messageType, data: vn(e.data) ?? [] };
+}
+function Ji(e) {
+  if (!S(e)) return {};
+  const t = {};
+  if (J(e.indoorAddress) && (t.indoorAddress = e.indoorAddress), typeof e.threeByte == "boolean" && (t.threeByte = e.threeByte), S(e.rings)) {
+    t.rings = {};
+    for (const [n, i] of Object.entries(e.rings)) {
+      if (!S(i)) continue;
+      const s = {};
+      J(i.outdoorAddress) && (s.outdoorAddress = i.outdoorAddress), Array.isArray(i.conditions) && (s.conditions = i.conditions.map(Xi).filter((r) => !!r)), t.rings[n] = s;
+    }
+  }
+  if (S(e.opens)) {
+    t.opens = {};
+    for (const [n, i] of Object.entries(e.opens)) {
+      const s = Yi(i);
+      s && (t.opens[n] = s);
+    }
+  }
+  return ut(t);
+}
+function Qi(e) {
+  if (!S(e)) return {};
+  const t = {};
+  (e.mode === "full" || e.mode === "snippet") && (t.mode = e.mode);
+  for (const n of ["name", "friendlyName", "debugSensorName"])
+    typeof e[n] == "string" && e[n] !== "" && (t[n] = e[n]);
+  return typeof e.nameAddMacSuffix == "boolean" && (t.nameAddMacSuffix = e.nameAddMacSuffix), t;
+}
+function es(e) {
   const t = Array.isArray(e.captures) ? e.captures : [];
   return {
     skipped: e.skipped === !0,
-    captures: t.filter(N).map((n) => ({
+    captures: t.filter(S).map((n) => ({
       startedAt: String(n.startedAt ?? ""),
       endedAt: String(n.endedAt ?? ""),
-      lines: (Array.isArray(n.lines) ? n.lines : []).filter(N).filter((i) => typeof i.line == "string").map((i) => ({ time: String(i.time ?? ""), line: i.line }))
+      lines: (Array.isArray(n.lines) ? n.lines : []).filter(S).filter((i) => typeof i.line == "string").map((i) => ({ time: String(i.time ?? ""), line: i.line }))
     }))
   };
 }
-function rn(e) {
+function yn(e) {
   let t;
   try {
     t = JSON.parse(e);
   } catch {
     throw new Error("Datei ist kein gültiges JSON.");
   }
-  if (!N(t) || t.format !== He)
+  if (!S(t) || t.format !== Ge)
     throw new Error("Datei ist keine ABB-Welcome-Wizard-Sitzung.");
-  if (t.version !== 1 && t.version !== Ke)
+  if (t.version !== 1 && t.version !== 2 && t.version !== Ve)
     throw new Error(`Nicht unterstützte Sitzungsversion: ${String(t.version)}.`);
   if (typeof t.entity != "string") throw new Error("Sitzung ohne Entität.");
-  const n = t.version === 1, i = !n && jn(t.doors) || ae(nt), s = {};
-  for (const [a, d] of Object.entries(N(t.steps) ? t.steps : {})) {
-    const l = n ? xi[a] : a;
-    l && N(d) && (s[l] = Ei(d));
+  const n = t.version === 1, i = !n && ai(t.doors) || ge(ot), s = {};
+  for (const [a, d] of Object.entries(S(t.steps) ? t.steps : {})) {
+    const u = n ? Wi[a] : a;
+    u && S(d) && (s[u] = es(d));
   }
-  const r = N(t.dials) ? t.dials : {}, o = {
-    format: He,
-    version: Ke,
+  const r = S(t.dials) ? t.dials : {}, o = {
+    format: Ge,
+    version: Ve,
     entity: t.entity,
     createdAt: String(t.createdAt ?? ""),
     updatedAt: String(t.updatedAt ?? ""),
-    dials: { station: pe(r.station), x10: pe(r.x10), x1: pe(r.x1) },
+    dials: { station: Le(r.station), x10: Le(r.x10), x1: Le(r.x1) },
     doors: i,
-    steps: s
+    steps: s,
+    overrides: Ji(t.overrides),
+    exportSettings: Qi(t.exportSettings)
   };
-  return pe(t.indoorAddress) !== void 0 && (o.indoorAddress = t.indoorAddress), { ...q(o, i), updatedAt: o.updatedAt };
+  return t.version === 2 && J(t.indoorAddress) && (o.overrides = { ...o.overrides, indoorAddress: t.indoorAddress }), { ...ne(o, i), updatedAt: o.updatedAt };
 }
-const Tt = 3, H = (e) => `„${e.name}“`;
-function Di(e, t) {
+const Ft = 3, V = (e) => `„${e.name}“`;
+function ts(e, t) {
   const n = e.type === "floor";
   return {
     id: C(e),
@@ -1356,10 +1506,10 @@ function Di(e, t) {
     door: e,
     title: `Klingeln: ${e.name}`,
     short: e.name,
-    icon: _e(e),
+    icon: De(e),
     todo: [
       "Auf „Aufnahme starten“ tippen – die Aufnahme beginnt erst, wenn der erste Frame ankommt.",
-      n ? `Den Klingeltaster an ${H(e)} (Etagenruf) drücken.` : `Zu ${H(e)} gehen und einmal klingeln. Nicht abheben, nicht öffnen.`,
+      n ? `Den Klingeltaster an ${V(e)} (Etagenruf) drücken.` : `Zu ${V(e)} gehen und einmal klingeln. Nicht abheben, nicht öffnen.`,
       "Für eine zuverlässige Erkennung 2–3 Mal wiederholen (jeweils neue Aufnahme)."
     ],
     why: n ? "Der Etagenruf ist direkt an die Innenstation angeschlossen. Sie meldet ihn mit Typ 11 auf dem Bus, die Antwort hat Typ 91." : "Frames, die in jeder Wiederholung auftauchen, sind zuverlässige Kandidaten für den Klingel-Sensor." + (t > 1 ? " Jede Außentür hat in der Regel eine eigene Außenstation – darüber werden die Türen unterschieden." : ""),
@@ -1368,7 +1518,7 @@ function Di(e, t) {
     needsPause: !1
   };
 }
-function Ct(e) {
+function Pt(e) {
   const t = {
     id: O(e),
     kind: "open",
@@ -1384,26 +1534,26 @@ function Ct(e) {
     todo: [
       "Einige Minuten nach dem letzten Klingeln warten.",
       "Auf „Aufnahme starten“ tippen.",
-      `An der Innenstation die Schlüssel-Taste drücken – ${H(e)} wird dabei wirklich geöffnet.`
+      `An der Innenstation die Schlüssel-Taste drücken – ${V(e)} wird dabei wirklich geöffnet.`
     ],
-    why: `Ohne vorheriges Klingeln öffnet die Schlüssel-Taste die Standard-Außenstation (${H(e)}). Liegt das letzte Klingeln zu kurz zurück, würde sie noch die zuletzt rufende Tür öffnen.`,
+    why: `Ohne vorheriges Klingeln öffnet die Schlüssel-Taste die Standard-Außenstation (${V(e)}). Liegt das letzte Klingeln zu kurz zurück, würde sie noch die zuletzt rufende Tür öffnen.`,
     needsPause: !0
   } : {
     ...t,
     todo: [
-      `An ${H(e)} klingeln – oder klingeln lassen. Allein: klingeln und zügig zur Innenstation gehen.`,
+      `An ${V(e)} klingeln – oder klingeln lassen. Allein: klingeln und zügig zur Innenstation gehen.`,
       "Erst an der Innenstation auf „Aufnahme starten“ tippen (das Klingeln muss nicht mit aufgenommen werden).",
-      `Sofort die Schlüssel-Taste drücken, solange der Ruf noch aktiv ist – ${H(e)} wird dabei wirklich geöffnet.`
+      `Sofort die Schlüssel-Taste drücken, solange der Ruf noch aktiv ist – ${V(e)} wird dabei wirklich geöffnet.`
     ],
     why: "Nach einem Klingeln öffnet die Schlüssel-Taste die rufende Außenstation – aber nur, solange der Ruf an der Innenstation noch aktiv ist. Ist er schon abgelaufen, öffnet sie die Standard-Tür; die Auswertung warnt dann. Gesucht wird der Frame vom Typ 0D/0E deiner Innenstation und die Bestätigung 8D/8E.",
     needsPause: !1
   };
 }
-function Ti(e) {
+function ns(e) {
   const t = e.filter((i) => i.type === "outdoor").length, n = e.filter((i) => i.open);
   return [
     {
-      id: K,
+      id: Z,
       kind: "baseline",
       title: "Baseline: Sprechverbindung ohne Klingeln",
       short: "Baseline",
@@ -1418,53 +1568,71 @@ function Ti(e) {
       waitForFrame: !1,
       needsPause: !1
     },
-    ...e.map((i) => Di(i, t)),
+    ...e.map((i) => ts(i, t)),
     // Doors opened after a doorbell first, the default door (needs a pause after ringing) last.
-    ...n.filter((i) => !i.default).map(Ct),
-    ...n.filter((i) => i.default).map(Ct)
+    ...n.filter((i) => !i.default).map(Pt),
+    ...n.filter((i) => i.default).map(Pt)
   ];
 }
-const at = (e) => `abb-welcome-wizard-card:session:${e}`;
-function Ci(e) {
+const ht = (e) => `abb-welcome-wizard-card:session:${e}`, $n = (e) => `abb-welcome-wizard-card:backup:${e}`;
+function is(e) {
+  let t = null;
   try {
-    const t = window.localStorage.getItem(at(e));
-    return t ? rn(t) : void 0;
+    t = window.localStorage.getItem(ht(e));
   } catch {
     return;
   }
+  if (t)
+    try {
+      return yn(t);
+    } catch (n) {
+      console.warn("abb-welcome-wizard-card: stored session could not be read, keeping a backup", n);
+      try {
+        window.localStorage.setItem($n(e), t);
+      } catch {
+      }
+      return;
+    }
 }
-function Oi(e) {
+function ss(e) {
   try {
-    window.localStorage.setItem(at(e.entity), sn(e));
+    return window.localStorage.getItem($n(e)) !== null;
+  } catch {
+    return !1;
+  }
+}
+function rs(e) {
+  try {
+    window.localStorage.setItem(ht(e.entity), bn(e));
   } catch {
   }
 }
-function Ii(e) {
+function os(e) {
   try {
-    window.localStorage.removeItem(at(e));
+    window.localStorage.removeItem(ht(e));
   } catch {
   }
 }
-const je = (e) => `abb-welcome-wizard-card:capture:${e}`;
-function Ot(e, t) {
+const Ze = (e) => `abb-welcome-wizard-card:capture:${e}`;
+function Nt(e, t) {
   try {
-    t ? window.localStorage.setItem(je(e), JSON.stringify(t)) : window.localStorage.removeItem(je(e));
+    t ? window.localStorage.setItem(Ze(e), JSON.stringify(t)) : window.localStorage.removeItem(Ze(e));
   } catch {
   }
 }
-function Bi(e) {
+function as(e) {
   try {
-    const t = JSON.parse(window.localStorage.getItem(je(e)) ?? "null");
+    const t = JSON.parse(window.localStorage.getItem(Ze(e)) ?? "null");
     if (t && typeof t.step == "string" && (t.phase === "armed" || t.phase === "recording") && typeof t.armedAt == "number" && Array.isArray(t.lines))
       return t;
   } catch {
   }
 }
-function It(e, t, n) {
+function Lt(e, t, n) {
   const i = URL.createObjectURL(new Blob([t], { type: n })), s = document.createElement("a");
   s.href = i, s.download = e, document.body.appendChild(s), s.click(), s.remove(), setTimeout(() => URL.revokeObjectURL(i), 1e3);
 }
-async function Fi(e) {
+async function ds(e) {
   try {
     return await navigator.clipboard.writeText(e), !0;
   } catch {
@@ -1479,7 +1647,7 @@ async function Fi(e) {
     return t.remove(), n;
   }
 }
-const Ri = Ye`
+const cs = Qe`
   :host {
     --wiz-accent: var(--primary-color, #03a9f4);
     --wiz-text: var(--primary-text-color, #212121);
@@ -1756,6 +1924,59 @@ const Ri = Ye`
     gap: 8px;
     font-size: 0.875rem;
     cursor: pointer;
+  }
+
+  /* Manual values */
+  .edit-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  button.icon.edit {
+    width: 28px;
+    height: 28px;
+    --mdc-icon-size: 16px;
+  }
+  .editor {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--wiz-surface);
+  }
+  .condition-row {
+    display: grid;
+    grid-template-columns: 64px repeat(2, minmax(80px, 1fr)) minmax(100px, 1.4fr) auto;
+    gap: 8px;
+    align-items: end;
+  }
+  .condition-row.open-row {
+    grid-template-columns: minmax(90px, 1fr) 64px minmax(120px, 2fr);
+  }
+  @media (max-width: 520px) {
+    .condition-row,
+    .condition-row.open-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .condition-row input {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--wiz-mono);
+  }
+  .field-error {
+    color: var(--wiz-error);
+    font-size: 0.75rem;
+  }
+  button.btn.small-btn {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+    justify-self: start;
+  }
+  .stat select {
+    justify-self: start;
   }
 
   /* Export */
@@ -2192,18 +2413,18 @@ const Ri = Ye`
   input[type='file'] {
     display: none;
   }
-`, U = {
+`, q = {
   name: "abb-welcome-demo",
   friendlyName: "ABB Welcome Demo",
   debugSensorName: "Doorbell Intercom",
   board: "esp32dev"
 };
-function Bt(e) {
-  return e.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || U.name;
+function Ht(e) {
+  return e.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || q.name;
 }
-const Pi = ["wifi_ssid", "wifi_password", "api_encryption_key", "ota_password", "ap_password"];
-function on(e) {
-  const t = qt(e);
+const ls = ["wifi_ssid", "wifi_password", "api_encryption_key", "ota_password", "ap_password"];
+function wn(e) {
+  const t = sn(e);
   return e.map((n) => ({
     door: n,
     id: `klingel_${t[n.key]}`,
@@ -2211,12 +2432,12 @@ function on(e) {
     icon: "mdi:bell"
   }));
 }
-function an(e) {
-  const t = qt(e);
-  return e.filter((n) => n.open).map((n) => ({ door: n, id: t[n.key], name: n.name, icon: _e(n) }));
+function kn(e) {
+  const t = sn(e);
+  return e.filter((n) => n.open).map((n) => ({ door: n, id: t[n.key], name: n.name, icon: De(n) }));
 }
-const Ue = "TÜRCODE – nicht öffentlich teilen!";
-class Mi {
+const qe = "TÜRCODE – nicht öffentlich teilen!";
+class us {
   constructor() {
     this.lines = [];
   }
@@ -2232,37 +2453,33 @@ class Mi {
 `;
   }
 }
-function he(e) {
+function ye(e) {
   return `"${e.replace(/[\r\n]+/g, " ").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
-function We(e) {
+function Be(e) {
   return e.toString(16).toUpperCase().padStart(2, "0");
 }
-function Li(e, t) {
-  const n = [`(x.get_message_type() == ${Z(e.type)})`];
-  e.src !== void 0 && n.push(`(x.get_source_address() == ${w(e.src, t)})`), e.dst !== void 0 && n.push(`(x.get_destination_address() == ${w(e.dst, t)})`);
+function ps(e, t) {
+  const n = [`(x.get_message_type() == ${se(e.type)})`];
+  e.src !== void 0 && n.push(`(x.get_source_address() == ${k(e.src, t)})`), e.dst !== void 0 && n.push(`(x.get_destination_address() == ${k(e.dst, t)})`);
   let i = "";
-  return e.data !== void 0 && (i = `std::vector<uint8_t> d = {${e.data.map(Z).join(", ")}}; `, n.push("(x.get_data() == d)")), `'${i}return ${n.join(" && ")};'`;
+  return e.data !== void 0 && (i = `std::vector<uint8_t> d = {${e.data.map(se).join(", ")}}; `, n.push("(x.get_data() == d)")), `'${i}return ${n.join(" && ")};'`;
 }
-function Ni(e, t, n) {
-  let i = `Typ ${We(e.type)}`;
-  return e.src !== void 0 && e.dst !== void 0 ? i += `: ${E(e.src, n)} > ${E(e.dst, n)}` : e.src !== void 0 ? i += `, Quelle: ${E(e.src, n)}` : e.dst !== void 0 && (i += `, Ziel: ${E(e.dst, n)}`), e.data !== void 0 && (i += `, Data: ${e.data.map((s) => We(s)).join(" ")}`), `${i} (${e.occurrences}/${t} Aufnahmen)`;
+function hs(e, t, n) {
+  let i = `Typ ${Be(e.type)}`;
+  return e.src !== void 0 && e.dst !== void 0 ? i += `: ${T(e.src, n)} > ${T(e.dst, n)}` : e.src !== void 0 ? i += `, Quelle: ${T(e.src, n)}` : e.dst !== void 0 && (i += `, Ziel: ${T(e.dst, n)}`), e.data !== void 0 && (i += `, Data: ${e.data.map((s) => Be(s)).join(" ")}`), `${i} (${e.occurrences}/${t} Aufnahmen)`;
 }
-function R(e, t, n, i, s) {
+function H(e, t, n, i, s) {
   e.line(t, `- ${n}.template.publish:`), e.line(t + 4, `id: ${i}`), e.line(t + 4, `state: ${s}`);
 }
-function Ft(e, t, n, i) {
-  R(e, t, "lock", n, "UNLOCKING"), e.line(t, `- delay: ${i}s`), R(e, t, "lock", n, "LOCKED");
+function jt(e, t, n, i) {
+  H(e, t, "lock", n, "UNLOCKING"), e.line(t, `- delay: ${i}s`), H(e, t, "lock", n, "LOCKED");
 }
-function Hi(e, t, n) {
+function fs(e, t, n) {
   const { indoor: i, threeByte: s } = t;
-  if (e.comment(0, "ABB-Welcome Wizard – generierte ESPHome-Konfiguration"), i) {
-    const o = n.apartment !== void 0 ? `, Wohnung ${n.apartment}` : "";
-    e.comment(0, `Innenstation: ${w(i.address, s)}${o}`);
-  }
-  e.comment(0, `Adresslänge: ${s ? "3 Byte (three_byte_address: true)" : "2 Byte"}`), e.comment(0, ""), n.device ? (e.comment(0, "Komplette Gerätekonfiguration auf Basis der ABB-Welcome-Demo-Firmware (Mat931)."), e.comment(0, `Im ESPHome Device Builder den Inhalt von ${n.device.name}.yaml hierdurch ersetzen.`), e.comment(0, "WICHTIG: esphome.name muss zum bestehenden Gerät passen – sonst ist es per OTA und"), e.comment(0, "in Home Assistant nicht mehr erreichbar."), e.comment(0, ""), e.comment(0, `Benötigt in secrets.yaml: ${Pi.join(", ")}.`), e.comment(0, "Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in"), e.comment(0, "Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den"), e.comment(0, "ota-Abschnitt aus der bisherigen Datei übernehmen.")) : (e.comment(0, "Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:"), e.comment(0, "esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock."), e.comment(0, "Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von"), e.comment(0, "remote_receiver, text_sensor ...) unverändert lassen."), e.comment(0, ""), e.comment(0, "Voraussetzung (in der Demo-Firmware bereits gesetzt):"), e.comment(0, "esp32:"), e.comment(0, "  framework:"), e.comment(0, "    type: esp-idf")), Object.values(t.opens).some((o) => o !== null) && (e.comment(0, ""), e.comment(
+  e.comment(0, "ABB-Welcome Wizard – generierte ESPHome-Konfiguration"), i && e.comment(0, `Innenstation: ${k(i.address, s)}`), e.comment(0, `Adresslänge: ${s ? "3 Byte (three_byte_address: true)" : "2 Byte"}`), e.comment(0, ""), n.device ? (e.comment(0, "Komplette Gerätekonfiguration auf Basis der ABB-Welcome-Demo-Firmware (Mat931)."), e.comment(0, `Im ESPHome Device Builder den Inhalt von ${n.device.name}.yaml hierdurch ersetzen.`), e.comment(0, "WICHTIG: esphome.name muss zum bestehenden Gerät passen – sonst ist es per OTA und"), e.comment(0, "in Home Assistant nicht mehr erreichbar."), e.comment(0, ""), e.comment(0, `Benötigt in secrets.yaml: ${ls.join(", ")}.`), e.comment(0, "Den API-Schlüssel aus der bisherigen Konfiguration übernehmen, sonst muss das Gerät in"), e.comment(0, "Home Assistant neu verbunden werden. Scheitert das Hochladen am OTA-Passwort, den"), e.comment(0, "ota-Abschnitt aus der bisherigen Datei übernehmen.")) : (e.comment(0, "Diese Abschnitte ersetzen die gleichnamigen Abschnitte der Demo-Firmware:"), e.comment(0, "esphome.on_boot, remote_receiver.on_abbwelcome, binary_sensor und lock."), e.comment(0, "Alle übrigen Einstellungen (wifi, api, ota, remote_transmitter, Pins von"), e.comment(0, "remote_receiver, text_sensor ...) unverändert lassen."), e.comment(0, ""), e.comment(0, "Voraussetzung (in der Demo-Firmware bereits gesetzt):"), e.comment(0, "esp32:"), e.comment(0, "  framework:"), e.comment(0, "    type: esp-idf")), Object.values(t.opens).some((o) => o !== null) && (e.comment(0, ""), e.comment(
     0,
-    n.maskDoorCode ? "Türcodes sind durch Platzhalter ersetzt – vor dem Flashen die echten Werte eintragen!" : `ACHTUNG: "data" der Öffnen-Befehle ist euer ${Ue}`
+    n.maskDoorCode ? "Türcodes sind durch Platzhalter ersetzt – vor dem Flashen die echten Werte eintragen!" : `ACHTUNG: "data" der Öffnen-Befehle ist euer ${qe}`
   ));
   const r = t.warnings.filter((o) => o.severity !== "info");
   if (r.length > 0) {
@@ -2271,119 +2488,187 @@ function Hi(e, t, n) {
   }
   e.line(0);
 }
-function Ki(e, t, n = {}) {
-  const i = new Mi(), { indoor: s, threeByte: r } = e, o = n.device ? { ...U, ...n.device } : void 0, a = o || n.debugSensorId === void 0 ? "doorbell_intercom" : n.debugSensorId, d = n.unlockSeconds ?? 3;
-  if (Hi(i, e, n), !s)
+function ms(e, t, n = {}) {
+  const i = new us(), { indoor: s, threeByte: r } = e, o = n.device ? { ...q, ...n.device } : void 0, a = o || n.debugSensorId === void 0 ? "doorbell_intercom" : n.debugSensorId, d = n.unlockSeconds ?? 3;
+  if (fs(i, e, n), !s)
     return i.comment(0, "Keine Innenstationsadresse ermittelt – es kann keine Konfiguration erzeugt werden."), i.toString();
-  const l = on(t), h = an(t), u = l.filter((p) => (e.rings[p.door.key]?.selected.length ?? 0) > 0), f = h.map((p) => ({ ...p, open: e.opens[p.door.key] ?? null })).filter((p) => p.open !== null), b = [
-    ...l.filter((p) => !u.includes(p)).map((p) => p.name),
-    ...h.filter((p) => !e.opens[p.door.key]).map((p) => `Öffnen ${p.name}`)
+  const u = wn(t), p = kn(t), l = u.filter((h) => (e.rings[h.door.key]?.selected.length ?? 0) > 0), m = p.map((h) => ({ ...h, open: e.opens[h.door.key] ?? null })).filter((h) => h.open !== null), b = [
+    ...u.filter((h) => !l.includes(h)).map((h) => h.name),
+    ...p.filter((h) => !e.opens[h.door.key]).map((h) => `Öffnen ${h.name}`)
   ];
-  if (o && (i.line(0, "esp32:"), i.line(2, `board: ${o.board}`), i.line(2, "framework:"), i.line(4, "type: esp-idf"), i.comment(4, "sdkconfig_options:"), i.comment(4, "  CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig"), i.line(0)), o || u.length + f.length > 0) {
-    if (i.line(0, "esphome:"), o && (i.line(2, `name: ${o.name}`), i.line(2, `friendly_name: ${he(o.friendlyName)}`)), u.length + f.length > 0) {
+  if (o && (i.line(0, "esp32:"), i.line(2, `board: ${o.board}`), i.line(2, "framework:"), i.line(4, "type: esp-idf"), i.comment(4, "sdkconfig_options:"), i.comment(4, "  CONFIG_FREERTOS_UNICORE: y # nur bei Single-Core-ESP32 nötig"), i.line(0)), o || l.length + m.length > 0) {
+    if (i.line(0, "esphome:"), o && (i.line(2, `name: ${o.name}`), i.line(2, `friendly_name: ${ye(o.friendlyName)}`)), l.length + m.length > 0) {
       i.line(2, "on_boot:");
-      for (const p of u) R(i, 4, "binary_sensor", p.id, "OFF");
-      for (const p of f) R(i, 4, "lock", p.id, "LOCKED");
+      for (const h of l) H(i, 4, "binary_sensor", h.id, "OFF");
+      for (const h of m) H(i, 4, "lock", h.id, "LOCKED");
     }
     i.line(0);
   }
-  o && ji(i), i.line(0, "remote_receiver:"), o ? Ui(i) : i.comment(2, "pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration"), i.line(2, "on_abbwelcome:"), i.line(4, "then:"), a && (i.comment(6, "Debug-Textsensor (id ggf. an eure Firmware anpassen)"), i.line(6, `- lambda: 'char buf[192]; x.format_to(buf, 192); id(${a}).publish_state(buf);'`));
-  for (const p of u) {
-    const g = e.rings[p.door.key], v = g.outdoorAddress !== void 0 ? ` – ${E(g.outdoorAddress, r)}` : "";
-    i.comment(6, `${p.name}${v}`), i.line(6, "- if:"), i.line(10, "condition:"), i.line(12, "or:");
-    for (const x of g.selected)
-      i.comment(14, Ni(x, g.captures, r)), i.line(14, `- lambda: ${Li(x, r)}`);
-    i.line(10, "then:"), R(i, 12, "binary_sensor", p.id, "ON"), R(i, 12, "binary_sensor", p.id, "OFF");
+  o && gs(i), i.line(0, "remote_receiver:"), o ? bs(i) : i.comment(2, "pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration"), i.line(2, "on_abbwelcome:"), i.line(4, "then:"), a && (i.comment(6, "Debug-Textsensor (id ggf. an eure Firmware anpassen)"), i.line(6, `- lambda: 'char buf[192]; x.format_to(buf, 192); id(${a}).publish_state(buf);'`));
+  for (const h of l) {
+    const v = e.rings[h.door.key], y = v.outdoorAddress !== void 0 ? ` – ${T(v.outdoorAddress, r)}` : "";
+    i.comment(6, `${h.name}${y}`), i.line(6, "- if:"), i.line(10, "condition:"), i.line(12, "or:");
+    for (const w of v.selected)
+      i.comment(14, hs(w, v.captures, r)), i.line(14, `- lambda: ${ps(w, r)}`);
+    i.line(10, "then:"), H(i, 12, "binary_sensor", h.id, "ON"), H(i, 12, "binary_sensor", h.id, "OFF");
   }
-  for (const p of f) {
-    const g = p.open.confirmation;
-    g && (i.comment(6, `${p.name} geöffnet (Bestätigung Typ ${We(g.messageType)})`), i.line(6, "- if:"), i.line(10, "condition:"), i.line(12, "and:"), i.line(14, `- lambda: 'return (x.get_message_type() == ${Z(g.messageType)});'`), i.line(
+  for (const h of m) {
+    const v = h.open.confirmation;
+    v && (i.comment(6, `${h.name} geöffnet (Bestätigung Typ ${Be(v.messageType)})`), i.line(6, "- if:"), i.line(10, "condition:"), i.line(12, "and:"), i.line(14, `- lambda: 'return (x.get_message_type() == ${se(v.messageType)});'`), i.line(
       14,
-      `- lambda: 'return (x.get_source_address() == ${w(g.source, r)});'`
-    ), g.destination !== void 0 && i.line(
+      `- lambda: 'return (x.get_source_address() == ${k(v.source, r)});'`
+    ), v.destination !== void 0 && i.line(
       14,
-      `- lambda: 'return (x.get_destination_address() == ${w(g.destination, r)});'`
-    ), i.line(10, "then:"), Ft(i, 12, p.id, d));
+      `- lambda: 'return (x.get_destination_address() == ${k(v.destination, r)});'`
+    ), i.line(10, "then:"), jt(i, 12, h.id, d));
   }
-  if (b.length > 0 && i.comment(6, `Nicht ermittelt: ${b.join(", ")}`), i.line(0), u.length > 0) {
+  if (b.length > 0 && i.comment(6, `Nicht ermittelt: ${b.join(", ")}`), i.line(0), l.length > 0) {
     i.line(0, "binary_sensor:");
-    for (const p of u)
-      i.line(2, "- platform: template"), i.line(4, `name: ${he(p.name)}`), i.line(4, `id: ${p.id}`), i.line(4, `icon: ${p.icon}`), i.line(4, "filters:"), i.line(6, "- delayed_off: 1s");
+    for (const h of l)
+      i.line(2, "- platform: template"), i.line(4, `name: ${ye(h.name)}`), i.line(4, `id: ${h.id}`), i.line(4, `icon: ${h.icon}`), i.line(4, "filters:"), i.line(6, "- delayed_off: 1s");
     i.line(0);
   }
   if (o && (i.line(0, "sensor:"), i.line(2, "- platform: internal_temperature"), i.line(4, 'name: "Internal Temperature"'), i.line(0), i.line(0, "text_sensor:"), i.line(2, "- platform: template"), i.line(
     4,
-    `name: ${he(o.debugSensorName ?? U.debugSensorName)} # Debug-Sensor für diese Karte`
-  ), i.line(4, "id: doorbell_intercom"), i.line(4, "icon: mdi:bell-circle"), i.line(4, "update_interval: never"), i.line(0)), f.length > 0) {
+    `name: ${ye(o.debugSensorName ?? q.debugSensorName)} # Debug-Sensor für diese Karte`
+  ), i.line(4, "id: doorbell_intercom"), i.line(4, "icon: mdi:bell-circle"), i.line(4, "update_interval: never"), i.line(0)), m.length > 0) {
     i.line(0, "lock:");
-    for (const p of f) {
-      const { open: g } = p, v = n.maskDoorCode ? g.data.map(() => 0) : g.data;
-      i.line(2, "- platform: template"), i.line(4, `name: ${he(p.name)}`), i.line(4, `id: ${p.id}`), i.line(4, `icon: ${p.icon}`), i.line(4, "lock_action:"), R(i, 6, "lock", p.id, "LOCKED"), i.line(4, "unlock_action:"), i.line(6, "- remote_transmitter.transmit_abbwelcome:"), i.line(10, `source_address: ${w(s.address, r)} # Innenstation`), i.line(
+    for (const h of m) {
+      const { open: v } = h, y = n.maskDoorCode ? v.data.map(() => 0) : v.data;
+      v.derived && i.comment(
+        2,
+        `${h.name}: abgeleitet aus der Bestätigung ${Be(v.messageType | 128)} – unbestätigt, bitte testen`
+      ), i.line(2, "- platform: template"), i.line(4, `name: ${ye(h.name)}`), i.line(4, `id: ${h.id}`), i.line(4, `icon: ${h.icon}`), i.line(4, "lock_action:"), H(i, 6, "lock", h.id, "LOCKED"), i.line(4, "unlock_action:"), i.line(6, "- remote_transmitter.transmit_abbwelcome:"), i.line(10, `source_address: ${k(s.address, r)} # Innenstation`), i.line(
         10,
-        `destination_address: ${w(g.destination, r)} # ${E(g.destination, r)}`
+        `destination_address: ${k(v.destination, r)} # ${T(v.destination, r)}`
       ), i.line(10, `three_byte_address: ${r}`), i.line(
         10,
-        `message_type: ${Z(g.messageType)} # ${g.messageType === 14 ? "Schiebetür" : "Türöffner"}`
+        `message_type: ${se(v.messageType)} # ${v.messageType === 14 ? "Schiebetür" : "Türöffner"}`
       );
-      const x = n.maskDoorCode ? `PLATZHALTER: ${v.length} Byte ${Ue}` : Ue;
-      i.line(10, `data: [${v.map(Z).join(", ")}] # ${x}`), g.confirmation || (i.comment(6, "Keine Bestätigung vom Bus aufgenommen – Status wird nur angenommen"), Ft(i, 6, p.id, d));
+      const w = n.maskDoorCode ? `PLATZHALTER: ${y.length} Byte ${qe}` : qe;
+      i.line(10, `data: [${y.map(se).join(", ")}] # ${w}`), v.confirmation || (i.comment(6, "Keine Bestätigung vom Bus aufgenommen – Status wird nur angenommen"), jt(i, 6, h.id, d));
     }
   }
-  return o && (f.length > 0 && i.line(0), i.line(0, "button:"), i.line(2, "- platform: restart"), i.line(4, 'name: "Reboot"'), i.line(2, "- platform: safe_mode"), i.line(4, 'name: "Reboot (Safe Mode)"'), i.line(0), i.line(0, "status_led:"), i.line(2, "pin:"), i.line(4, "number: GPIO2"), i.line(4, "ignore_strapping_warning: true")), i.toString();
+  return o && (m.length > 0 && i.line(0), i.line(0, "button:"), i.line(2, "- platform: restart"), i.line(4, 'name: "Reboot"'), i.line(2, "- platform: safe_mode"), i.line(4, 'name: "Reboot (Safe Mode)"'), i.line(0), i.line(0, "status_led:"), i.line(2, "pin:"), i.line(4, "number: GPIO2"), i.line(4, "ignore_strapping_warning: true")), i.toString();
 }
-function ji(e) {
+function gs(e) {
   e.line(0, "wifi:"), e.line(2, "ssid: !secret wifi_ssid"), e.line(2, "password: !secret wifi_password"), e.line(2, "ap:"), e.line(4, "password: !secret ap_password"), e.line(0), e.line(0, "captive_portal:"), e.line(0), e.line(0, "logger:"), e.line(0), e.line(0, "api:"), e.line(2, "encryption:"), e.line(4, "key: !secret api_encryption_key"), e.line(2, "batch_delay: 0ms # jeden Bus-Frame einzeln an Home Assistant senden"), e.line(0), e.line(0, "ota:"), e.line(2, "- platform: esphome"), e.line(4, "password: !secret ota_password"), e.line(0), e.line(0, "remote_transmitter:"), e.line(2, "pin: GPIO26"), e.line(2, "carrier_duty_percent: 100%"), e.line(2, "non_blocking: true"), e.line(0);
 }
-function Ui(e) {
+function bs(e) {
   e.line(2, "pin:"), e.line(4, "number: GPIO25"), e.line(4, "mode:"), e.line(6, "input: true"), e.line(2, "dump: [abbwelcome]"), e.line(2, "filter: 8us"), e.line(2, "tolerance:"), e.line(4, "type: time"), e.line(4, "value: 26us"), e.line(2, "idle: 1500us"), e.line(2, "buffer_size: 15kB"), e.line(2, "rmt_symbols: 320"), e.line(2, "clock_resolution: 500000");
 }
-var Wi = Object.defineProperty, Gi = Object.getOwnPropertyDescriptor, _ = (e, t, n, i) => {
-  for (var s = i > 1 ? void 0 : i ? Gi(t, n) : t, r = e.length - 1, o; r >= 0; r--)
+function xn(e) {
+  const t = e.trim().replace(/^0x/i, "");
+  return /^[0-9a-f]{1,2}$/i.test(t) ? parseInt(t, 16) : void 0;
+}
+function _n(e) {
+  const t = e.trim().split(/[\s.,:;-]+/).filter((i) => i !== "").map((i) => i.replace(/^0x/i, "")), n = [];
+  for (const i of t) {
+    if (!/^[0-9a-f]+$/i.test(i)) return;
+    if (i.length <= 2) n.push(parseInt(i, 16));
+    else if (i.length % 2 === 0)
+      for (let s = 0; s < i.length; s += 2) n.push(parseInt(i.slice(s, s + 2), 16));
+    else return;
+  }
+  return n.length <= 15 ? n : void 0;
+}
+function Ie(e) {
+  const t = e.trim().replace(/^0x/i, "");
+  return /^([0-9a-f]{4}|[0-9a-f]{6})$/i.test(t) ? parseInt(t, 16) : void 0;
+}
+const ft = (e) => e.toString(16).toUpperCase().padStart(2, "0"), An = (e) => e.map(ft).join(" "), pe = (e, t) => e.toString(16).toUpperCase().padStart(t ? 6 : 4, "0");
+function vs(e, t) {
+  return {
+    type: ft(e.type),
+    src: e.src !== void 0 ? pe(e.src, t) : "",
+    dst: e.dst !== void 0 ? pe(e.dst, t) : "",
+    data: e.data ? An(e.data) : ""
+  };
+}
+function ys(e, t) {
+  return e ? {
+    destination: pe(e.destination, t),
+    type: ft(e.messageType),
+    data: An(e.data)
+  } : { destination: "", type: "0D", data: "" };
+}
+function $s(e) {
+  const t = {}, n = xn(e.type);
+  n === void 0 && (t.type = "Typ: ein Hex-Byte, z. B. 01");
+  const i = e.src.trim() === "" ? void 0 : Ie(e.src);
+  e.src.trim() !== "" && i === void 0 && (t.src = "Quelle: 4 oder 6 Hex-Ziffern, z. B. 2001");
+  const s = e.dst.trim() === "" ? void 0 : Ie(e.dst);
+  e.dst.trim() !== "" && s === void 0 && (t.dst = "Ziel: 4 oder 6 Hex-Ziffern, z. B. 1016");
+  const r = e.data.trim() === "" ? void 0 : _n(e.data);
+  if (e.data.trim() !== "" && r === void 0 && (t.data = "Data: Hex-Bytes, z. B. 01 10 16"), Object.keys(t).length > 0 || n === void 0) return { errors: t };
+  if (i === void 0 && s === void 0 && r === void 0)
+    return {
+      errors: {
+        src: "Mindestens Quelle, Ziel oder Data angeben – sonst passt die Bedingung auf jeden Frame."
+      }
+    };
+  const o = { type: n };
+  return i !== void 0 && (o.src = i), s !== void 0 && (o.dst = s), r !== void 0 && (o.data = r), { condition: o, errors: t };
+}
+function ws(e) {
+  const t = {}, n = Ie(e.destination);
+  n === void 0 && (t.destination = "Ziel: 4 oder 6 Hex-Ziffern, z. B. 4002");
+  const i = xn(e.type);
+  i === void 0 && (t.type = "Typ: ein Hex-Byte, meist 0D oder 0E");
+  const s = _n(e.data);
+  return s === void 0 && (t.data = "Data: Hex-Bytes, z. B. 1C 41 68 (höchstens 15)"), n === void 0 || i === void 0 || s === void 0 ? { errors: t } : { open: { destination: n, messageType: i, data: s }, errors: t };
+}
+var ks = Object.defineProperty, xs = Object.getOwnPropertyDescriptor, _ = (e, t, n, i) => {
+  for (var s = i > 1 ? void 0 : i ? xs(t, n) : t, r = e.length - 1, o; r >= 0; r--)
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
-  return i && s && Wi(t, n, s), s;
+  return i && s && ks(t, n, s), s;
 };
-const se = "abb-welcome-wizard-card", Vi = "0.6.0", Rt = 10, qi = 40, Yi = 900 * 1e3, Zi = {
+const he = "abb-welcome-wizard-card", _s = "0.6.0", Kt = 10, As = 40, Ss = 900 * 1e3, zs = {
   info: "mdi:information-outline",
   warning: "mdi:alert-outline",
   error: "mdi:alert-circle-outline"
 };
-function Be(e) {
+function He(e) {
   const t = new Date(e);
   return Number.isNaN(t.getTime()) ? "--:--:--" : t.toLocaleTimeString("de-DE", { hour12: !1 });
 }
-const fe = (e) => e.toString(16).toUpperCase().padStart(2, "0");
-let k = class extends B {
+const te = (e) => e.toString(16).toUpperCase().padStart(2, "0");
+let x = class extends F {
   constructor() {
     super(...arguments), this.page = 0, this.live = [], this.capture = null, this.now = Date.now(), this.toast = "", this.maskDoorCode = !1, this.showDoorCode = !1, this.exportMode = "full", this.deviceEdits = {}, this.indoorInput = "", this.receivedCount = 0, this.syncing = !1, this.lastSyncAt = 0, this.syncFailed = !1, this.onVisibilityChange = () => {
-      this.capture && (this.capture = document.visibilityState === "hidden" ? _t(this.capture) : At(this.capture, Date.now()));
+      this.capture && (this.capture = document.visibilityState === "hidden" ? Ct(this.capture) : Ot(this.capture, Date.now()));
     };
   }
   // ---- Lovelace API --------------------------------------------------------------------------------
   static getConfigElement() {
-    return document.createElement(en);
+    return document.createElement(hn);
   }
   static getStubConfig(e) {
     return { entity: Object.keys(e?.states ?? {}).filter(
       (n) => n.startsWith("sensor.") && /intercom|abb|welcome|frame|doorbell/i.test(n)
-    )[0] ?? "sensor.doorbell_intercom", capture_seconds: Rt };
+    )[0] ?? "sensor.doorbell_intercom", capture_seconds: Kt };
   }
   setConfig(e) {
     if (!e || typeof e.entity != "string" || !e.entity.includes("."))
       throw new Error('Bitte "entity" auf den Debug-Textsensor setzen, z. B. sensor.doorbell_intercom.');
     if (e.capture_seconds !== void 0 && (typeof e.capture_seconds != "number" || e.capture_seconds < 2 || e.capture_seconds > 120))
       throw new Error('"capture_seconds" muss eine Zahl zwischen 2 und 120 sein.');
-    if (e.indoor_address !== void 0 && ue(e.indoor_address) === void 0)
+    if (e.indoor_address !== void 0 && ve(e.indoor_address) === void 0)
       throw new Error('"indoor_address" muss eine Adresse wie 0x1010 oder 0x000110 sein.');
-    e.doors !== void 0 && $t(e.doors);
+    e.doors !== void 0 && Et(e.doors);
     const t = this.config?.entity !== e.entity;
-    this.config = e, t && (this.resubscribe(), this.session = Ci(e.entity) ?? St(e.entity, this.configDoors), this.indoorInput = this.session.indoorAddress !== void 0 ? w(this.session.indoorAddress, this.session.indoorAddress > 65535) : "", this.live = [], this.capture = null, this.resumeCapture(e.entity));
+    if (this.config = e, t) {
+      this.resubscribe();
+      const n = is(e.entity);
+      this.session = n ?? Bt(e.entity, this.configDoors), !n && ss(e.entity) && this.showToast("Gespeicherte Sitzung nicht lesbar – eine Sicherung wurde im Browser abgelegt."), this.indoorInput = this.session.overrides.indoorAddress !== void 0 ? k(this.session.overrides.indoorAddress, this.session.overrides.indoorAddress > 65535) : "", this.live = [], this.capture = null, this.resumeCapture(e.entity);
+    }
   }
   getCardSize() {
     return 10;
   }
   set hass(e) {
     const t = !this._hass, n = this.online;
-    this._hass = e, this.capture && n !== this.online && (this.capture = this.online ? At(this.capture, Date.now()) : _t(this.capture)), t && this.subscribe(), this.requestUpdate();
+    this._hass = e, this.capture && n !== this.online && (this.capture = this.online ? Ot(this.capture, Date.now()) : Ct(this.capture)), t && this.subscribe(), this.requestUpdate();
   }
   get hass() {
     return this._hass;
@@ -2398,12 +2683,12 @@ let k = class extends B {
     super.disconnectedCallback(), document.removeEventListener("visibilitychange", this.onVisibilityChange), this.unsubscribeEvents(), this.stopTimer();
   }
   updated(e) {
-    this.session && this.page > this.resultPage && (this.page = this.resultPage), e.has("page") && e.get("page") !== void 0 && this.renderRoot.querySelector(".stepper .current")?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: "smooth" }), e.has("capture") && (this.capture ? this.startTimer() : this.stopTimer(), this.config && Ot(this.config.entity, this.capture));
+    this.session && this.page > this.resultPage && (this.page = this.resultPage), e.has("page") && e.get("page") !== void 0 && this.renderRoot.querySelector(".stepper .current")?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: "smooth" }), e.has("capture") && (this.capture ? this.startTimer() : this.stopTimer(), this.config && Nt(this.config.entity, this.capture));
   }
   // ---- Event subscription (read-only: the card never calls services or sends frames) ---------------
   subscribe() {
     this.unsubscribe || !this._hass?.connection || !this.config || !this.isConnected || (this.unsubscribe = this._hass.connection.subscribeEvents((e) => this.onStateChanged(e), "state_changed").catch((e) => {
-      console.error(`${se}: subscribing to state_changed failed`, e), this.unsubscribe = void 0;
+      console.error(`${he}: subscribing to state_changed failed`, e), this.unsubscribe = void 0;
     }));
   }
   unsubscribeEvents() {
@@ -2416,16 +2701,16 @@ let k = class extends B {
   }
   onStateChanged(e) {
     if (!this.config) return;
-    const t = tn(e, this.config.entity);
-    t && (this.receivedCount++, this.live = [t, ...this.live].slice(0, qi), this.capture && (this.capture = fi(this.capture, t, this.captureSeconds, Date.now())));
+    const t = fn(e, this.config.entity);
+    t && (this.receivedCount++, this.live = [t, ...this.live].slice(0, As), this.capture && (this.capture = Mi(this.capture, t, this.captureSeconds, Date.now())));
   }
   // ---- Capture -------------------------------------------------------------------------------------
   get captureSeconds() {
-    return this.config?.capture_seconds ?? Rt;
+    return this.config?.capture_seconds ?? Kt;
   }
   startTimer() {
     this.timer === void 0 && (this.timer = window.setInterval(() => {
-      this.now = Date.now(), this.capture && (this.capture.missed ? this.syncFromHistory() : mi(this.capture, this.now) && this.finishCapture());
+      this.now = Date.now(), this.capture && (this.capture.missed ? this.syncFromHistory() : Fi(this.capture, this.now) && this.finishCapture());
     }, 250));
   }
   stopTimer() {
@@ -2433,7 +2718,7 @@ let k = class extends B {
   }
   beginCapture(e) {
     const t = this.currentStep;
-    t && (this.now = Date.now(), this.syncFailed = !1, this.capture = hi(t.id, this.captureSeconds, e, this.now));
+    t && (this.now = Date.now(), this.syncFailed = !1, this.capture = Ri(t.id, this.captureSeconds, e, this.now));
   }
   /** Fill in frames missed while offline from the recorder history (read-only). */
   async syncFromHistory() {
@@ -2441,10 +2726,10 @@ let k = class extends B {
     if (!(!e?.missed || e.syncAfter === void 0 || !this.online || !this._hass?.connection || !this.config || this.syncing || t - this.lastSyncAt < 2e3)) {
       this.syncing = !0, this.lastSyncAt = t;
       try {
-        const { start: n, end: i } = gi(e, t), s = await $i(this._hass.connection, this.config.entity, n, i);
-        this.capture?.armedAt === e.armedAt && (this.capture = vi(this.capture, s, this.captureSeconds, Date.now()));
+        const { start: n, end: i } = Pi(e, t), s = await ji(this._hass.connection, this.config.entity, n, i);
+        this.capture?.armedAt === e.armedAt && (this.capture = Li(this.capture, s, this.captureSeconds, Date.now()));
       } catch (n) {
-        console.warn(`${se}: reading history failed`, n), this.capture?.armedAt === e.armedAt && !this.syncFailed && (this.syncFailed = !0, this.capture = { ...this.capture, missed: !1, syncAfter: void 0 }, this.showToast("Verpasste Frames konnten nicht aus dem Verlauf geladen werden."));
+        console.warn(`${he}: reading history failed`, n), this.capture?.armedAt === e.armedAt && !this.syncFailed && (this.syncFailed = !0, this.capture = { ...this.capture, missed: !1, syncAfter: void 0 }, this.showToast("Verpasste Frames konnten nicht aus dem Verlauf geladen werden."));
       } finally {
         this.syncing = !1;
       }
@@ -2452,21 +2737,21 @@ let k = class extends B {
   }
   /** Continue a capture that was interrupted by reloading the page or app. */
   resumeCapture(e) {
-    const t = Bi(e);
+    const t = as(e);
     if (!t) return;
     const n = this.steps.findIndex((i) => i.id === t.step);
-    if (n < 0 || Date.now() - t.armedAt > Yi) {
-      Ot(e, null);
+    if (n < 0 || Date.now() - t.armedAt > Ss) {
+      Nt(e, null);
       return;
     }
-    this.page = n + 1, this.capture = { ...t, missed: !0, syncAfter: Date.now() + rt }, this.showToast("Unterbrochene Aufnahme wird fortgesetzt.");
+    this.page = n + 1, this.capture = { ...t, missed: !0, syncAfter: Date.now() + ct }, this.showToast("Unterbrochene Aufnahme wird fortgesetzt.");
   }
   finishCapture() {
     const e = this.capture;
     if (this.capture = null, !e || e.phase !== "recording") return;
     const t = Math.min(Date.now(), e.endsAt ?? Date.now());
     this.updateSession(
-      _i(this.session, e.step, {
+      Gi(this.session, e.step, {
         startedAt: e.startedAt ?? (/* @__PURE__ */ new Date()).toISOString(),
         endedAt: new Date(t).toISOString(),
         lines: e.lines
@@ -2480,38 +2765,36 @@ let k = class extends B {
   }
   // ---- Session -------------------------------------------------------------------------------------
   updateSession(e) {
-    this.session = e, Oi(e);
+    this.session = e, rs(e);
   }
   /** Doors from the card config (`doors:`), otherwise the default gate / house door / apartment setup. */
   get configDoors() {
-    return this.config?.doors !== void 0 ? $t(this.config.doors) : [...nt];
+    return this.config?.doors !== void 0 ? Et(this.config.doors) : [...ot];
   }
   get steps() {
-    return this.stepsCache?.doors !== this.session.doors && (this.stepsCache = { doors: this.session.doors, steps: Ti(this.session.doors) }), this.stepsCache.steps;
+    return this.stepsCache?.doors !== this.session.doors && (this.stepsCache = { doors: this.session.doors, steps: ns(this.session.doors) }), this.stepsCache.steps;
   }
   /** Page 0 is the start page, 1..steps.length are the recording steps, the last page is the result. */
   get resultPage() {
     return this.steps.length + 1;
   }
   get configIndoor() {
-    return ue(this.config?.indoor_address);
+    return ve(this.config?.indoor_address);
   }
   get result() {
-    const e = this.session.indoorAddress ?? this.configIndoor, t = this.analysisCache;
+    const e = this.session.overrides.indoorAddress ?? this.configIndoor, t = this.analysisCache;
     if (t && t.session === this.session && t.indoor === e) return t.result;
-    const n = oi(this.session, { indoorAddress: e });
+    const n = Ei(this.session, { indoorAddress: e });
     return this.analysisCache = { session: this.session, indoor: e, result: n }, n;
   }
-  /** Address used to highlight own frames: detected, manual or expected from the dials. */
-  get highlightAddress() {
+  /** Addresses used to highlight own frames: detected or manual, otherwise those the dials stand for. */
+  get highlightAddresses() {
     const e = this.result.indoor?.address;
-    if (e !== void 0) return e;
-    const t = ve(this.session.dials);
-    return t !== void 0 ? ke(t, !1) : void 0;
+    return e !== void 0 ? [e] : ze(this.session.dials, !1).map((t) => t.address);
   }
   exportSession() {
     const e = (/* @__PURE__ */ new Date()).toISOString().slice(0, 16).replace(/[:T]/g, "-");
-    It(`abb-welcome-session-${e}.json`, sn(this.session), "application/json");
+    Lt(`abb-welcome-session-${e}.json`, bn(this.session), "application/json");
   }
   importSession() {
     this.renderRoot.querySelector("#import")?.click();
@@ -2520,19 +2803,19 @@ let k = class extends B {
     const t = e.target, n = t.files?.[0];
     if (t.value = "", !(!n || !this.config))
       try {
-        const i = rn(await n.text());
-        this.updateSession({ ...i, entity: this.config.entity }), this.indoorInput = i.indoorAddress !== void 0 ? w(i.indoorAddress, i.indoorAddress > 65535) : "", this.page = this.resultPage, this.showToast("Sitzung importiert.");
+        const i = yn(await n.text());
+        this.updateSession({ ...i, entity: this.config.entity }), this.indoorInput = i.overrides.indoorAddress !== void 0 ? k(i.overrides.indoorAddress, i.overrides.indoorAddress > 65535) : "", this.page = this.resultPage, this.showToast("Sitzung importiert.");
       } catch (i) {
         this.showToast(i instanceof Error ? i.message : String(i));
       }
   }
   resetSession() {
-    this.config && window.confirm("Alle Aufnahmen dieser Sitzung löschen und neu beginnen?") && (Ii(this.config.entity), this.updateSession(St(this.config.entity, this.configDoors)), this.indoorInput = "", this.capture = null, this.page = 0);
+    this.config && window.confirm("Alle Aufnahmen dieser Sitzung löschen und neu beginnen?") && (os(this.config.entity), this.updateSession(Bt(this.config.entity, this.configDoors)), this.indoorInput = "", this.capture = null, this.page = 0);
   }
   onDialInput(e, t) {
     const n = t.target.value, i = n === "" ? void 0 : Number(n);
     this.updateSession(
-      Si(this.session, {
+      Zi(this.session, {
         ...this.session.dials,
         [e]: i !== void 0 && Number.isInteger(i) ? i : void 0
       })
@@ -2541,36 +2824,36 @@ let k = class extends B {
   onIndoorInput(e) {
     this.indoorInput = e.target.value;
     const t = this.indoorInput.trim();
-    if (t === "") this.updateSession(Et(this.session, void 0));
+    if (t === "") this.updateSession(Rt(this.session, void 0));
     else {
-      const n = ue(t);
-      n !== void 0 && this.updateSession(Et(this.session, n));
+      const n = ve(t);
+      n !== void 0 && this.updateSession(Rt(this.session, n));
     }
   }
   updateDoor(e, t) {
     let n = this.session.doors.map((i) => i.key === e ? { ...i, ...t } : i);
-    t.default && (n = n.map((i) => i.key === e ? i : { ...i, default: !1 })), this.updateSession(q(this.session, n));
+    t.default && (n = n.map((i) => i.key === e ? i : { ...i, default: !1 })), this.updateSession(ne(this.session, n));
   }
   renameDoor(e, t) {
     const n = t.target, i = n.value.trim();
     i === "" ? n.value = e.name : i !== e.name && this.updateDoor(e.key, { name: i });
   }
   addDoor() {
-    this.session.doors.length >= ne || this.updateSession(q(this.session, [...this.session.doors, Kn(this.session.doors)]));
+    this.session.doors.length >= le || this.updateSession(ne(this.session, [...this.session.doors, oi(this.session.doors)]));
   }
   removeDoor(e) {
     if (this.session.doors.length <= 1) return;
-    const t = Dt(this.session, e);
+    const t = Mt(this.session, e);
     t > 0 && !window.confirm(`„${e.name}“ und ${t} Aufnahme(n) dieser Tür löschen?`) || this.updateSession(
-      q(
+      ne(
         this.session,
         this.session.doors.filter((n) => n.key !== e.key)
       )
     );
   }
   resetDoors() {
-    const e = this.configDoors, t = this.session.doors.filter((n) => !e.some((i) => i.key === n.key)).reduce((n, i) => n + Dt(this.session, i), 0);
-    t > 0 && !window.confirm(`Dabei gehen ${t} Aufnahme(n) entfernter Türen verloren. Fortfahren?`) || this.updateSession(q(this.session, e));
+    const e = this.configDoors, t = this.session.doors.filter((n) => !e.some((i) => i.key === n.key)).reduce((n, i) => n + Mt(this.session, i), 0);
+    t > 0 && !window.confirm(`Dabei gehen ${t} Aufnahme(n) entfernter Türen verloren. Fortfahren?`) || this.updateSession(ne(this.session, e));
   }
   showToast(e) {
     this.toast = e, window.clearTimeout(this.toastTimer), this.toastTimer = window.setTimeout(() => this.toast = "", 4e3);
@@ -2585,11 +2868,11 @@ let k = class extends B {
   }
   skipStep() {
     const e = this.currentStep;
-    e && this.updateSession(Ai(this.session, e.id, !0)), this.goTo(this.page + 1);
+    e && this.updateSession(Vi(this.session, e.id, !0)), this.goTo(this.page + 1);
   }
   // ---- Rendering -----------------------------------------------------------------------------------
   render() {
-    return !this.config || !this.session ? m : c`
+    return !this.config || !this.session ? f : c`
       <ha-card>
         <div class="header">
           <div class="header-icon"><ha-icon icon="mdi:doorbell-video"></ha-icon></div>
@@ -2611,7 +2894,7 @@ let k = class extends B {
         ${this.renderStepper()}
         <div class="progress"><div style="width:${this.page / this.resultPage * 100}%"></div></div>
         <div class="content">
-          ${this.capture ? m : this.renderConnectionStatus()}
+          ${this.capture ? f : this.renderConnectionStatus()}
           ${this.page === 0 ? this.renderStart() : this.page >= this.resultPage ? this.renderResult() : this.renderStep(this.steps[this.page - 1])}
         </div>
         ${this.renderFooter()}
@@ -2622,7 +2905,7 @@ let k = class extends B {
     const e = [
       { label: "Start", icon: "mdi:play", status: "" },
       ...this.steps.map((t) => {
-        const n = z(this.session, t.id), i = n.captures.length > 0 ? "done" : n.skipped ? "skipped" : "";
+        const n = D(this.session, t.id), i = n.captures.length > 0 ? "done" : n.skipped ? "skipped" : "";
         return { label: t.short, icon: i === "done" ? "mdi:check" : t.icon, status: i };
       }),
       { label: "Ergebnis", icon: "mdi:file-code-outline", status: "" }
@@ -2647,7 +2930,7 @@ let k = class extends B {
     `;
   }
   renderFooter() {
-    const e = this.currentStep, t = e ? z(this.session, e.id).captures.length > 0 : !1;
+    const e = this.currentStep, t = e ? D(this.session, e.id).captures.length > 0 : !1;
     return c`
       <div class="footer">
         <button
@@ -2658,11 +2941,11 @@ let k = class extends B {
           <ha-icon icon="mdi:chevron-left"></ha-icon>Zurück
         </button>
         <span class="spacer"></span>
-        ${this.toast ? c`<span class="toast" role="status">${this.toast}</span>` : m}
+        ${this.toast ? c`<span class="toast" role="status">${this.toast}</span>` : f}
         <span class="spacer"></span>
         ${e && !t ? c`<button class="btn text" ?disabled=${!!this.capture} @click=${this.skipStep}>
                 Überspringen
-              </button>` : m}
+              </button>` : f}
         ${this.page < this.resultPage ? c`<button
                 class="btn ${!e || t ? "primary" : ""}"
                 ?disabled=${!!this.capture}
@@ -2671,13 +2954,13 @@ let k = class extends B {
                 ${this.page === this.steps.length ? "Auswerten" : "Weiter"}<ha-icon
                   icon="mdi:chevron-right"
                 ></ha-icon>
-              </button>` : m}
+              </button>` : f}
       </div>
     `;
   }
   // ---- Start page ----------------------------------------------------------------------------------
   renderStart() {
-    const e = this.config.entity, t = this.hass?.states[e], n = ve(this.session.dials), i = this.result.threeByte, s = n !== void 0 ? ke(n, i) : void 0, r = this.indoorInput.trim() !== "" && ue(this.indoorInput) === void 0, o = this.configIndoor;
+    const e = this.config.entity, t = this.hass?.states[e], n = this.result.threeByte, i = ze(this.session.dials, n), s = this.result.indoor?.method === "manual" ? void 0 : this.result.indoor?.address, r = this.indoorInput.trim() !== "" && ve(this.indoorInput) === void 0, o = this.configIndoor;
     return c`
       <h2><ha-icon icon="mdi:hand-wave-outline"></ha-icon>Willkommen</h2>
       <p>
@@ -2715,8 +2998,9 @@ let k = class extends B {
       <div class="panel">
         <h3>2 · Drehregler der Innenstation (optional)</h3>
         <p class="muted small">
-          Auf der Rückseite deiner Innenstation. X10 und X1 ergeben die Wohnungsnummer – daraus folgt die
-          erwartete Adresse. Sie dient nur zur Kontrolle, die echte Adresse wird aus den Frames ermittelt.
+          Auf der Rückseite deiner Innenstation. Je nach Anlage stehen X10/X1 direkt als Ziffern in der
+          Adresse (1/6 → 0x1016) oder werden dezimal umgerechnet (16 → 0x1010). Beides wird mit der gemessenen
+          Adresse verglichen – nur zur Kontrolle, die echte Adresse kommt aus den Frames.
         </p>
         <div class="fields">
           ${["station", "x10", "x1"].map(
@@ -2735,27 +3019,38 @@ let k = class extends B {
             `
     )}
         </div>
-        ${s !== void 0 ? c`<p class="small">
-                Wohnung <b>${n}</b> → erwartete Innenstationsadresse
-                <span class="badge accent">${w(s, i)}</span>
-              </p>` : m}
+        ${i.length > 0 ? c`<div class="small" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                ${tn(this.session.dials)} →
+                ${i.map((a) => {
+      const d = s === a.address;
+      return c`<span
+                    class="badge ${d ? "ok" : s !== void 0 && !d ? "" : "accent"}"
+                    title=${d ? "passt zur gemessenen Adresse" : xe[a.reading]}
+                    >${d ? c`<ha-icon icon="mdi:check"></ha-icon>` : f}${k(a.address, n)}
+                    · ${xe[a.reading]}</span
+                  >`;
+    })}
+                ${s !== void 0 && !i.some((a) => a.address === s) ? c`<span class="badge warning"
+                        >gemessen ${k(s, n)} – passt zu keiner</span
+                      >` : f}
+              </div>` : f}
       </div>
 
-      <details ?open=${o !== void 0 || this.session.indoorAddress !== void 0}>
+      <details ?open=${o !== void 0 || this.session.overrides.indoorAddress !== void 0}>
         <summary>Innenstationsadresse manuell festlegen (für Profis)</summary>
         <div class="panel" style="border:none;padding:0">
           <p class="muted small">
             Normalerweise ermittelt der Assistent die Adresse selbst. Falls du sie kennst oder die Erkennung
             danebenliegt, kannst du sie hier
             vorgeben${o !== void 0 ? c` (Karten-Konfiguration:
-                    <code>${w(o, o > 65535)}</code>)` : m}.
+                    <code>${k(o, o > 65535)}</code>)` : f}.
           </p>
           <label class="field"
             >Adresse (z. B. 0x1010 oder 0x000110)
             <input
               type="text"
               class=${r ? "invalid" : ""}
-              placeholder=${o !== void 0 ? w(o, o > 65535) : "automatisch"}
+              placeholder=${o !== void 0 ? k(o, o > 65535) : "automatisch"}
               .value=${this.indoorInput}
               @input=${this.onIndoorInput}
             />
@@ -2780,7 +3075,7 @@ let k = class extends B {
       (t) => c`
               <div class="door-row">
                 <div class="door-main">
-                  <ha-icon icon=${_e(t)}></ha-icon>
+                  <ha-icon icon=${De(t)}></ha-icon>
                   <input
                     type="text"
                     aria-label="Name der Tür"
@@ -2834,7 +3129,7 @@ let k = class extends B {
     )}
         </div>
         <div class="actions">
-          <button class="btn" ?disabled=${e.length >= ne} @click=${this.addDoor}>
+          <button class="btn" ?disabled=${e.length >= le} @click=${this.addDoor}>
             <ha-icon icon="mdi:plus"></ha-icon>Tür hinzufügen
           </button>
           <button class="btn text" @click=${this.resetDoors}>Vorgabe wiederherstellen</button>
@@ -2865,7 +3160,7 @@ let k = class extends B {
   }
   renderDoorsWithoutOpener() {
     const e = this.session.doors.filter((t) => !t.open).map((t) => `„${t.name}“`);
-    return e.length === 0 ? m : c`<p class="muted small">Ohne elektrischen Öffner (nur Klingel): ${e.join(", ")}.</p>`;
+    return e.length === 0 ? f : c`<p class="muted small">Ohne elektrischen Öffner (nur Klingel): ${e.join(", ")}.</p>`;
   }
   renderLimitations() {
     return c`
@@ -2897,25 +3192,25 @@ let k = class extends B {
   }
   renderFrames(e, t) {
     if (e.length === 0) return c`<div class="empty">${t}</div>`;
-    const n = this.highlightAddress;
+    const n = this.highlightAddresses;
     return c`
       <div class="frames" role="log">
         ${e.map((i) => {
-      const s = Yt(i.line);
+      const s = rn(i.line);
       if (!s.ok)
         return c`<div class="frame unparsed" title="Nicht erkannt">
-              <span class="time">${Be(i.time)}</span><span class="route">?</span
+              <span class="time">${He(i.time)}</span><span class="route">?</span
               ><span class="detail">${i.line}</span>
             </div>`;
-      const r = s.frame, o = n !== void 0 && tt(r, n);
-      return c`<div class="frame ${n === void 0 ? "" : o ? "own" : "foreign"}" title=${i.line}>
-            <span class="time">${Be(i.time)}</span>
+      const r = s.frame, o = n.some((d) => rt(r, d)), a = n.length === 0 ? "" : o ? "own" : "foreign";
+      return c`<div class="frame ${a}" title=${i.line}>
+            <span class="time">${He(i.time)}</span>
             <span class="route"
-              >${Ie(r.src, r.threeByte)} ${r.retransmission ? "»" : "›"}
-              ${Ie(r.dst, r.threeByte)}</span
+              >${ee(r.src, r.threeByte)} ${r.retransmission ? "»" : "›"}
+              ${ee(r.dst, r.threeByte)}</span
             >
             <span class="detail"
-              ><span class="type">${fe(r.type)}</span>${r.data.length ? c` · ${J(r.data)}` : m}</span
+              ><span class="type">${te(r.type)}</span>${r.data.length ? c` · ${G(r.data)}` : f}</span
             >
           </div>`;
     })}
@@ -2924,7 +3219,7 @@ let k = class extends B {
   }
   // ---- Recording step ------------------------------------------------------------------------------
   renderStep(e) {
-    const n = z(this.session, e.id).captures.length;
+    const n = D(this.session, e.id).captures.length;
     return c`
       <h2><ha-icon icon=${e.icon}></ha-icon>${e.title}</h2>
       <ol class="todo">
@@ -2934,34 +3229,34 @@ let k = class extends B {
         <summary>Warum?</summary>
         <p class="small">${e.why}</p>
       </details>
-      ${e.needsPause ? this.renderPauseHint() : m}
+      ${e.needsPause ? this.renderPauseHint() : f}
       ${e.kind === "open" ? c`<div class="callout warning">
               <ha-icon icon="mdi:door-open"></ha-icon>
               <span
                 >Die Tür öffnet sich bei diesem Schritt tatsächlich – nur ausführen, wenn das in Ordnung
                 ist.</span
               >
-            </div>` : m}
+            </div>` : f}
 
       <div class="panel">
         ${this.capture ? this.renderActiveCapture() : this.renderCaptureControls(e, n)}
       </div>
 
-      ${n > 0 ? this.renderCaptures(e) : m}
-      ${n > 0 ? this.renderStepFeedback(e) : m}
+      ${n > 0 ? this.renderCaptures(e) : f}
+      ${n > 0 ? this.renderStepFeedback(e) : f}
       ${this.capture ? this.renderLive("Frames dieser Aufnahme", [...this.capture.lines].reverse()) : this.renderLive("Live-Frames")}
     `;
   }
   renderPauseHint() {
-    const e = zi(this.session);
+    const e = qi(this.session);
     if (!e) return c``;
-    const t = (this.now - e.getTime()) / 6e4, n = t >= Tt;
+    const t = (this.now - e.getTime()) / 6e4, n = t >= Ft;
     return c`<div class="callout ${n ? "ok" : "warning"}">
       <ha-icon icon="mdi:timer-outline"></ha-icon>
       <span
         >Letztes Klingeln vor
         ${t < 1 ? "weniger als einer Minute" : `${Math.floor(t)} Minute(n)`}.
-        ${n ? "Passt – die Schlüssel-Taste öffnet jetzt die Standard-Außenstation." : `Bitte noch etwas warten (mindestens ${Tt} Minuten).`}</span
+        ${n ? "Passt – die Schlüssel-Taste öffnet jetzt die Standard-Außenstation." : `Bitte noch etwas warten (mindestens ${Ft} Minuten).`}</span
       >
     </div>`;
   }
@@ -3003,7 +3298,7 @@ let k = class extends B {
     return this.online ? this.capture?.missed ? c`<div class="callout info" role="status">
         <ha-icon icon="mdi:history"></ha-icon>
         <span>Verbindung wieder da – verpasste Frames werden aus dem Verlauf nachgeladen …</span>
-      </div>` : m : c`<div class="callout warning" role="status">
+      </div>` : f : c`<div class="callout warning" role="status">
         <ha-icon icon="mdi:wifi-off"></ha-icon>
         <span
           >Keine Verbindung zu Home
@@ -3048,14 +3343,14 @@ let k = class extends B {
       </div>`;
   }
   renderCaptures(e) {
-    const t = z(this.session, e.id).captures;
+    const t = D(this.session, e.id).captures;
     return c`
       <div class="captures">
         <div class="actions">
           <h3 style="margin:0;flex:1">Aufnahmen</h3>
           <button
             class="btn text danger"
-            @click=${() => this.updateSession(zt(this.session, e.id, t.length - 1))}
+            @click=${() => this.updateSession(It(this.session, e.id, t.length - 1))}
           >
             <ha-icon icon="mdi:undo"></ha-icon>Verwerfen
           </button>
@@ -3065,13 +3360,13 @@ let k = class extends B {
             <details class="capture-row">
               <summary>
                 <ha-icon icon="mdi:chevron-right"></ha-icon>
-                <span class="grow">Aufnahme ${i + 1} · ${Be(n.startedAt)}</span>
+                <span class="grow">Aufnahme ${i + 1} · ${He(n.startedAt)}</span>
                 <span class="badge ${n.lines.length ? "" : "warning"}">${n.lines.length} Frames</span>
                 <button
                   class="icon"
                   title="Diese Aufnahme löschen"
                   @click=${(s) => {
-        s.preventDefault(), this.updateSession(zt(this.session, e.id, i));
+        s.preventDefault(), this.updateSession(It(this.session, e.id, i));
       }}
                 >
                   <ha-icon icon="mdi:delete-outline"></ha-icon>
@@ -3096,7 +3391,7 @@ let k = class extends B {
       return c`<div class="callout ok">
         <ha-icon icon="mdi:check-circle-outline"></ha-icon>
         <span
-          >${z(this.session, e.id).captures.flatMap((i) => i.lines).length} Frames als Baseline
+          >${D(this.session, e.id).captures.flatMap((i) => i.lines).length} Frames als Baseline
           markiert.</span
         >
       </div>`;
@@ -3109,7 +3404,7 @@ let k = class extends B {
             <ha-icon icon="mdi:alert-outline"></ha-icon>
             <span
               >Noch keine passenden Klingel-Frames für
-              ${E(t.indoor.address, t.threeByte)}.</span
+              ${T(t.indoor.address, t.threeByte)}.</span
             >
           </div>`;
     }
@@ -3124,32 +3419,65 @@ let k = class extends B {
   }
   // ---- Result page ---------------------------------------------------------------------------------
   renderResult() {
-    const e = this.result, { indoor: t, threeByte: n } = e, i = ve(this.session.dials), s = this.device, r = Ki(e, this.session.doors, {
+    const e = this.result, { indoor: t, threeByte: n } = e, i = this.device, s = ms(e, this.session.doors, {
       maskDoorCode: this.maskDoorCode,
-      apartment: i,
-      device: this.exportMode === "full" ? s : void 0
-    });
-    return Object.values(this.session.steps).some((a) => a.captures.length > 0) ? c`
+      device: this.exportMode === "full" ? i : void 0
+    }), r = Object.values(this.session.steps).some((a) => a.captures.length > 0), o = this.session.overrides;
+    return c`
       <h2><ha-icon icon="mdi:file-code-outline"></ha-icon>Ergebnis</h2>
+      ${r ? f : c`<div class="callout info">
+              <ha-icon icon="mdi:information-outline"></ha-icon>
+              <span
+                >Noch keine Aufnahmen. Geh die Schritte durch, importiere eine Sitzung – oder trag die Werte
+                unten mit dem Stift von Hand ein.</span
+              >
+            </div>`}
 
       <div class="grid">
         <div class="panel stat">
-          <span class="muted small">Innenstation</span>
-          <span class="value">${t ? w(t.address, n) : "—"}</span>
+          <span class="muted small edit-head"
+            >Innenstation
+            ${this.editButton(
+      "Innenstationsadresse bearbeiten",
+      () => this.startEdit({
+        kind: "indoor",
+        value: t ? pe(t.address, n) : ""
+      })
+    )}</span
+          >
+          ${this.editing?.kind === "indoor" ? this.renderAddressEditor(
+      this.editing.value,
+      this.editing.error,
+      o.indoorAddress !== void 0
+    ) : c`<span class="value">${t ? k(t.address, n) : "—"}</span>`}
           ${t ? c`<span class="small">
                   ${t.method === "manual" ? c`<span class="badge accent">manuell</span>` : t.method === "open" ? c`<span class="badge ok">aus Öffnen-Frames</span>` : c`<span class="badge warning">nach Häufigkeit</span>`}
-                  ${t.expected !== void 0 ? t.matchesExpected ? c`<span class="badge ok"
-                            ><ha-icon icon="mdi:check"></ha-icon>passt zu Wohnung ${i}</span
-                          >` : c`<span class="badge warning"
-                            >erwartet ${w(t.expected, n)} (Wohnung
-                            ${i})</span
-                          >` : m}
-                </span>` : m}
+                  ${t.dialMatch ? c`<span class="badge ok"
+                          ><ha-icon icon="mdi:check"></ha-icon>passt zu den Drehreglern
+                          (${xe[t.dialMatch]})</span
+                        >` : t.dialMatch === null ? c`<span class="badge warning">passt nicht zu den Drehreglern</span>` : f}
+                </span>` : c`<span class="muted small">Ohne Innenstation kein Export – bitte eintragen.</span>`}
         </div>
         <div class="panel stat">
-          <span class="muted small">Adresslänge</span>
-          <span class="value">${n ? "3 Byte" : "2 Byte"}</span>
-          <span class="muted small">${n ? "three_byte_address: true" : "Standard"}</span>
+          <label class="muted small edit-head" for="three-byte">Adresslänge</label>
+          <select
+            id="three-byte"
+            @change=${(a) => {
+      const d = a.target.value;
+      this.updateOverrides({
+        ...o,
+        threeByte: d === "auto" ? void 0 : d === "3"
+      });
+    }}
+          >
+            <option value="auto" ?selected=${o.threeByte === void 0}>Automatisch</option>
+            <option value="2" ?selected=${o.threeByte === !1}>2 Byte (XXXX)</option>
+            <option value="3" ?selected=${o.threeByte === !0}>3 Byte (XXXXXX)</option>
+          </select>
+          <span class="small">
+            <span class="value" style="font-size:1rem">${n ? "3 Byte" : "2 Byte"}</span>
+            ${e.threeByteManual ? c`<span class="badge accent">manuell</span>` : f}
+          </span>
         </div>
       </div>
 
@@ -3157,25 +3485,7 @@ let k = class extends B {
 
       <div class="panel">
         <h3>Klingeln</h3>
-        ${on(this.session.doors).map((a) => {
-      const d = e.rings[a.door.key], l = d.selected.length > 0;
-      return c`<div class="result-row">
-            <ha-icon icon=${_e(a.door)}></ha-icon>
-            <div>
-              <div class="row-head">
-                <b>${a.name}</b>
-                ${d.outdoorAddress !== void 0 ? c`<span class="muted small"
-                        >${E(d.outdoorAddress, n)}</span
-                      >` : m}
-                <span class="spacer"></span>
-                ${l ? c`<span class="badge ok">binary_sensor.${a.id}</span>` : c`<span class="badge ${d.captures ? "warning" : ""}"
-                        >${d.captures ? "nicht erkannt" : "nicht aufgenommen"}</span
-                      >`}
-              </div>
-              ${d.candidates.length > 0 ? this.renderCandidates(d) : m}
-            </div>
-          </div>`;
-    })}
+        ${wn(this.session.doors).map((a) => this.renderRingResult(a, e))}
       </div>
 
       <div class="panel">
@@ -3189,22 +3499,7 @@ let k = class extends B {
             <ha-icon icon=${this.showDoorCode ? "mdi:eye-off-outline" : "mdi:eye-outline"}></ha-icon>
           </button>
         </h3>
-        ${an(this.session.doors).map((a) => {
-      const d = e.opens[a.door.key], l = z(this.session, O(a.door)).captures.length > 0;
-      return c`<div class="result-row">
-            <ha-icon icon=${a.icon}></ha-icon>
-            <div>
-              <div class="row-head">
-                <b>${a.name}</b>
-                <span class="spacer"></span>
-                ${d ? c`<span class="badge ok">lock.${a.id}</span>` : c`<span class="badge ${l ? "warning" : ""}"
-                        >${l ? "nicht erkannt" : "nicht aufgenommen"}</span
-                      >`}
-              </div>
-              ${d ? this.renderOpen(d) : m}
-            </div>
-          </div>`;
-    })}
+        ${kn(this.session.doors).map((a) => this.renderOpenResult(a, e))}
         ${this.renderDoorsWithoutOpener()}
       </div>
 
@@ -3234,7 +3529,7 @@ let k = class extends B {
               </button>`
     )}
         </div>
-        ${this.exportMode === "full" ? this.renderDeviceFields(s) : m}
+        ${this.exportMode === "full" ? this.renderDeviceFields(i) : f}
         <p class="muted small">
           ${this.exportMode === "full" ? c`Im ESPHome Device Builder beim Gerät auf <b>Bearbeiten</b>, den gesamten Inhalt durch
                   diese Datei ersetzen und <b>Installieren</b> (drahtlos). Benötigt in
@@ -3243,21 +3538,21 @@ let k = class extends B {
           ${this.maskDoorCode ? "Türcodes sind durch Platzhalter ersetzt – gut zum Teilen in Foren." : c`<b>Enthält deinen Türcode – nicht öffentlich teilen.</b>`}
         </p>
         <div class="actions">
-          <button class="btn primary" @click=${() => this.copyYaml(r)}>
+          <button class="btn primary" @click=${() => this.copyYaml(s)}>
             <ha-icon icon="mdi:content-copy"></ha-icon>Kopieren
           </button>
           <button
             class="btn"
-            @click=${() => It(
-      this.exportMode === "full" ? `${s.name}.yaml` : "abb-welcome-abschnitte.yaml",
-      r,
+            @click=${() => Lt(
+      this.exportMode === "full" ? `${i.name}.yaml` : "abb-welcome-abschnitte.yaml",
+      s,
       "text/yaml"
     )}
           >
             <ha-icon icon="mdi:download"></ha-icon>Herunterladen
           </button>
         </div>
-        <pre class="yaml">${r}</pre>
+        <pre class="yaml">${s}</pre>
       </div>
 
       <details>
@@ -3271,18 +3566,14 @@ let k = class extends B {
                 </div>` : c`<p class="small muted">Alle Zeilen wurden erkannt.</p>`}
       </details>
       ${this.renderLimitations()}
-    ` : c`<h2><ha-icon icon="mdi:file-code-outline"></ha-icon>Ergebnis</h2>
-        <div class="callout info">
-          <ha-icon icon="mdi:information-outline"></ha-icon>
-          <span>Noch keine Aufnahmen. Geh die Schritte durch oder importiere eine gespeicherte Sitzung.</span>
-        </div>`;
+    `;
   }
   /** Device settings: user edits, otherwise suggested from the debug sensor's device in Home Assistant. */
   get device() {
-    const e = this.config ? this._hass?.entities?.[this.config.entity] : void 0, t = e?.device_id ? this._hass?.devices?.[e.device_id] : void 0, n = t?.name_by_user || t?.name || U.friendlyName, i = this.config ? this._hass?.states[this.config.entity]?.attributes.friendly_name : void 0, s = typeof i == "string" && i.startsWith(`${n} `) ? i.slice(n.length + 1) : U.debugSensorName;
+    const e = this.config ? this._hass?.entities?.[this.config.entity] : void 0, t = e?.device_id ? this._hass?.devices?.[e.device_id] : void 0, n = t?.name_by_user || t?.name || q.friendlyName, i = this.config ? this._hass?.states[this.config.entity]?.attributes.friendly_name : void 0, s = typeof i == "string" && i.startsWith(`${n} `) ? i.slice(n.length + 1) : q.debugSensorName;
     return {
-      ...U,
-      name: Bt(n),
+      ...q,
+      name: Ht(n),
       friendlyName: n,
       debugSensorName: s,
       ...this.deviceEdits
@@ -3296,10 +3587,10 @@ let k = class extends B {
           .value=${e[n] ?? ""}
           @change=${(r) => {
       const o = r.target.value.trim(), a = { ...this.deviceEdits };
-      o === "" ? delete a[n] : a[n] = n === "name" ? Bt(o) : o, this.deviceEdits = a;
+      o === "" ? delete a[n] : a[n] = n === "name" ? Ht(o) : o, this.deviceEdits = a;
     }}
         />
-        ${s ? c`<span>${s}</span>` : m}
+        ${s ? c`<span>${s}</span>` : f}
       </label>`;
     return c`<div class="fields device-fields">
       ${t("name", "Gerätename", "esphome name – muss zum bestehenden Gerät passen")}
@@ -3309,8 +3600,264 @@ let k = class extends B {
   }
   async copyYaml(e) {
     this.showToast(
-      await Fi(e) ? "YAML kopiert." : "Kopieren nicht möglich – bitte manuell markieren."
+      await ds(e) ? "YAML kopiert." : "Kopieren nicht möglich – bitte manuell markieren."
     );
+  }
+  // ---- Manual values ----------------------------------------------------------------------------
+  updateOverrides(e) {
+    this.updateSession(gn(this.session, e));
+    const t = this.session.overrides.indoorAddress;
+    this.indoorInput = t !== void 0 ? k(t, t > 65535) : "";
+  }
+  startEdit(e) {
+    this.editing = e;
+  }
+  editButton(e, t) {
+    return c`<button class="icon edit" title=${e} aria-label=${e} @click=${t}>
+      <ha-icon icon="mdi:pencil-outline"></ha-icon>
+    </button>`;
+  }
+  editActions(e, t) {
+    return c`<div class="actions">
+      <button class="btn primary" @click=${e}><ha-icon icon="mdi:check"></ha-icon>Übernehmen</button>
+      <button class="btn text" @click=${() => this.editing = void 0}>Abbrechen</button>
+      ${t ? c`<button class="btn text danger" @click=${t}>
+              <ha-icon icon="mdi:restore"></ha-icon>Analyse verwenden
+            </button>` : f}
+    </div>`;
+  }
+  /** Inline editor for the indoor station or an outdoor station address. */
+  renderAddressEditor(e, t, n) {
+    const i = () => this.editing, s = i(), r = () => {
+      const a = Ie(i().value);
+      if (a === void 0) {
+        this.editing = { ...i(), error: "4 oder 6 Hex-Ziffern, z. B. 1016" };
+        return;
+      }
+      const d = this.session.overrides;
+      if (s.kind === "indoor") this.updateOverrides({ ...d, indoorAddress: a });
+      else {
+        const u = d.rings?.[s.door] ?? {};
+        this.updateOverrides({
+          ...d,
+          rings: { ...d.rings, [s.door]: { ...u, outdoorAddress: a } }
+        });
+      }
+      this.editing = void 0;
+    }, o = () => {
+      const a = this.session.overrides;
+      if (s.kind === "indoor") this.updateOverrides({ ...a, indoorAddress: void 0 });
+      else {
+        const d = { ...a.rings?.[s.door] ?? {} };
+        delete d.outdoorAddress, this.updateOverrides({ ...a, rings: { ...a.rings, [s.door]: d } });
+      }
+      this.editing = void 0;
+    };
+    return c`<div class="editor">
+      <label class="field"
+        >Adresse (hex)
+        <input
+          type="text"
+          class=${t ? "invalid" : ""}
+          placeholder="1016"
+          .value=${e}
+          @input=${(a) => this.editing = { ...i(), value: a.target.value, error: void 0 }}
+          @keydown=${(a) => a.key === "Enter" && r()}
+        />
+        ${t ? c`<span class="field-error">${t}</span>` : f}
+      </label>
+      ${this.editActions(r, n ? o : void 0)}
+    </div>`;
+  }
+  renderRingResult(e, t) {
+    const n = t.rings[e.door.key], { threeByte: i } = t, s = n.selected.length > 0, r = this.editing, o = r?.kind === "ring" && r.door === e.door.key ? r : void 0, a = r?.kind === "outdoor" && r.door === e.door.key ? r : void 0, d = e.door.type === "outdoor";
+    return c`<div class="result-row">
+      <ha-icon icon=${De(e.door)}></ha-icon>
+      <div>
+        <div class="row-head">
+          <b>${e.name}</b>
+          ${d && n.outdoorAddress !== void 0 && !a ? c`<span class="muted small">${T(n.outdoorAddress, i)}</span>` : f}
+          ${n.outdoorManual ? c`<span class="badge accent">manuell</span>` : f}
+          ${d && !a ? this.editButton(
+      `Außenstation ${e.door.name} bearbeiten`,
+      () => this.startEdit({
+        kind: "outdoor",
+        door: e.door.key,
+        value: n.outdoorAddress !== void 0 ? pe(n.outdoorAddress, i) : ""
+      })
+    ) : f}
+          <span class="spacer"></span>
+          ${n.manual ? c`<span class="badge accent">manuell</span>` : f}
+          ${s ? c`<span class="badge ok">binary_sensor.${e.id}</span>` : c`<span class="badge ${n.captures ? "warning" : ""}"
+                  >${n.captures ? "nicht erkannt" : "nicht aufgenommen"}</span
+                >`}
+        </div>
+        ${a ? this.renderAddressEditor(
+      a.value,
+      a.error,
+      this.session.overrides.rings?.[e.door.key]?.outdoorAddress !== void 0
+    ) : f}
+        ${o ? this.renderRingEditor(o, n) : c`${n.manual ? this.renderManualConditions(n) : n.candidates.length > 0 ? this.renderCandidates(n) : f}
+                <button
+                  class="btn text small-btn"
+                  @click=${() => this.startEdit({
+      kind: "ring",
+      door: e.door.key,
+      rows: n.selected.map((u) => vs(u, i)),
+      errors: []
+    })}
+                >
+                  <ha-icon icon="mdi:pencil-outline"></ha-icon>Bedingungen bearbeiten
+                </button>`}
+      </div>
+    </div>`;
+  }
+  renderManualConditions(e) {
+    const { threeByte: t } = this.result;
+    return c`<div class="candidates">
+      ${e.selected.map(
+      (n) => c`<div class="candidate">
+            <code
+              >Typ ${te(n.type)} ${n.src !== void 0 ? `von ${ee(n.src, t)}` : ""}
+              ${n.dst !== void 0 ? `an ${ee(n.dst, t)}` : ""}
+              ${n.data ? `· ${G(n.data)}` : ""}</code
+            >
+            <span class="badge accent">manuell</span>
+          </div>`
+    )}
+    </div>`;
+  }
+  renderRingEditor(e, t) {
+    const n = () => this.editing, i = (a) => this.editing = { ...n(), rows: a, errors: [] }, s = () => {
+      const a = n().rows.map($s);
+      if (a.some((p) => !p.condition)) {
+        this.editing = { ...n(), errors: a.map((p) => p.errors) };
+        return;
+      }
+      const d = this.session.overrides, u = d.rings?.[e.door] ?? {};
+      this.updateOverrides({
+        ...d,
+        rings: {
+          ...d.rings,
+          [e.door]: { ...u, conditions: a.map((p) => p.condition) }
+        }
+      }), this.editing = void 0;
+    }, r = () => {
+      const a = this.session.overrides, d = { ...a.rings?.[e.door] ?? {} };
+      delete d.conditions, this.updateOverrides({ ...a, rings: { ...a.rings, [e.door]: d } }), this.editing = void 0;
+    }, o = (a, d, u, p, l) => {
+      const m = e.errors[d]?.[u];
+      return c`<label class="field"
+        >${p}
+        <input
+          type="text"
+          class=${m ? "invalid" : ""}
+          placeholder=${l}
+          .value=${a[u]}
+          @input=${(b) => i(
+        n().rows.map(
+          (h, v) => v === d ? { ...h, [u]: b.target.value } : h
+        )
+      )}
+        />
+        ${m ? c`<span class="field-error">${m}</span>` : f}
+      </label>`;
+    };
+    return c`<div class="editor">
+      <p class="muted small">
+        Eine Bedingung passt, wenn Typ und alle ausgefüllten Felder übereinstimmen; leer = beliebig. Der
+        Klingel-Sensor löst aus, wenn irgendeine Bedingung passt.
+      </p>
+      ${e.rows.map(
+      (a, d) => c`<div class="condition-row">
+            ${o(a, d, "type", "Typ", "01")} ${o(a, d, "src", "Quelle", "beliebig")}
+            ${o(a, d, "dst", "Ziel", "beliebig")} ${o(a, d, "data", "Data", "beliebig")}
+            <button
+              class="icon"
+              title="Bedingung entfernen"
+              aria-label="Bedingung entfernen"
+              @click=${() => i(n().rows.filter((u, p) => p !== d))}
+            >
+              <ha-icon icon="mdi:delete-outline"></ha-icon>
+            </button>
+          </div>`
+    )}
+      <button
+        class="btn text small-btn"
+        @click=${() => i([...n().rows, { type: "01", src: "", dst: "", data: "" }])}
+      >
+        <ha-icon icon="mdi:plus"></ha-icon>Bedingung hinzufügen
+      </button>
+      ${this.editActions(s, t.manual ? r : void 0)}
+    </div>`;
+  }
+  renderOpenResult(e, t) {
+    const n = t.opens[e.door.key], i = D(this.session, O(e.door)).captures.length > 0, s = this.editing?.kind === "open" && this.editing.door === e.door.key ? this.editing : void 0;
+    return c`<div class="result-row">
+      <ha-icon icon=${e.icon}></ha-icon>
+      <div>
+        <div class="row-head">
+          <b>${e.name}</b>
+          ${n?.manual ? c`<span class="badge accent">manuell</span>` : f}
+          ${s ? f : this.editButton(
+      `Öffnen-Frame ${e.door.name} bearbeiten`,
+      () => this.startEdit({
+        kind: "open",
+        door: e.door.key,
+        draft: ys(n ?? void 0, t.threeByte),
+        errors: {}
+      })
+    )}
+          <span class="spacer"></span>
+          ${n ? c`<span class="badge ok">lock.${e.id}</span>` : c`<span class="badge ${i ? "warning" : ""}"
+                  >${i ? "nicht erkannt" : "nicht aufgenommen"}</span
+                >`}
+        </div>
+        ${s ? this.renderOpenEditor(s, !!n?.manual) : n ? this.renderOpen(n) : f}
+      </div>
+    </div>`;
+  }
+  renderOpenEditor(e, t) {
+    const n = () => this.editing, i = () => {
+      const o = ws(n().draft);
+      if (!o.open) {
+        this.editing = { ...n(), errors: o.errors };
+        return;
+      }
+      const a = this.session.overrides;
+      this.updateOverrides({ ...a, opens: { ...a.opens, [e.door]: o.open } }), this.editing = void 0;
+    }, s = () => {
+      const o = { ...this.session.overrides.opens };
+      delete o[e.door], this.updateOverrides({ ...this.session.overrides, opens: o }), this.editing = void 0;
+    }, r = (o, a, d) => {
+      const u = e.errors[o];
+      return c`<label class="field"
+        >${a}
+        <input
+          type="text"
+          class=${u ? "invalid" : ""}
+          placeholder=${d}
+          .value=${e.draft[o]}
+          @input=${(p) => this.editing = {
+        ...n(),
+        draft: { ...n().draft, [o]: p.target.value },
+        errors: {}
+      }}
+        />
+        ${u ? c`<span class="field-error">${u}</span>` : f}
+      </label>`;
+    };
+    return c`<div class="editor">
+      <p class="muted small">
+        Der Befehl, den die Innenstation zum Öffnen sendet (Quelle ist immer die Innenstation). Data ist der
+        Türcode – nicht öffentlich teilen.
+      </p>
+      <div class="condition-row open-row">
+        ${r("destination", "Ziel", "4002")} ${r("type", "Typ", "0D")}
+        ${r("data", "Data", "1C 41 68")}
+      </div>
+      ${this.editActions(i, t ? s : void 0)}
+    </div>`;
   }
   renderWarnings(e) {
     const t = ["error", "warning", "info"], n = [...e.warnings].sort(
@@ -3324,10 +3871,10 @@ let k = class extends B {
     return c`
       ${i.length === 0 ? c`<div class="callout ok">
               <ha-icon icon="mdi:check-circle-outline"></ha-icon><span>Keine Probleme gefunden.</span>
-            </div>` : m}
+            </div>` : f}
       ${i.map(
       (r) => c`<div class="callout ${r.severity}">
-            <ha-icon icon=${Zi[r.severity]}></ha-icon><span>${r.message}</span>
+            <ha-icon icon=${zs[r.severity]}></ha-icon><span>${r.message}</span>
           </div>`
     )}
       ${s.length > 0 ? c`<details>
@@ -3335,13 +3882,13 @@ let k = class extends B {
               <ul class="small" style="margin:0;padding-left:1.2em;line-height:1.5">
                 ${s.map((r) => c`<li>${r.message}</li>`)}
               </ul>
-            </details>` : m}
+            </details>` : f}
     `;
   }
   renderCandidates(e) {
     const { threeByte: t } = this.result, n = new Set(e.selected.map((s) => s.key)), i = (s) => {
-      const r = (a) => Ie(a, t), o = s.src !== void 0 && s.dst !== void 0 ? `${r(s.src)} › ${r(s.dst)}` : s.src !== void 0 ? `von ${r(s.src)}` : s.dst !== void 0 ? `an ${r(s.dst)}` : "";
-      return `Typ ${fe(s.type)} ${o}${s.data ? ` · ${J(s.data)}` : ""}`;
+      const r = (a) => ee(a, t), o = s.src !== void 0 && s.dst !== void 0 ? `${r(s.src)} › ${r(s.dst)}` : s.src !== void 0 ? `von ${r(s.src)}` : s.dst !== void 0 ? `an ${r(s.dst)}` : "";
+      return `Typ ${te(s.type)} ${o}${s.data ? ` · ${G(s.data)}` : ""}`;
     };
     return c`<div class="candidates">
       ${e.candidates.map(
@@ -3361,100 +3908,106 @@ let k = class extends B {
     </div>`;
   }
   renderOpen(e) {
-    const { threeByte: t } = this.result, n = this.showDoorCode ? J(e.data) : e.data.map(() => "••").join(" ");
-    return c`<dl class="kv" style="margin:6px 0 0">
-      <dt>Ziel</dt>
-      <dd>${E(e.destination, t)}</dd>
-      <dt>Typ</dt>
-      <dd>${fe(e.messageType)} ${e.messageType === 14 ? "(Schiebetür)" : "(Türöffner)"}</dd>
-      <dt>Türcode</dt>
-      <dd>${n || "—"}</dd>
-      <dt>Bestätigung</dt>
-      <dd>
-        ${e.confirmation ? `${fe(e.confirmation.messageType)} von ${w(e.confirmation.source, t)}` : "—"}
-      </dd>
-      <dt>Stabilität</dt>
-      <dd>${e.occurrences}/${e.captures} Aufnahmen</dd>
-    </dl>`;
+    const { threeByte: t } = this.result, n = this.showDoorCode ? G(e.data) : e.data.map(() => "••").join(" ");
+    return c`${e.derived ? c`<span class="badge warning" title="Kein 0D/0E empfangen – aus der Bestätigung abgeleitet"
+              >abgeleitet – unbestätigt</span
+            >` : f}
+      <dl class="kv" style="margin:6px 0 0">
+        <dt>Ziel</dt>
+        <dd>${T(e.destination, t)}</dd>
+        <dt>Typ</dt>
+        <dd>${te(e.messageType)} ${e.messageType === 14 ? "(Schiebetür)" : "(Türöffner)"}</dd>
+        <dt>Türcode</dt>
+        <dd>${n || "—"}</dd>
+        <dt>Bestätigung</dt>
+        <dd>
+          ${e.confirmation ? `${te(e.confirmation.messageType)} von ${k(e.confirmation.source, t)}` : "—"}
+        </dd>
+        <dt>Stabilität</dt>
+        <dd>${e.occurrences}/${e.captures} Aufnahmen</dd>
+      </dl>`;
   }
 };
-k.styles = Ri;
+x.styles = cs;
 _([
   $()
-], k.prototype, "config", 2);
+], x.prototype, "config", 2);
 _([
   $()
-], k.prototype, "session", 2);
+], x.prototype, "session", 2);
 _([
   $()
-], k.prototype, "page", 2);
+], x.prototype, "page", 2);
 _([
   $()
-], k.prototype, "live", 2);
+], x.prototype, "live", 2);
 _([
   $()
-], k.prototype, "capture", 2);
+], x.prototype, "capture", 2);
 _([
   $()
-], k.prototype, "now", 2);
+], x.prototype, "now", 2);
 _([
   $()
-], k.prototype, "toast", 2);
+], x.prototype, "toast", 2);
 _([
   $()
-], k.prototype, "maskDoorCode", 2);
+], x.prototype, "maskDoorCode", 2);
 _([
   $()
-], k.prototype, "showDoorCode", 2);
+], x.prototype, "showDoorCode", 2);
 _([
   $()
-], k.prototype, "exportMode", 2);
+], x.prototype, "exportMode", 2);
 _([
   $()
-], k.prototype, "deviceEdits", 2);
+], x.prototype, "editing", 2);
 _([
   $()
-], k.prototype, "indoorInput", 2);
+], x.prototype, "deviceEdits", 2);
 _([
   $()
-], k.prototype, "receivedCount", 2);
+], x.prototype, "indoorInput", 2);
 _([
   $()
-], k.prototype, "waitForFrame", 2);
-k = _([
-  De(se)
-], k);
+], x.prototype, "receivedCount", 2);
+_([
+  $()
+], x.prototype, "waitForFrame", 2);
+x = _([
+  Fe(he)
+], x);
 window.customCards = window.customCards ?? [];
-window.customCards.some((e) => e.type === se) || window.customCards.push({
-  type: se,
+window.customCards.some((e) => e.type === he) || window.customCards.push({
+  type: he,
   name: "ABB-Welcome Wizard",
   description: "Assistent zum Einmessen von Klingeln und Türöffnern einer Busch-/ABB-Welcome-Anlage.",
   preview: !1,
   documentationURL: "https://github.com/jako-dev/esp32-abb-wizard-card"
 });
 console.info(
-  `%c ABB-WELCOME-WIZARD-CARD %c ${Vi} `,
+  `%c ABB-WELCOME-WIZARD-CARD %c ${_s} `,
   "background:#03a9f4;color:#fff",
   "background:#444;color:#fff"
 );
-const Ge = "abb-welcome-door-card", me = {
+const Xe = "abb-welcome-door-card", $e = {
   layout: "tiles",
   ring_window: 60,
   hold_time: 800,
   action: "unlock"
-}, ge = (e, t, n) => {
+}, we = (e, t, n) => {
   if (e !== void 0) {
     if (typeof e == "string" && t.includes(e)) return e;
     throw new Error(`"${n}" muss einer dieser Werte sein: ${t.join(", ")}.`);
   }
-}, Fe = (e, t, n) => {
+}, je = (e, t, n) => {
   if (!(e === void 0 || e === "" || e === null)) {
     if (typeof e != "string" || !e.startsWith(`${t}.`))
       throw new Error(`"${n}" muss eine ${t}-Entität sein (z. B. ${t}.haustuer).`);
     return e;
   }
 };
-function Ji(e) {
+function Es(e) {
   if (typeof e != "object" || e === null) throw new Error("Ungültige Konfiguration.");
   const t = e;
   if (!Array.isArray(t.doors)) throw new Error('"doors" muss eine Liste von Türen sein.');
@@ -3466,54 +4019,54 @@ function Ji(e) {
     throw new Error('"hold_time" muss zwischen 200 und 5000 ms liegen.');
   const s = t.doors.map((o, a) => {
     if (typeof o != "object" || o === null) throw new Error(`Tür ${a + 1}: ungültiger Eintrag.`);
-    const d = o, l = typeof d.name == "string" && d.name.trim() !== "" ? d.name.trim() : void 0, h = `Tür ${l ? `„${l}“` : a + 1}`;
+    const d = o, u = typeof d.name == "string" && d.name.trim() !== "" ? d.name.trim() : void 0, p = `Tür ${u ? `„${u}“` : a + 1}`;
     try {
-      const u = {
-        name: l ?? `Tür ${a + 1}`,
-        lock: Fe(d.lock, "lock", "lock"),
-        doorbell: Fe(d.doorbell, "binary_sensor", "doorbell"),
-        camera: Fe(d.camera, "camera", "camera"),
-        camera_view: ge(d.camera_view, ["ring", "always"], "camera_view"),
-        confirm: ge(d.confirm, ["slide", "hold", "tap", "dialog"], "confirm"),
-        action: ge(d.action, ["unlock", "open"], "action")
+      const l = {
+        name: u ?? `Tür ${a + 1}`,
+        lock: je(d.lock, "lock", "lock"),
+        doorbell: je(d.doorbell, "binary_sensor", "doorbell"),
+        camera: je(d.camera, "camera", "camera"),
+        camera_view: we(d.camera_view, ["ring", "always"], "camera_view"),
+        confirm: we(d.confirm, ["slide", "hold", "tap", "dialog"], "confirm"),
+        action: we(d.action, ["unlock", "open"], "action")
       };
-      if (typeof d.icon == "string" && d.icon !== "" && (u.icon = d.icon), d.users !== void 0) {
-        if (!Array.isArray(d.users) || d.users.some((f) => typeof f != "string"))
+      if (typeof d.icon == "string" && d.icon !== "" && (l.icon = d.icon), d.users !== void 0) {
+        if (!Array.isArray(d.users) || d.users.some((m) => typeof m != "string"))
           throw new Error('"users" muss eine Liste von Benutzer-IDs sein.');
-        u.users = d.users;
+        l.users = d.users;
       }
-      if (!u.lock && !u.doorbell) throw new Error('braucht mindestens "lock" oder "doorbell".');
-      for (const f of Object.keys(u))
-        u[f] === void 0 && delete u[f];
-      return u;
-    } catch (u) {
-      throw new Error(`${h}: ${u.message}`);
+      if (!l.lock && !l.doorbell) throw new Error('braucht mindestens "lock" oder "doorbell".');
+      for (const m of Object.keys(l))
+        l[m] === void 0 && delete l[m];
+      return l;
+    } catch (l) {
+      throw new Error(`${p}: ${l.message}`);
     }
   }), r = t.layout === "compact" ? "bar" : t.layout;
   return {
     ...t,
-    layout: ge(r, ["tiles", "rows", "buttons", "bar"], "layout"),
+    layout: we(r, ["tiles", "rows", "buttons", "bar"], "layout"),
     doors: s
   };
 }
-function Re(e, t, n = "main") {
+function Ke(e, t, n = "main") {
   const i = e.confirm ?? (t === "buttons" ? "hold" : "slide");
   return i === "slide" && n === "main" && (t === "buttons" || t === "bar") ? "hold" : i;
 }
-const Pt = (e, t) => typeof e?.attributes.friendly_name == "string" ? e.attributes.friendly_name : t;
-function dn(e) {
+const Ut = (e, t) => typeof e?.attributes.friendly_name == "string" ? e.attributes.friendly_name : t;
+function Sn(e) {
   const t = Object.keys(e).sort(), n = t.filter((r) => r.startsWith("lock.")), i = /* @__PURE__ */ new Set(), s = [];
   for (const r of t.filter((o) => /^binary_sensor\..*klingel_?/.test(o))) {
-    const o = r.replace(/^binary_sensor\..*klingel_?/, ""), a = o ? n.find((l) => !i.has(l) && l.endsWith(o)) : void 0;
+    const o = r.replace(/^binary_sensor\..*klingel_?/, ""), a = o ? n.find((u) => !i.has(u) && u.endsWith(o)) : void 0;
     a && i.add(a);
-    const d = Pt(e[r], o).replace(/^.*Klingel\s*/i, "") || o;
+    const d = Ut(e[r], o).replace(/^.*Klingel\s*/i, "") || o;
     s.push({ name: d, doorbell: r, ...a ? { lock: a } : {} });
   }
   for (const r of n.filter((o) => !i.has(o)))
-    s.push({ name: Pt(e[r], r), lock: r });
+    s.push({ name: Ut(e[r], r), lock: r });
   return s;
 }
-function Mt(e) {
+function Wt(e) {
   switch (e) {
     case "locked":
       return { label: "Verriegelt", tone: "locked" };
@@ -3535,13 +4088,13 @@ function Mt(e) {
       return { label: "Nicht verfügbar", tone: "unavailable" };
   }
 }
-const Pe = (e) => e === "unlocking" || e === "unlocked" || e === "opening" || e === "open", Xi = (e) => e === "unlocked" || e === "open";
-function Qi(e, t, n) {
+const Ue = (e) => e === "unlocking" || e === "unlocked" || e === "opening" || e === "open", Ds = (e) => e === "unlocked" || e === "open";
+function Ts(e, t, n) {
   if (e === void 0 || n <= 0) return 0;
   const i = Math.ceil((e + n * 1e3 - t) / 1e3);
   return i > 0 ? Math.min(i, n) : 0;
 }
-function es(e, t) {
+function Cs(e, t) {
   const n = Math.max(0, Math.round((t - e) / 1e3));
   if (n < 45) return "gerade eben";
   if (n < 3600) return `vor ${Math.max(1, Math.round(n / 60))} min`;
@@ -3550,21 +4103,21 @@ function es(e, t) {
   );
   return o === 0 ? n < 6 * 3600 ? `vor ${Math.round(n / 3600)} h` : `heute ${s}` : o === 1 ? `gestern ${s}` : `${i.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${s}`;
 }
-function Lt(e, t) {
+function Gt(e, t) {
   return !e.users || e.users.length === 0 || t !== void 0 && e.users.includes(t);
 }
-function ts(e, t, n) {
+function Os(e, t, n) {
   return e.map((i, s) => ({ door: i, index: s })).sort((i, s) => {
     const r = t(i.door) > 0, o = t(s.door) > 0;
     return r !== o ? r ? -1 : 1 : r && o ? n(s.door) - n(i.door) : i.index - s.index;
   }).map((i) => i.door);
 }
-var ns = Object.defineProperty, is = Object.getOwnPropertyDescriptor, dt = (e, t, n, i) => {
-  for (var s = i > 1 ? void 0 : i ? is(t, n) : t, r = e.length - 1, o; r >= 0; r--)
+var Bs = Object.defineProperty, Is = Object.getOwnPropertyDescriptor, mt = (e, t, n, i) => {
+  for (var s = i > 1 ? void 0 : i ? Is(t, n) : t, r = e.length - 1, o; r >= 0; r--)
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
-  return i && s && ns(t, n, s), s;
+  return i && s && Bs(t, n, s), s;
 };
-const cn = "abb-welcome-door-card-editor", ss = [
+const zn = "abb-welcome-door-card-editor", Rs = [
   { name: "title", selector: { text: {} } },
   {
     type: "grid",
@@ -3590,7 +4143,7 @@ const cn = "abb-welcome-door-card-editor", ss = [
       }
     ]
   }
-], rs = [
+], Ms = [
   {
     type: "grid",
     name: "",
@@ -3646,7 +4199,7 @@ const cn = "abb-welcome-door-card-editor", ss = [
       }
     }
   }
-], os = {
+], Fs = {
   title: "Titel (optional)",
   layout: "Darstellung",
   ring_window: "Klingel-Hinweis anzeigen für",
@@ -3658,12 +4211,12 @@ const cn = "abb-welcome-door-card-editor", ss = [
   action: "Aktion",
   camera: "Kamera (optional)",
   camera_view: "Kamerabild zeigen"
-}, as = {
+}, Ps = {
   lock: "Schloss aus dem ABB-Welcome-Wizard oder jedes andere, z. B. Aqara.",
   doorbell: "z. B. binary_sensor.klingel_tor – hebt die Tür beim Klingeln hervor.",
   action: "„Öffnen“ nur für Schlösser mit Falle (z. B. Nuki „Tür aufziehen“)."
 };
-let re = class extends B {
+let fe = class extends F {
   setConfig(e) {
     this.config = { ...e, doors: Array.isArray(e.doors) ? e.doors : [] };
   }
@@ -3694,17 +4247,17 @@ let re = class extends B {
     n.splice(e + t, 0, i), this.updateDoors(n);
   }
   discover() {
-    const e = dn(this.hass?.states ?? {}), t = new Set(this.config.doors.flatMap((i) => [i.lock, i.doorbell]).filter(Boolean)), n = e.filter((i) => !t.has(i.lock) && !t.has(i.doorbell));
+    const e = Sn(this.hass?.states ?? {}), t = new Set(this.config.doors.flatMap((i) => [i.lock, i.doorbell]).filter(Boolean)), n = e.filter((i) => !t.has(i.lock) && !t.has(i.doorbell));
     this.updateDoors([...this.config.doors, ...n]);
   }
   render() {
-    if (!this.config) return m;
-    const e = this.config.doors, t = (i) => os[i.name] ?? i.name, n = (i) => as[i.name];
+    if (!this.config) return f;
+    const e = this.config.doors, t = (i) => Fs[i.name] ?? i.name, n = (i) => Ps[i.name];
     return c`
       <ha-form
         .hass=${this.hass}
         .data=${this.config}
-        .schema=${ss}
+        .schema=${Rs}
         .computeLabel=${t}
         @value-changed=${this.onCardChanged}
       ></ha-form>
@@ -3740,7 +4293,7 @@ let re = class extends B {
             <ha-form
               .hass=${this.hass}
               .data=${i}
-              .schema=${rs}
+              .schema=${Ms}
               .computeLabel=${t}
               .computeHelper=${n}
               @value-changed=${(r) => this.onDoorChanged(s, r)}
@@ -3760,7 +4313,7 @@ let re = class extends B {
     `;
   }
 };
-re.styles = Ye`
+fe.styles = Qe`
     .door {
       border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
       border-radius: 12px;
@@ -3806,16 +4359,16 @@ re.styles = Ye`
       font-size: 0.875rem;
     }
   `;
-dt([
+mt([
   $()
-], re.prototype, "hass", 2);
-dt([
+], fe.prototype, "hass", 2);
+mt([
   $()
-], re.prototype, "config", 2);
-re = dt([
-  De(cn)
-], re);
-const ds = Ye`
+], fe.prototype, "config", 2);
+fe = mt([
+  Fe(zn)
+], fe);
+const Ns = Qe`
   :host {
     --door-accent: var(--primary-color, #1a73e8);
     --door-on-accent: var(--text-primary-color, #fff);
@@ -4464,25 +5017,25 @@ const ds = Ye`
     }
   }
 `;
-var cs = Object.defineProperty, ls = Object.getOwnPropertyDescriptor, D = (e, t, n, i) => {
-  for (var s = i > 1 ? void 0 : i ? ls(t, n) : t, r = e.length - 1, o; r >= 0; r--)
+var Ls = Object.defineProperty, Hs = Object.getOwnPropertyDescriptor, B = (e, t, n, i) => {
+  for (var s = i > 1 ? void 0 : i ? Hs(t, n) : t, r = e.length - 1, o; r >= 0; r--)
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
-  return i && s && cs(t, n, s), s;
+  return i && s && Ls(t, n, s), s;
 };
-const us = 8e3, ps = 4e3, hs = 6e3, fs = 168 * 3600 * 1e3, ms = 0.85, gs = 4, Nt = 2 * Math.PI * 48, T = (e) => c`<ha-icon icon=${e}></ha-icon>`;
-let A = class extends B {
+const js = 8e3, Ks = 4e3, Us = 6e3, Ws = 168 * 3600 * 1e3, Gs = 0.85, Vs = 4, Vt = 2 * Math.PI * 48, R = (e) => c`<ha-icon icon=${e}></ha-icon>`;
+let z = class extends F {
   constructor() {
     super(...arguments), this.now = Date.now(), this.lastRings = {}, this.dismissed = {}, this.pending = {};
   }
   static getConfigElement() {
-    return document.createElement(cn);
+    return document.createElement(zn);
   }
   static getStubConfig(e) {
-    const t = dn(e?.states ?? {});
+    const t = Sn(e?.states ?? {});
     return { doors: t.length > 0 ? t : [{ name: "Haustür", lock: "lock.haustuer" }] };
   }
   setConfig(e) {
-    this.config = Ji(e), this.pending = {}, this.confirming = void 0, this.loadRingHistory();
+    this.config = Es(e), this.pending = {}, this.confirming = void 0, this.loadRingHistory();
   }
   getCardSize() {
     const e = this.config?.doors.length ?? 1;
@@ -4524,7 +5077,7 @@ let A = class extends B {
     super.disconnectedCallback(), window.clearInterval(this.timer), this.cancelHold();
   }
   get layout() {
-    return this.config?.layout ?? me.layout;
+    return this.config?.layout ?? $e.layout;
   }
   /** Last ring per doorbell from the recorder, so "klingelte vor …" survives reloads and restarts. */
   async loadRingHistory() {
@@ -4532,7 +5085,7 @@ let A = class extends B {
     if (!(!this._hass?.connection?.sendMessagePromise || e.length === 0 || this.historyLoadedFor === t)) {
       this.historyLoadedFor = t;
       try {
-        const n = Date.now(), i = await nn(this._hass.connection, e, n - fs, n), s = { ...wi(i) };
+        const n = Date.now(), i = await mn(this._hass.connection, e, n - Ws, n), s = { ...Ki(i) };
         for (const [r, o] of Object.entries(this.lastRings))
           s[r] = Math.max(o, s[r] ?? 0);
         this.lastRings = s;
@@ -4546,7 +5099,7 @@ let A = class extends B {
     const t = { ...this.pending };
     for (const [n, i] of Object.entries(t)) {
       const s = Number(n);
-      i.phase === "sent" && this.now - i.at > us ? (t[s] = { phase: "noresponse", at: this.now }, e = !0) : i.phase !== "sending" && i.phase !== "sent" && this.now - i.at > ps && (delete t[s], e = !0);
+      i.phase === "sent" && this.now - i.at > js ? (t[s] = { phase: "noresponse", at: this.now }, e = !0) : i.phase !== "sending" && i.phase !== "sent" && this.now - i.at > Ks && (delete t[s], e = !0);
     }
     e && (this.pending = t);
   }
@@ -4555,7 +5108,7 @@ let A = class extends B {
     let t = !1;
     const n = { ...this.pending };
     this.config.doors.forEach((i, s) => {
-      n[s]?.phase === "sent" && i.lock && Pe(e.states[i.lock]?.state) && (n[s] = { phase: "done", at: Date.now() }, this.haptic("success"), t = !0);
+      n[s]?.phase === "sent" && i.lock && Ue(e.states[i.lock]?.state) && (n[s] = { phase: "done", at: Date.now() }, this.haptic("success"), t = !0);
     }), t && (this.pending = n);
   }
   haptic(e) {
@@ -4572,7 +5125,7 @@ let A = class extends B {
       this.pending = { ...this.pending, [e]: { phase: "sending" } };
       try {
         await this._hass.callService("lock", n, { entity_id: t.lock });
-        const i = n === "lock" || Pe(this._hass.states[t.lock]?.state);
+        const i = n === "lock" || Ue(this._hass.states[t.lock]?.state);
         this.pending = {
           ...this.pending,
           [e]: i ? { phase: "done", at: Date.now() } : { phase: "sent", at: Date.now() }
@@ -4584,10 +5137,10 @@ let A = class extends B {
     }
   }
   openDoor(e, t) {
-    this.confirming = void 0, this.callLock(e, t, t.action ?? me.action);
+    this.confirming = void 0, this.callLock(e, t, t.action ?? $e.action);
   }
   holdTime() {
-    return this.config?.hold_time ?? me.hold_time;
+    return this.config?.hold_time ?? $e.hold_time;
   }
   isBusy(e) {
     const t = this.pending[e]?.phase;
@@ -4608,7 +5161,7 @@ let A = class extends B {
   pressHandlers(e, t, n) {
     return n !== "hold" ? {
       click: () => {
-        this.confirming?.index === e || n === "tap" ? this.openDoor(e, t) : this.confirming = { index: e, until: Date.now() + hs };
+        this.confirming?.index === e || n === "tap" ? this.openDoor(e, t) : this.confirming = { index: e, until: Date.now() + Us };
       }
     } : {
       pointerdown: (i) => {
@@ -4633,7 +5186,7 @@ let A = class extends B {
     n.preventDefault();
     const i = n.currentTarget, s = i.parentElement, r = Math.max(
       1,
-      s.getBoundingClientRect().width - i.getBoundingClientRect().width - 2 * gs
+      s.getBoundingClientRect().width - i.getBoundingClientRect().width - 2 * Vs
     );
     i.setPointerCapture?.(n.pointerId), this.drag = { id: e, x: 0, max: r, start: n.clientX };
   }
@@ -4642,7 +5195,7 @@ let A = class extends B {
   }
   slideEnd(e, t, n) {
     if (this.drag?.id !== e) return;
-    const i = this.drag.x >= this.drag.max * ms;
+    const i = this.drag.x >= this.drag.max * Gs;
     this.drag = void 0, i ? this.openDoor(t, n) : this.hint = { index: t, text: "Zum Öffnen ganz nach rechts schieben", until: Date.now() + 2500 };
   }
   // ---- State helpers ---------------------------------------------------------------------------------
@@ -4653,8 +5206,8 @@ let A = class extends B {
     if (!e.doorbell) return 0;
     const t = this.lastRings[e.doorbell];
     if (t !== void 0 && this.dismissed[e.doorbell] === t) return 0;
-    const n = this._hass?.states[e.doorbell]?.state === "on", i = this.config?.ring_window ?? me.ring_window;
-    return Math.max(n ? i : 0, Qi(t, this.now, i));
+    const n = this._hass?.states[e.doorbell]?.state === "on", i = this.config?.ring_window ?? $e.ring_window;
+    return Math.max(n ? i : 0, Ts(t, this.now, i));
   }
   dismiss(e) {
     e.doorbell && (this.dismissed = { ...this.dismissed, [e.doorbell]: this.lastRing(e) });
@@ -4663,20 +5216,20 @@ let A = class extends B {
     return e.lock ? this._hass?.states[e.lock]?.state : void 0;
   }
   tone(e) {
-    return e.lock ? Mt(this.lockState(e)).tone : "locked";
+    return e.lock ? Wt(this.lockState(e)).tone : "locked";
   }
   operable(e) {
-    return !!e.lock && Lt(e, this._hass?.user?.id);
+    return !!e.lock && Gt(e, this._hass?.user?.id);
   }
   doorIcon(e, t) {
-    return e.icon ? e.icon : t ? "mdi:bell-ring" : e.lock ? Pe(this.lockState(e)) ? "mdi:lock-open-variant" : "mdi:lock" : "mdi:bell";
+    return e.icon ? e.icon : t ? "mdi:bell-ring" : e.lock ? Ue(this.lockState(e)) ? "mdi:lock-open-variant" : "mdi:lock" : "mdi:bell";
   }
   stateLine(e, t = !1) {
     const n = [];
-    if (e.lock && n.push(Mt(this.lockState(e)).label), this.remaining(e) > 0) n.push("klingelt");
+    if (e.lock && n.push(Wt(this.lockState(e)).label), this.remaining(e) > 0) n.push("klingelt");
     else if (!t) {
       const i = this.lastRing(e);
-      i > 0 ? n.push(`klingelte ${es(i, this.now)}`) : e.lock || n.push("Klingel");
+      i > 0 ? n.push(`klingelte ${Cs(i, this.now)}`) : e.lock || n.push("Klingel");
     }
     return n.join(" · ");
   }
@@ -4703,15 +5256,15 @@ let A = class extends B {
   }
   // ---- Rendering -------------------------------------------------------------------------------------
   render() {
-    if (!this.config) return m;
-    const e = ts(
+    if (!this.config) return f;
+    const e = Os(
       this.config.doors.map((n, i) => ({ door: n, index: i })),
       (n) => this.remaining(n.door),
       (n) => this.lastRing(n.door)
     ), t = this.config.doors.length === 0 ? c`<div class="empty">Noch keine Türen konfiguriert – im Karten-Editor hinzufügen.</div>` : this.layout === "rows" ? this.renderRows(e) : this.layout === "buttons" ? this.renderButtons(e) : this.layout === "bar" ? this.renderBar(e) : this.renderTiles(e);
     return c`
       <ha-card style="--hold-ms:${this.holdTime()}ms">
-        ${this.config.title ? c`<h2 class="title">${this.config.title}</h2>` : m} ${t}
+        ${this.config.title ? c`<h2 class="title">${this.config.title}</h2>` : f} ${t}
       </ha-card>
     `;
   }
@@ -4719,46 +5272,46 @@ let A = class extends B {
     return c`<div class="head">
       <button class="head-main" @click=${() => this.moreInfo(e.lock ?? e.doorbell)}>
         <span class="ico tone-${t ? "ring" : this.tone(e)}"
-          >${T(this.doorIcon(e, t))}</span
+          >${R(this.doorIcon(e, t))}</span
         >
         <span class="txt">
           <span class="name">${e.name}</span>
           <span class="state">${this.stateLine(e)}</span>
         </span>
       </button>
-      ${t ? c`<span class="badge">${T("mdi:bell-ring")}${this.remaining(e)} s</span>` : m}
-      ${n ?? m}
+      ${t ? c`<span class="badge">${R("mdi:bell-ring")}${this.remaining(e)} s</span>` : f}
+      ${n ?? f}
     </div>`;
   }
   renderLockAgain(e, t) {
-    return !this.operable(e) || !Xi(this.lockState(e)) ? m : c`<button
+    return !this.operable(e) || !Ds(this.lockState(e)) ? f : c`<button
       class="mini"
       title="${e.name} verriegeln"
       aria-label="${e.name} verriegeln"
       @click=${() => this.callLock(t, e, "lock")}
     >
-      ${T("mdi:lock")}
+      ${R("mdi:lock")}
     </button>`;
   }
   renderHint(e, t) {
     const n = this.pending[t];
-    return n?.phase === "error" ? c`<div class="hint error">Fehler: ${n.message}</div>` : this.hint?.index === t ? c`<div class="hint">${this.hint.text}</div>` : e.lock && !Lt(e, this._hass?.user?.id) ? c`<div class="hint">Öffnen nur für berechtigte Personen</div>` : m;
+    return n?.phase === "error" ? c`<div class="hint error">Fehler: ${n.message}</div>` : this.hint?.index === t ? c`<div class="hint">${this.hint.text}</div>` : e.lock && !Gt(e, this._hass?.user?.id) ? c`<div class="hint">Öffnen nur für berechtigte Personen</div>` : f;
   }
   renderCamera(e, t) {
     const n = e.camera ? this._hass?.states[e.camera]?.attributes.entity_picture : void 0;
-    if (typeof n != "string" || !(t || e.camera_view === "always")) return m;
+    if (typeof n != "string" || !(t || e.camera_view === "always")) return f;
     const i = `${n}${n.includes("?") ? "&" : "?"}t=${Math.floor(this.now / 2e3)}`;
     return c`<img class="camera" alt="Kamera ${e.name}" src=${i} />`;
   }
   /** The open control for a door: slider, hold / tap / dialog button. */
   renderAction(e, t, n = {}) {
-    if (!this.operable(e)) return m;
-    const i = this.tone(e) === "unavailable", s = Re(e, this.layout, n.place), r = n.size ?? "full", o = n.filled ? "filled" : "";
+    if (!this.operable(e)) return f;
+    const i = this.tone(e) === "unavailable", s = Ke(e, this.layout, n.place), r = n.size ?? "full", o = n.filled ? "filled" : "";
     if (s === "slide") {
-      const l = `${n.place ?? "main"}-${t}`, h = this.drag?.id === l, u = h ? this.drag.x : 0, f = h ? 1 - u / this.drag.max : 1, b = this.feedbackClass(t);
+      const u = `${n.place ?? "main"}-${t}`, p = this.drag?.id === u, l = p ? this.drag.x : 0, m = p ? 1 - l / this.drag.max : 1, b = this.feedbackClass(t);
       return c`<div
-        class="slider ${r} ${o} ${b} ${h ? "dragging" : ""} ${i ? "disabled" : ""}"
-        style="--x:${u}px;--fade:${f}"
+        class="slider ${r} ${o} ${b} ${p ? "dragging" : ""} ${i ? "disabled" : ""}"
+        style="--x:${l}px;--fade:${m}"
       >
         <span class="slabel"
           >${this.actionLabel(t, r === "small" ? "Öffnen" : "Zum Öffnen schieben")}</span
@@ -4767,15 +5320,15 @@ let A = class extends B {
           class="knob"
           aria-label="${e.name} öffnen – schieben oder Eingabetaste"
           ?disabled=${i || this.isBusy(t)}
-          @pointerdown=${(p) => this.slideStart(l, t, p)}
-          @pointermove=${(p) => this.slideMove(l, p)}
-          @pointerup=${() => this.slideEnd(l, t, e)}
+          @pointerdown=${(h) => this.slideStart(u, t, h)}
+          @pointermove=${(h) => this.slideMove(u, h)}
+          @pointerup=${() => this.slideEnd(u, t, e)}
           @pointercancel=${() => this.drag = void 0}
-          @keydown=${(p) => {
-        (p.key === "Enter" || p.key === " " || p.key === "ArrowRight") && (p.preventDefault(), this.openDoor(t, e));
+          @keydown=${(h) => {
+        (h.key === "Enter" || h.key === " " || h.key === "ArrowRight") && (h.preventDefault(), this.openDoor(t, e));
       }}
         >
-          ${T(b === "done" ? "mdi:check" : b === "failed" ? "mdi:alert" : "mdi:chevron-double-right")}
+          ${R(b === "done" ? "mdi:check" : b === "failed" ? "mdi:alert" : "mdi:chevron-double-right")}
         </button>
       </div>`;
     }
@@ -4793,7 +5346,7 @@ let A = class extends B {
       @keyup=${"keyup" in a ? a.keyup : void 0}
       @click=${a.click}
     >
-      ${T(this.pending[t]?.phase === "done" ? "mdi:check" : "mdi:door-open")}
+      ${R(this.pending[t]?.phase === "done" ? "mdi:check" : "mdi:door-open")}
       <span>${this.actionLabel(t, d)}</span>
     </button>`;
   }
@@ -4815,10 +5368,10 @@ let A = class extends B {
     return c`<div class="rows">
       ${e.map(({ door: t, index: n }) => {
       const i = this.remaining(t) > 0, s = c`${this.renderLockAgain(t, n)}
-        ${i ? m : this.renderAction(t, n, { size: "small" })}`;
+        ${i ? f : this.renderAction(t, n, { size: "small" })}`;
       return c`<div class="row ${i ? "ringing" : ""}">
           ${this.renderHead(t, i, s)} ${this.renderCamera(t, i)}
-          ${i ? this.renderAction(t, n, { filled: !0 }) : m}
+          ${i ? this.renderAction(t, n, { filled: !0 }) : f}
           ${this.renderHint(t, n)}
         </div>`;
     })}
@@ -4828,7 +5381,7 @@ let A = class extends B {
   renderButtons(e) {
     return c`<div class="buttons">
       ${e.map(({ door: t, index: n }) => {
-      const i = this.remaining(t) > 0, s = Re(t, "buttons"), r = this.pressHandlers(n, t, s), o = this.tone(t) === "unavailable" || this.isBusy(n), a = this.pending[n]?.phase;
+      const i = this.remaining(t) > 0, s = Ke(t, "buttons"), r = this.pressHandlers(n, t, s), o = this.tone(t) === "unavailable" || this.isBusy(n), a = this.pending[n]?.phase;
       return c`<div class="keytile ${i ? "ringing" : ""} ${this.feedbackClass(n)}">
           <button class="keytile-head" @click=${() => this.moreInfo(t.lock ?? t.doorbell)}>
             <span class="name">${t.name}</span>
@@ -4851,16 +5404,16 @@ let A = class extends B {
                     @click=${r.click}
                   >
                     <svg class="ring" viewBox="0 0 104 104" aria-hidden="true">
-                      ${kn`<circle class="ring-bg" cx="52" cy="52" r="48"></circle>
-                    <circle class="ring-fg" cx="52" cy="52" r="48" style="stroke-dasharray:${Nt};stroke-dashoffset:${Nt}"></circle>`}
+                      ${Ln`<circle class="ring-bg" cx="52" cy="52" r="48"></circle>
+                    <circle class="ring-fg" cx="52" cy="52" r="48" style="stroke-dasharray:${Vt};stroke-dashoffset:${Vt}"></circle>`}
                     </svg>
                     <span class="face"
-                      >${T(a === "done" ? "mdi:check" : t.icon ?? "mdi:key-variant")}</span
+                      >${R(a === "done" ? "mdi:check" : t.icon ?? "mdi:key-variant")}</span
                     >
                   </button>
                   <span class="keyhint"
                     >${this.actionLabel(n, s === "hold" ? "Gedrückt halten" : "Tippen zum Öffnen")}</span
-                  >` : c`<span class="face idle">${T(this.doorIcon(t, i))}</span>`}
+                  >` : c`<span class="face idle">${R(this.doorIcon(t, i))}</span>`}
           ${this.renderLockAgain(t, n)} ${this.renderHint(t, n)}
         </div>`;
     })}
@@ -4870,7 +5423,7 @@ let A = class extends B {
   renderBar(e) {
     const t = e.find((n) => this.remaining(n.door) > 0);
     return c`
-      ${t ? this.renderHero(t) : m}
+      ${t ? this.renderHero(t) : f}
       <div class="bar">${e.map((n) => this.renderChip(n, n === t))}</div>
     `;
   }
@@ -4878,7 +5431,7 @@ let A = class extends B {
     const n = this.pending[t]?.phase === "done";
     return c`<div class="hero ${n ? "done" : ""}" role="status">
       <div class="hero-top">
-        <span class="hero-ico">${T(n ? "mdi:check" : "mdi:bell-ring")}</span>
+        <span class="hero-ico">${R(n ? "mdi:check" : "mdi:bell-ring")}</span>
         <span class="txt">
           <span class="hero-title">${n ? `${e.name} geöffnet` : `Es klingelt: ${e.name}`}</span>
           <span class="hero-text"
@@ -4896,7 +5449,7 @@ let A = class extends B {
     </div>`;
   }
   renderChip({ door: e, index: t }, n) {
-    const i = this.operable(e) && this.tone(e) !== "unavailable", s = Re(e, "bar"), r = i ? this.pressHandlers(t, e, s) : { click: () => this.moreInfo(e.doorbell) }, o = this.pending[t] || this.confirming?.index === t ? this.actionLabel(t, "") : this.stateLine(e, !0);
+    const i = this.operable(e) && this.tone(e) !== "unavailable", s = Ke(e, "bar"), r = i ? this.pressHandlers(t, e, s) : { click: () => this.moreInfo(e.doorbell) }, o = this.pending[t] || this.confirming?.index === t ? this.actionLabel(t, "") : this.stateLine(e, !0);
     return c`<button
       class="chip ${n ? "ringing" : ""} ${this.holding === t ? "holding" : ""} ${this.feedbackClass(t)}"
       title=${this.stateLine(e)}
@@ -4912,46 +5465,46 @@ let A = class extends B {
       @click=${r.click}
     >
       <span class="ico tone-${n ? "ring" : this.tone(e)}"
-        >${T(this.doorIcon(e, n))}</span
+        >${R(this.doorIcon(e, n))}</span
       >
       <span class="txt"><span class="name">${e.name}</span><span class="state">${o}</span></span>
     </button>`;
   }
 };
-A.styles = ds;
-D([
+z.styles = Ns;
+B([
   $()
-], A.prototype, "config", 2);
-D([
+], z.prototype, "config", 2);
+B([
   $()
-], A.prototype, "now", 2);
-D([
+], z.prototype, "now", 2);
+B([
   $()
-], A.prototype, "lastRings", 2);
-D([
+], z.prototype, "lastRings", 2);
+B([
   $()
-], A.prototype, "dismissed", 2);
-D([
+], z.prototype, "dismissed", 2);
+B([
   $()
-], A.prototype, "pending", 2);
-D([
+], z.prototype, "pending", 2);
+B([
   $()
-], A.prototype, "holding", 2);
-D([
+], z.prototype, "holding", 2);
+B([
   $()
-], A.prototype, "drag", 2);
-D([
+], z.prototype, "drag", 2);
+B([
   $()
-], A.prototype, "confirming", 2);
-D([
+], z.prototype, "confirming", 2);
+B([
   $()
-], A.prototype, "hint", 2);
-A = D([
-  De(Ge)
-], A);
+], z.prototype, "hint", 2);
+z = B([
+  Fe(Xe)
+], z);
 window.customCards = window.customCards ?? [];
-window.customCards.some((e) => e.type === Ge) || window.customCards.push({
-  type: Ge,
+window.customCards.some((e) => e.type === Xe) || window.customCards.push({
+  type: Xe,
   name: "ABB-Welcome Türen",
   description: "Türen öffnen und verriegeln, mit Klingel-Anzeige – für ABB-Welcome-Schlösser und jedes andere Schloss.",
   preview: !0,
