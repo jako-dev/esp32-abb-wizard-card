@@ -2,9 +2,9 @@ import type { HassEntity } from '../ha-types';
 
 export const DOOR_CARD_TAG = 'abb-welcome-door-card';
 
-export type ConfirmMode = 'hold' | 'tap' | 'dialog';
+export type ConfirmMode = 'slide' | 'hold' | 'tap' | 'dialog';
 export type OpenAction = 'unlock' | 'open';
-export type DoorCardLayout = 'tiles' | 'rows' | 'compact';
+export type DoorCardLayout = 'tiles' | 'rows' | 'buttons' | 'bar';
 export type CameraView = 'ring' | 'always';
 
 export interface DoorCardDoor {
@@ -16,7 +16,7 @@ export interface DoorCardDoor {
   doorbell?: string;
   camera?: string;
   camera_view?: CameraView;
-  /** How opening has to be confirmed: hold the button, a single tap or an inline confirmation. */
+  /** How opening has to be confirmed; default depends on the layout (slide, or hold for round buttons). */
   confirm?: ConfirmMode;
   /** lock.unlock (default) or lock.open for locks with a latch (e.g. "Tür aufziehen"). */
   action?: OpenAction;
@@ -39,7 +39,6 @@ export const DEFAULTS = {
   layout: 'tiles' as DoorCardLayout,
   ring_window: 60,
   hold_time: 800,
-  confirm: 'hold' as ConfirmMode,
   action: 'unlock' as OpenAction,
   camera_view: 'ring' as CameraView,
 };
@@ -84,7 +83,7 @@ export function normalizeDoorCardConfig(raw: unknown): DoorCardConfig {
         doorbell: entityOf(d.doorbell, 'binary_sensor', 'doorbell'),
         camera: entityOf(d.camera, 'camera', 'camera'),
         camera_view: oneOf(d.camera_view, ['ring', 'always'] as const, 'camera_view'),
-        confirm: oneOf(d.confirm, ['hold', 'tap', 'dialog'] as const, 'confirm'),
+        confirm: oneOf(d.confirm, ['slide', 'hold', 'tap', 'dialog'] as const, 'confirm'),
         action: oneOf(d.action, ['unlock', 'open'] as const, 'action'),
       };
       if (typeof d.icon === 'string' && d.icon !== '') door.icon = d.icon;
@@ -103,11 +102,27 @@ export function normalizeDoorCardConfig(raw: unknown): DoorCardConfig {
     }
   });
 
+  // "compact" was the name of the bar layout in 0.5.
+  const layout = config.layout === 'compact' ? 'bar' : config.layout;
   return {
     ...(config as unknown as DoorCardConfig),
-    layout: oneOf(config.layout, ['tiles', 'rows', 'compact'] as const, 'layout'),
+    layout: oneOf(layout, ['tiles', 'rows', 'buttons', 'bar'] as const, 'layout'),
     doors,
   };
+}
+
+/**
+ * Effective confirmation for a door in a layout. Sliders need room: round buttons and bar chips hold instead,
+ * the large "ringing" panel of the bar layout keeps the slider.
+ */
+export function confirmModeFor(
+  door: DoorCardDoor,
+  layout: DoorCardLayout,
+  place: 'main' | 'hero' = 'main',
+): ConfirmMode {
+  const mode = door.confirm ?? (layout === 'buttons' ? 'hold' : 'slide');
+  if (mode === 'slide' && place === 'main' && (layout === 'buttons' || layout === 'bar')) return 'hold';
+  return mode;
 }
 
 const friendly = (entity: HassEntity | undefined, fallback: string) =>

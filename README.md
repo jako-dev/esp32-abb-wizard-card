@@ -35,7 +35,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.5.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.6.0`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -155,17 +155,23 @@ Dashboard bearbeiten → **Karte hinzufügen** → „ABB-Welcome Türen“. Im 
   ABB-Welcome-Türen ist „wird entriegelt“ die echte Bestätigung vom Bus.
 - **Klingel-Modus:** Klingelt es, wird die Tür hervorgehoben, nach oben sortiert und zeigt „jetzt öffnen“ mit
   Countdown – passend dazu, dass die Anlage nur kurz nach dem Klingeln öffnet.
-- **Öffnen bestätigen:** gedrückt halten (Standard), mit Rückfrage oder einmal tippen – pro Tür.
-- **Verriegeln:** für Schlösser, die offen bleiben (z. B. Aqara), erscheint „Verriegeln“.
+- **Öffnen bestätigen:** zum Öffnen schieben, gedrückt halten, mit Rückfrage oder einmal tippen – pro Tür.
+  Ohne Angabe passend zur Darstellung (Schieberegler; bei Schlüssel-Knöpfen und Statusleiste gedrückt halten).
+- **Verriegeln:** für Schlösser, die offen bleiben (z. B. Aqara), erscheint ein kleiner Schloss-Knopf.
 - **Kamera (optional):** Bild beim Klingeln oder dauerhaft.
 - **Berechtigung (optional):** Öffnen nur für bestimmte Benutzer. Das ist Bedienkomfort, kein Schutz – wer Zugriff
   auf Home Assistant hat, kann Schlösser auch anders auslösen.
-- **Darstellung:** Kacheln, Liste oder kompakte Knöpfe.
+- **Vier Darstellungen** (`layout`):
+  - `tiles` – **Kacheln** fürs Tablet; die klingelnde Tür wird breit und farbig.
+  - `rows` – **Liste** fürs Handy mit kleinen Reglern; die klingelnde Tür bekommt einen großen.
+  - `buttons` – **Schlüssel-Knöpfe** fürs Wandtablet: große runde Knöpfe, beim Halten läuft ein Ring voll.
+  - `bar` – **Statusleiste**: kompakte Chips; beim Klingeln erscheint darüber ein großes Feld mit
+    Schieberegler und „Ignorieren“.
 
 ```yaml
 type: custom:abb-welcome-door-card
 title: Türen
-layout: tiles # tiles | rows | compact
+layout: tiles # tiles | rows | buttons | bar
 ring_window: 60 # Sekunden "es klingelt"-Hinweis
 doors:
   - name: Tor
@@ -178,7 +184,7 @@ doors:
   - name: Wohnungstür
     lock: lock.aqara_wohnungstuer # jedes Schloss möglich
     doorbell: binary_sensor.abb_welcome_demo_klingel_wohnungstuer
-    confirm: dialog # hold | dialog | tap
+    confirm: dialog # slide | hold | dialog | tap
     # action: open    # lock.open statt lock.unlock (Schlösser mit Falle)
     # camera: camera.flur
     # camera_view: ring # ring | always
@@ -188,7 +194,7 @@ doors:
 | Option        | Standard | Beschreibung                                                       |
 | ------------- | -------- | ------------------------------------------------------------------ |
 | `title`       | –        | Überschrift                                                        |
-| `layout`      | `tiles`  | `tiles` (Kacheln), `rows` (Liste), `compact` (Knöpfe)              |
+| `layout`      | `tiles`  | `tiles`, `rows`, `buttons`, `bar`                                  |
 | `ring_window` | `60`     | Wie lange eine Tür nach dem Klingeln hervorgehoben wird (s)        |
 | `hold_time`   | `800`    | Wie lange gedrückt gehalten werden muss (ms)                       |
 | `doors`       | –        | Liste der Türen: `name`, `lock` und/oder `doorbell`, Rest optional |

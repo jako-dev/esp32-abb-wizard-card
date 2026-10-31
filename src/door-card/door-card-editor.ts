@@ -17,9 +17,10 @@ const CARD_SCHEMA = [
           select: {
             mode: 'dropdown',
             options: [
-              { value: 'tiles', label: 'Kacheln' },
-              { value: 'rows', label: 'Liste' },
-              { value: 'compact', label: 'Kompakt (Knöpfe)' },
+              { value: 'tiles', label: 'Kacheln (Tablet)' },
+              { value: 'rows', label: 'Liste (Handy)' },
+              { value: 'buttons', label: 'Schlüssel-Knöpfe (Wandtablet)' },
+              { value: 'bar', label: 'Statusleiste (kompakt)' },
             ],
           },
         },
@@ -53,6 +54,7 @@ const DOOR_SCHEMA = [
           select: {
             mode: 'dropdown',
             options: [
+              { value: 'slide', label: 'Schieben' },
               { value: 'hold', label: 'Gedrückt halten' },
               { value: 'dialog', label: 'Mit Rückfrage' },
               { value: 'tap', label: 'Einmal tippen' },
@@ -97,7 +99,7 @@ const LABELS: Record<string, string> = {
   icon: 'Icon (optional)',
   lock: 'Schloss',
   doorbell: 'Klingel-Sensor (optional)',
-  confirm: 'Öffnen bestätigen durch',
+  confirm: 'Öffnen bestätigen durch (leer = passend zur Darstellung)',
   action: 'Aktion',
   camera: 'Kamera (optional)',
   camera_view: 'Kamerabild zeigen',

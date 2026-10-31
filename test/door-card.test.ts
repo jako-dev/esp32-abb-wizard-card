@@ -51,6 +51,12 @@ const doors = [
   { name: 'Wohnungstür', lock: 'lock.aqara', confirm: 'tap' },
 ];
 
+const ring = (hass: HomeAssistant) =>
+  ({
+    ...hass,
+    states: { ...hass.states, 'binary_sensor.klingel_tor': entity('binary_sensor.klingel_tor', 'on') },
+  }) as never;
+
 describe('abb-welcome-door-card', () => {
   beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
   afterEach(() => {
@@ -62,15 +68,39 @@ describe('abb-welcome-door-card', () => {
     const { root, card, sendMessagePromise } = await mount({ doors });
     await vi.waitFor(() => expect(sendMessagePromise).toHaveBeenCalled());
     await card.updateComplete;
-    expect(text(root)).toContain('Tor');
     expect(text(root)).toContain('Verriegelt · klingelte vor 5 min');
-    expect(text(root)).toContain('Halten zum Öffnen');
+    expect(text(root)).toContain('Zum Öffnen schieben');
+  });
+
+  it('opens by sliding the knob all the way', async () => {
+    const { root, card, callService } = await mount({ doors });
+    const knob = root.querySelector<HTMLButtonElement>('.slider .knob')!;
+    knob.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 10 }));
+    await card.updateComplete;
+    knob.dispatchEvent(new PointerEvent('pointerup'));
+    await card.updateComplete;
+    expect(callService).not.toHaveBeenCalled();
+    expect(text(root)).toContain('ganz nach rechts schieben');
+
+    knob.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 10 }));
+    knob.dispatchEvent(new PointerEvent('pointermove', { clientX: 400 }));
+    knob.dispatchEvent(new PointerEvent('pointerup'));
+    expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.tor' });
+  });
+
+  it('opens a slider with the keyboard', async () => {
+    const { root, callService } = await mount({ doors });
+    root.querySelector('.slider .knob')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.tor' });
   });
 
   it('opens only after holding the button', async () => {
-    const { root, card, callService } = await mount({ doors, hold_time: 500 });
-    const button = root.querySelector<HTMLButtonElement>('button.act.open')!;
-
+    const { root, card, callService } = await mount({
+      doors: [{ name: 'Tor', lock: 'lock.tor', confirm: 'hold' }],
+      hold_time: 500,
+    });
+    const button = root.querySelector<HTMLButtonElement>('button.press')!;
+    expect(text(button)).toContain('Halten zum Öffnen');
     button.dispatchEvent(new PointerEvent('pointerdown', { button: 0 }));
     await vi.advanceTimersByTimeAsync(200);
     button.dispatchEvent(new PointerEvent('pointerup'));
@@ -85,8 +115,7 @@ describe('abb-welcome-door-card', () => {
 
   it('confirms success when the lock reports unlocking', async () => {
     const { root, card, hass } = await mount({ doors });
-    const buttons = root.querySelectorAll<HTMLButtonElement>('button.act.open');
-    buttons[1].click(); // Wohnungstür: tap
+    root.querySelector<HTMLButtonElement>('button.press')!.click(); // Wohnungstür: tap
     await vi.advanceTimersByTimeAsync(0);
     await card.updateComplete;
     expect(text(root)).toContain('Warte auf Tür');
@@ -97,12 +126,12 @@ describe('abb-welcome-door-card', () => {
     } as never;
     await card.updateComplete;
     expect(text(root)).toContain('Geöffnet');
-    expect(text(root)).toContain('Verriegeln');
+    expect(root.querySelector('button.mini[aria-label="Wohnungstür verriegeln"]')).not.toBeNull();
   });
 
   it('reports a command without confirmation', async () => {
     const { root, card } = await mount({ doors });
-    root.querySelectorAll<HTMLButtonElement>('button.act.open')[1].click();
+    root.querySelector<HTMLButtonElement>('button.press')!.click();
     await vi.advanceTimersByTimeAsync(9000);
     await card.updateComplete;
     expect(text(root)).toContain('Gesendet – keine Rückmeldung');
@@ -112,11 +141,11 @@ describe('abb-welcome-door-card', () => {
     const { root, card, callService } = await mount({
       doors: [{ name: 'Haustür', lock: 'lock.tor', confirm: 'dialog' }],
     });
-    root.querySelector<HTMLButtonElement>('button.act.open')!.click();
+    root.querySelector<HTMLButtonElement>('button.press')!.click();
     await card.updateComplete;
     expect(text(root)).toContain('Wirklich öffnen?');
     expect(callService).not.toHaveBeenCalled();
-    root.querySelector<HTMLButtonElement>('button.act.open')!.click();
+    root.querySelector<HTMLButtonElement>('button.press')!.click();
     expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.tor' });
   });
 
@@ -124,44 +153,75 @@ describe('abb-welcome-door-card', () => {
     const { root, callService } = await mount({
       doors: [{ name: 'Wohnungstür', lock: 'lock.aqara', confirm: 'tap', action: 'open' }],
     });
-    root.querySelector<HTMLButtonElement>('button.act.open')!.click();
+    root.querySelector<HTMLButtonElement>('button.press')!.click();
     expect(callService).toHaveBeenCalledWith('lock', 'open', { entity_id: 'lock.aqara' });
   });
 
   it('highlights a ringing door and moves it to the top', async () => {
     const { root, card, hass } = await mount({
-      doors: [{ name: 'Wohnungstür', lock: 'lock.aqara' }, ...doors.slice(0, 1)],
+      doors: [{ name: 'Wohnungstür', lock: 'lock.aqara' }, doors[0]],
     });
-    expect(root.querySelector('.door-name')!.textContent).toBe('Wohnungstür');
-
-    card.hass = {
-      ...hass,
-      states: { ...hass.states, 'binary_sensor.klingel_tor': entity('binary_sensor.klingel_tor', 'on') },
-    } as never;
+    expect(root.querySelector('.name')!.textContent).toBe('Wohnungstür');
+    card.hass = ring(hass);
     await card.updateComplete;
-    const first = root.querySelector('.door')!;
+    const first = root.querySelector('.tile')!;
     expect(first.classList.contains('ringing')).toBe(true);
-    expect(text(first)).toContain('Es klingelt – jetzt öffnen');
+    expect(text(first)).toContain('Tor');
     expect(text(first)).toContain('60 s');
+    expect(first.querySelector('.slider.filled')).not.toBeNull();
   });
 
   it('only lets configured users open', async () => {
     const { root } = await mount({ doors: [{ name: 'Tor', lock: 'lock.tor', users: ['someone-else'] }] });
-    expect(root.querySelector('button.act.open')).toBeNull();
+    expect(root.querySelector('.knob, button.press')).toBeNull();
     expect(text(root)).toContain('nur für berechtigte Personen');
   });
 
   it('disables opening while the lock is unavailable', async () => {
     const { root } = await mount({ doors: doors.slice(0, 1) }, [entity('lock.tor', 'unavailable')]);
-    expect(root.querySelector<HTMLButtonElement>('button.act.open')!.disabled).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('.knob')!.disabled).toBe(true);
     expect(text(root)).toContain('Nicht verfügbar');
   });
 
-  it('renders the compact layout as buttons', async () => {
-    const { root, callService } = await mount({ doors, layout: 'compact' });
-    const chips = root.querySelectorAll<HTMLButtonElement>('button.chip');
-    expect(chips).toHaveLength(2);
-    chips[1].click();
-    expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.aqara' });
+  it('shows small controls in the list and a full slider for the ringing door', async () => {
+    const { root, card, hass } = await mount({ doors, layout: 'rows' });
+    expect(root.querySelectorAll('.row')).toHaveLength(2);
+    expect(root.querySelector('.slider.small')).not.toBeNull();
+    card.hass = ring(hass);
+    await card.updateComplete;
+    expect(root.querySelector('.row.ringing .slider.filled')).not.toBeNull();
+  });
+
+  it('renders round key buttons that open on hold', async () => {
+    const { root, callService } = await mount({ doors, layout: 'buttons', hold_time: 300 });
+    const keys = root.querySelectorAll<HTMLButtonElement>('button.key');
+    expect(keys).toHaveLength(2);
+    expect(text(root)).toContain('Gedrückt halten');
+    keys[0].dispatchEvent(new PointerEvent('pointerdown', { button: 0 }));
+    await vi.advanceTimersByTimeAsync(400);
+    expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.tor' });
+  });
+
+  it('shows the status bar with a panel for the ringing door that can be dismissed', async () => {
+    const { root, card, hass, callService } = await mount({ doors, layout: 'bar' });
+    expect(root.querySelectorAll('button.chip')).toHaveLength(2);
+    expect(root.querySelector('.hero')).toBeNull();
+
+    card.hass = ring(hass);
+    await card.updateComplete;
+    expect(text(root.querySelector('.hero')!)).toContain('Es klingelt: Tor');
+    root.querySelector('.hero .knob')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(callService).toHaveBeenCalledWith('lock', 'unlock', { entity_id: 'lock.tor' });
+
+    [...root.querySelectorAll<HTMLButtonElement>('.hero button')]
+      .find((b) => b.textContent!.includes('Ignorieren'))!
+      .click();
+    await card.updateComplete;
+    expect(root.querySelector('.hero')).toBeNull();
+  });
+
+  it('accepts the old compact layout name', async () => {
+    const { root } = await mount({ doors, layout: 'compact' });
+    expect(root.querySelectorAll('button.chip')).toHaveLength(2);
   });
 });

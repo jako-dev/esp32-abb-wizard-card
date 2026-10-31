@@ -1,5 +1,6 @@
 import {
   canLockAgain,
+  confirmModeFor,
   canOperate,
   discoverDoors,
   formatAgo,
@@ -47,7 +48,7 @@ describe('door card config', () => {
       'lock-Entität',
     );
     expect(() => normalizeDoorCardConfig({ doors: [{ lock: 'lock.a', confirm: 'swipe' }] })).toThrow(
-      'hold, tap, dialog',
+      'slide, hold, tap, dialog',
     );
     expect(() => normalizeDoorCardConfig({ doors: [], layout: 'grid' })).toThrow('layout');
     expect(() => normalizeDoorCardConfig({ doors: [], ring_window: -1 })).toThrow('ring_window');
@@ -131,5 +132,16 @@ describe('door card config', () => {
         (d) => d.ring,
       ).map((d) => d.id),
     ).toEqual(['d', 'b', 'a', 'c']);
+  });
+
+  it('picks the confirmation that fits the layout', () => {
+    const door = { name: 'A', lock: 'lock.a' };
+    expect(confirmModeFor(door, 'tiles')).toBe('slide');
+    expect(confirmModeFor(door, 'rows')).toBe('slide');
+    expect(confirmModeFor(door, 'buttons')).toBe('hold');
+    expect(confirmModeFor(door, 'bar')).toBe('hold');
+    expect(confirmModeFor(door, 'bar', 'hero')).toBe('slide');
+    expect(confirmModeFor({ ...door, confirm: 'tap' }, 'bar', 'hero')).toBe('tap');
+    expect(confirmModeFor({ ...door, confirm: 'slide' }, 'buttons')).toBe('hold');
   });
 });
