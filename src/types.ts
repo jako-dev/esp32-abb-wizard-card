@@ -141,6 +141,8 @@ export interface RingCandidate {
   score: number;
   /** Candidate occurred in every capture of the step. */
   reliable: boolean;
+  /** Entered by the user in the result step. */
+  manual?: boolean;
 }
 
 export interface RingResult {
@@ -152,6 +154,10 @@ export interface RingResult {
   outdoorAddress?: number;
   /** Relevant frames (own indoor station, not in baseline) that matched no rule. */
   otherFrames: Frame[];
+  /** The doorbell conditions were entered by hand. */
+  manual?: boolean;
+  /** The outdoor station address was entered by hand. */
+  outdoorManual?: boolean;
 }
 
 export interface OpenConfirmation {
@@ -198,6 +204,8 @@ export interface AnalysisStats {
 export interface WizardResult {
   indoor: IndoorResult | null;
   threeByte: boolean;
+  /** The address length was set by hand. */
+  threeByteManual?: boolean;
   /** Keyed by door key, for every door. */
   rings: Record<string, RingResult>;
   /** Keyed by door key, for every door with an opener. */

@@ -3,7 +3,14 @@ import { analyzeSession, deriveOpenCommand, matchRingRule } from '../src/analysi
 import { parseFrame } from '../src/parser';
 import { generateYaml } from '../src/yaml-export';
 import { DEFAULT_DOORS } from '../src/doors';
-import { addCapture, createSession, parseSession, setIndoorAddress, setSkipped } from '../src/session';
+import {
+  addCapture,
+  createSession,
+  parseSession,
+  setIndoorAddress,
+  setOverrides,
+  setSkipped,
+} from '../src/session';
 import type { Door, RingCandidate, Session, StepId } from '../src/types';
 
 export function loadFixture(name: string): Session {
@@ -383,5 +390,66 @@ describe('dial readings', () => {
       sessionFrom({ 'ring:tor': [['[2001 > 1010] Type: 01', '[2001 > 1016] Type: 01']] }, { x10: 1, x1: 6 }),
     );
     expect(result.indoor?.address).toBe(0x1010);
+  });
+});
+
+describe('manual values', () => {
+  const base = () =>
+    sessionFrom(
+      {
+        'ring:tor': [['[2001 > 1016] Type: 01', '[1016 > 2001] Type: 81']],
+        'open:haustuer': [['[1016 > 4002] Type: 0D Data: 1C 41 68', '[4002 > 1016] Type: 8D']],
+      },
+      { x10: 1, x1: 6 },
+    );
+
+  it('replaces analysed values and marks them as manual', () => {
+    const session = setOverrides(base(), {
+      threeByte: false,
+      rings: {
+        tor: { outdoorAddress: 0x2005, conditions: [{ type: 0x01, src: 0x2005, dst: 0x1016 }] },
+      },
+      opens: { haustuer: { destination: 0x4002, messageType: 0x0d, data: [0xaa] } },
+    });
+    const result = analyzeSession(session);
+    expect(result.threeByteManual).toBe(true);
+    expect(result.rings.tor).toMatchObject({ manual: true, outdoorAddress: 0x2005, outdoorManual: true });
+    expect(result.rings.tor.selected).toEqual([
+      expect.objectContaining({ type: 0x01, src: 0x2005, dst: 0x1016, manual: true, key: '01|2005|1016|*' }),
+    ]);
+    // Same destination and type as measured: the measured confirmation is kept.
+    expect(result.opens.haustuer).toMatchObject({
+      manual: true,
+      data: [0xaa],
+      confirmation: { source: 0x4002, messageType: 0x8d },
+    });
+  });
+
+  it('keeps manual values when more captures are added', () => {
+    let session = setOverrides(base(), {
+      opens: { haustuer: { destination: 0x4003, messageType: 0x0e, data: [1] } },
+    });
+    session = addCapture(session, 'open:haustuer', {
+      startedAt: '2026-01-01T00:01:00Z',
+      endedAt: '2026-01-01T00:01:10Z',
+      lines: [{ time: '2026-01-01T00:01:01Z', line: '[1016 > 4002] Type: 0D Data: 1C 41 68' }],
+    });
+    expect(analyzeSession(session).opens.haustuer).toMatchObject({
+      destination: 0x4003,
+      messageType: 0x0e,
+      manual: true,
+    });
+  });
+
+  it('creates an opener without any capture', () => {
+    const session = setOverrides(createSession('sensor.test'), {
+      indoorAddress: 0x1016,
+      opens: { tor: { destination: 0x2001, messageType: 0x0d, data: [0x12, 0x34] } },
+    });
+    const result = analyzeSession(session);
+    expect(result.indoor).toMatchObject({ address: 0x1016, method: 'manual' });
+    expect(result.opens.tor).toMatchObject({ destination: 0x2001, manual: true, captures: 0 });
+    expect(result.warnings.filter((w) => w.step === 'open:tor')).toEqual([]);
+    expect(generateYaml(result, session.doors)).toContain('destination_address: 0x2001');
   });
 });

@@ -437,7 +437,7 @@ function emptyRing(door: Door): RingResult {
   return { door: door.key, captures: 0, candidates: [], selected: [], otherFrames: [] };
 }
 
-export function analyzeSession(session: Session, options: AnalysisOptions = {}): WizardResult {
+function analyzeRecordings(session: Session, options: AnalysisOptions): WizardResult {
   const unparsed: string[] = [];
   const { steps, total } = parseSteps(session, unparsed);
   const warnings: Warning[] = [];
@@ -575,4 +575,102 @@ export function analyzeSession(session: Session, options: AnalysisOptions = {}):
   }
 
   return result;
+}
+
+/** Warnings about a value the user replaced by hand are no longer relevant. */
+const RING_WARNINGS = new Set([
+  'no_ring_candidates',
+  'unstable_candidates',
+  'single_capture',
+  'step_missing',
+  'step_skipped',
+]);
+const OPEN_WARNINGS = new Set([
+  'no_open_frame',
+  'derived_open',
+  'unstable_open',
+  'multiple_open_frames',
+  'no_confirmation',
+  'step_missing',
+  'step_skipped',
+]);
+
+/** Replace analysed values by the manual ones from the result step (session.overrides). */
+export function applyOverrides(result: WizardResult, session: Session): WizardResult {
+  const { overrides } = session;
+  const next: WizardResult = { ...result, rings: { ...result.rings }, opens: { ...result.opens } };
+  let warnings = [...result.warnings];
+
+  if (overrides.threeByte !== undefined) {
+    next.threeByte = overrides.threeByte;
+    next.threeByteManual = true;
+    warnings = warnings.filter((w) => w.code !== 'mixed_address_length');
+  }
+
+  for (const door of session.doors) {
+    const ring = overrides.rings?.[door.key];
+    if (ring) {
+      const current = next.rings[door.key] ?? {
+        door: door.key,
+        captures: 0,
+        candidates: [],
+        selected: [],
+        otherFrames: [],
+      };
+      const updated: RingResult = { ...current };
+      if (ring.conditions) {
+        updated.selected = ring.conditions.map((c) => ({
+          ...c,
+          key: candidateKey(c),
+          outdoor:
+            c.type === TYPE_RING_OUTDOOR
+              ? c.src
+              : c.type === (TYPE_RING_OUTDOOR | REPLY_FLAG)
+                ? c.dst
+                : undefined,
+          occurrences: 0,
+          score: 1,
+          reliable: true,
+          manual: true,
+        }));
+        updated.manual = true;
+        warnings = warnings.filter((w) => !(w.step === ringStepId(door) && RING_WARNINGS.has(w.code)));
+      }
+      if (ring.outdoorAddress !== undefined) {
+        updated.outdoorAddress = ring.outdoorAddress;
+        updated.outdoorManual = true;
+      }
+      next.rings[door.key] = updated;
+    }
+
+    const open = door.open ? overrides.opens?.[door.key] : undefined;
+    if (open) {
+      const measured = result.opens[door.key];
+      const sameCommand =
+        measured && measured.destination === open.destination && measured.messageType === open.messageType;
+      next.opens[door.key] = {
+        door: door.key,
+        captures: measured?.captures ?? 0,
+        destination: open.destination,
+        messageType: open.messageType,
+        data: [...open.data],
+        occurrences: 0,
+        score: 1,
+        manual: true,
+        ...(sameCommand && measured.confirmation ? { confirmation: measured.confirmation } : {}),
+      };
+      warnings = warnings.filter((w) => !(w.step === openStepId(door) && OPEN_WARNINGS.has(w.code)));
+    }
+  }
+
+  next.warnings = warnings;
+  return next;
+}
+
+/**
+ * Analyse the recordings of a session and apply the manual values entered in the result step. Manual values
+ * always win, so new captures or a repeated analysis never replace them.
+ */
+export function analyzeSession(session: Session, options: AnalysisOptions = {}): WizardResult {
+  return applyOverrides(analyzeRecordings(session, options), session);
 }
