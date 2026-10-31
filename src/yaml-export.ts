@@ -22,6 +22,11 @@ export interface DeviceOptions {
   board?: string;
   /** `esphome.name_add_mac_suffix` – the demo firmware does not set it (false). */
   nameAddMacSuffix?: boolean;
+  /**
+   * `wifi.use_address`: where to reach the device for the upload, e.g. the old name of the factory firmware
+   * (`abb-welcome-demo-factory-a7d7f8.local`) or its IP. Needed once when the device is renamed.
+   */
+  useAddress?: string;
 }
 
 export const DEFAULT_DEVICE: DeviceOptions = {
@@ -287,7 +292,7 @@ export function generateYaml(
     w.line(0);
   }
 
-  if (device) writeDeviceBase(w);
+  if (device) writeDeviceBase(w, device);
 
   w.line(0, 'remote_receiver:');
   if (device) writeReceiverSettings(w);
@@ -430,10 +435,14 @@ export function generateYaml(
 }
 
 /** wifi, api, ota and transmitter as in the demo firmware of the ESP32 doorbell bus interface. */
-function writeDeviceBase(w: YamlWriter): void {
+function writeDeviceBase(w: YamlWriter, device: DeviceOptions): void {
   w.line(0, 'wifi:');
   w.line(2, 'ssid: !secret wifi_ssid');
   w.line(2, 'password: !secret wifi_password');
+  if (device.useAddress) {
+    w.comment(2, 'Nur für das erste Aufspielen unter neuem Namen – danach entfernen:');
+    w.line(2, `use_address: ${device.useAddress}`);
+  }
   w.line(2, 'ap:');
   w.line(4, 'password: !secret ap_password');
   w.line(0);

@@ -280,4 +280,29 @@ describe('device name', () => {
       checkDeviceName({ ...device, nameAddMacSuffix: true }, { name: 'ABB Welcome Demo', mac }),
     ).toContain('ausschalten');
   });
+
+  it('reaches a renamed device through use_address once', () => {
+    const full = exportWith({
+      name: 'gegensprechanlage',
+      friendlyName: 'Gegensprechanlage',
+      useAddress: 'abb-welcome-demo-factory-a7d7f8.local',
+    });
+    expect(full.esphome).toMatchObject({ name: 'gegensprechanlage', friendly_name: 'Gegensprechanlage' });
+    expect(full.esphome.name_add_mac_suffix).toBeUndefined();
+    expect(full.wifi.use_address).toBe('abb-welcome-demo-factory-a7d7f8.local');
+    expect(exportWith({ name: 'gegensprechanlage', friendlyName: 'G' }).wifi.use_address).toBeUndefined();
+  });
+
+  it('recognises the factory firmware name with MAC suffix', () => {
+    const registered = { name: 'abb-welcome-demo-factory-a7d7f8', mac: 'e8:6b:ea:a7:d7:f8' };
+    expect(checkDeviceName({ name: 'abb-welcome-demo-factory', friendlyName: '' }, registered)).toContain(
+      'name_add_mac_suffix“ aktivieren',
+    );
+    expect(
+      checkDeviceName(
+        { name: 'abb-welcome-demo-factory', friendlyName: '', nameAddMacSuffix: true },
+        registered,
+      ),
+    ).toBeUndefined();
+  });
 });

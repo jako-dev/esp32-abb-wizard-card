@@ -36,7 +36,7 @@ HACS legt die Dashboard-Ressource automatisch an.
 
 1. `dist/abb-welcome-wizard-card.js` herunterladen und nach `/config/www/abb-welcome-wizard-card.js` kopieren.
 2. **Einstellungen → Dashboards → ⋮ → Ressourcen → Ressource hinzufügen**
-   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.0`
+   - URL: `/local/abb-welcome-wizard-card.js?v=0.8.1`
    - Typ: **JavaScript-Modul**
 3. Browser neu laden (bei Updates die Versionsnummer in der URL erhöhen).
 
@@ -153,6 +153,9 @@ Auf der Ergebnisseite gibt es die ESPHome-Konfiguration in zwei Varianten (Kopie
   `wifi_password`, `api_encryption_key`, `ota_password` und `ap_password` erwartet – den API-Schlüssel aus der
   bisherigen Datei übernehmen. Die Option `name_add_mac_suffix` ist wie in der Demo-Firmware aus; passt der Name
   nicht zum Gerät in Home Assistant, warnt die Karte. `api: batch_delay: 0ms` ist gesetzt.
+  **Umbenennen** (z. B. von der Werks-Firmware `abb-welcome-demo-factory-a7d7f8` auf `gegensprechanlage`): neuen
+  Namen eintragen und unter „Adresse fürs Aufspielen“ den alten Namen mit `.local` oder die IP – das wird
+  `wifi: use_address:`; nach dem ersten Aufspielen die Zeile im Device Builder wieder löschen.
 - **Nur geänderte Abschnitte**: ersetzt in der bestehenden Konfiguration nur `esphome.on_boot`,
   `remote_receiver.on_abbwelcome`, `binary_sensor` und `lock`.
 

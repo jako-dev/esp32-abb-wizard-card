@@ -256,7 +256,7 @@ function parseExportSettings(raw: unknown): ExportSettings {
   if (!isObject(raw)) return {};
   const settings: ExportSettings = {};
   if (raw.mode === 'full' || raw.mode === 'snippet') settings.mode = raw.mode;
-  for (const key of ['name', 'friendlyName', 'debugSensorName'] as const) {
+  for (const key of ['name', 'friendlyName', 'debugSensorName', 'useAddress'] as const) {
     if (typeof raw[key] === 'string' && raw[key] !== '') settings[key] = raw[key] as string;
   }
   if (typeof raw.nameAddMacSuffix === 'boolean') settings.nameAddMacSuffix = raw.nameAddMacSuffix;

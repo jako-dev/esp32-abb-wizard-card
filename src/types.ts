@@ -100,6 +100,8 @@ export interface ExportSettings {
   friendlyName?: string;
   debugSensorName?: string;
   nameAddMacSuffix?: boolean;
+  /** wifi.use_address for the upload after a rename. */
+  useAddress?: string;
 }
 
 export interface Session {

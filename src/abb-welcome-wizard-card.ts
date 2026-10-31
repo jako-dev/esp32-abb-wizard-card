@@ -110,7 +110,7 @@ type Editing =
   | { kind: 'outdoor'; door: string; value: string; error?: string }
   | { kind: 'ring'; door: string; rows: ConditionDraft[]; errors: FieldErrors<ConditionDraft>[] }
   | { kind: 'open'; door: string; draft: OpenDraft; errors: FieldErrors<OpenDraft> };
-const VERSION = '0.8.0';
+const VERSION = '0.8.1';
 const DEFAULT_CAPTURE_SECONDS = 10;
 const LIVE_LIMIT = 40;
 /** A capture interrupted by a reload is resumed only if it is younger than this. */
@@ -1502,11 +1502,16 @@ export class AbbWelcomeWizardCard extends LitElement {
       friendlyName: saved.friendlyName ?? friendly,
       debugSensorName: saved.debugSensorName ?? sensorName,
       nameAddMacSuffix: saved.nameAddMacSuffix ?? false,
+      useAddress: saved.useAddress,
     };
   }
 
   private renderDeviceFields(device: DeviceOptions): TemplateResult {
-    const field = (key: 'name' | 'friendlyName' | 'debugSensorName', label: string, hint?: string) =>
+    const field = (
+      key: 'name' | 'friendlyName' | 'debugSensorName' | 'useAddress',
+      label: string,
+      hint?: string,
+    ) =>
       html`<label class="field"
         >${label}
         <input
@@ -1527,6 +1532,11 @@ export class AbbWelcomeWizardCard extends LitElement {
         ${field('name', 'Gerätename', 'esphome name – muss zum bestehenden Gerät passen')}
         ${field('friendlyName', 'Anzeigename')}
         ${field('debugSensorName', 'Debug-Sensor', 'Unverändert lassen, damit diese Karte ihn findet')}
+        ${field(
+          'useAddress',
+          'Adresse fürs Aufspielen',
+          'Nur beim Umbenennen: alter Name.local oder IP (use_address)',
+        )}
       </div>
       <label class="switch">
         <input
@@ -1548,11 +1558,25 @@ export class AbbWelcomeWizardCard extends LitElement {
         >
       </label>
       ${
-        warning
-          ? html`<div class="callout warning">
-              <ha-icon icon="mdi:alert-outline"></ha-icon><span>${warning}</span>
+        device.useAddress
+          ? html`<div class="callout info">
+              <ha-icon icon="mdi:rename-outline"></ha-icon>
+              <span
+                >Das Gerät wird beim Aufspielen zu „${effectiveDeviceName(device, registered.mac)}“. Der
+                Device Builder erreicht es dafür einmal über <code>${device.useAddress}</code>. Nach dem
+                ersten erfolgreichen Aufspielen die Zeile <code>use_address</code> im Device Builder löschen
+                und speichern (und das Feld hier leeren).</span
+              >
             </div>`
-          : nothing
+          : warning
+            ? html`<div class="callout warning">
+                <ha-icon icon="mdi:alert-outline"></ha-icon
+                ><span
+                  >${warning} Zum Umbenennen den bisherigen Namen (z. B. „…-factory-a7d7f8.local“) oder die IP
+                  unter „Adresse fürs Aufspielen“ eintragen.</span
+                >
+              </div>`
+            : nothing
       }`;
   }
 
