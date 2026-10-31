@@ -96,7 +96,7 @@ export class AbbWelcomeDoorCard extends LitElement {
 
   public getCardSize(): number {
     const count = this.config?.doors.length ?? 1;
-    switch (this.layout) {
+    switch (this.doorLayout) {
       case 'bar':
         return 2;
       case 'rows':
@@ -150,7 +150,7 @@ export class AbbWelcomeDoorCard extends LitElement {
     this.cancelHold();
   }
 
-  private get layout(): DoorCardLayout {
+  private get doorLayout(): DoorCardLayout {
     return this.config?.layout ?? DEFAULTS.layout;
   }
 
@@ -420,11 +420,11 @@ export class AbbWelcomeDoorCard extends LitElement {
     const body =
       this.config.doors.length === 0
         ? html`<div class="empty">Noch keine Türen konfiguriert – im Karten-Editor hinzufügen.</div>`
-        : this.layout === 'rows'
+        : this.doorLayout === 'rows'
           ? this.renderRows(entries)
-          : this.layout === 'buttons'
+          : this.doorLayout === 'buttons'
             ? this.renderButtons(entries)
-            : this.layout === 'bar'
+            : this.doorLayout === 'bar'
               ? this.renderBar(entries)
               : this.renderTiles(entries);
     return html`
@@ -488,7 +488,7 @@ export class AbbWelcomeDoorCard extends LitElement {
   ): TemplateResult | typeof nothing {
     if (!this.operable(door)) return nothing;
     const disabled = this.tone(door) === 'unavailable';
-    const mode = confirmModeFor(door, this.layout, options.place);
+    const mode = confirmModeFor(door, this.doorLayout, options.place);
     const size = options.size ?? 'full';
     const fill = options.filled ? 'filled' : '';
     if (mode === 'slide') {
