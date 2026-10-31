@@ -224,4 +224,16 @@ describe('abb-welcome-door-card', () => {
     const { root } = await mount({ doors, layout: 'compact' });
     expect(root.querySelectorAll('button.chip')).toHaveLength(2);
   });
+
+  it('lets Home Assistant set its own layout property', async () => {
+    // hui-card assigns element.layout (e.g. "grid" in sections views); a getter-only
+    // "layout" made that throw and Home Assistant hid the whole section.
+    const { root, card } = await mount({ doors, layout: 'rows' });
+    expect(() => {
+      (card as unknown as { layout: string }).layout = 'grid';
+    }).not.toThrow();
+    card.requestUpdate();
+    await card.updateComplete;
+    expect(root.querySelector('.rows')).not.toBeNull();
+  });
 });

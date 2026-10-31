@@ -5271,7 +5271,7 @@ let z = class extends M {
   }
   getCardSize() {
     const e = this.config?.doors.length ?? 1;
-    switch (this.layout) {
+    switch (this.doorLayout) {
       case "bar":
         return 2;
       case "rows":
@@ -5308,7 +5308,7 @@ let z = class extends M {
   disconnectedCallback() {
     super.disconnectedCallback(), window.clearInterval(this.timer), this.cancelHold();
   }
-  get layout() {
+  get doorLayout() {
     return this.config?.layout ?? we.layout;
   }
   /** Last ring per doorbell from the recorder, so "klingelte vor …" survives reloads and restarts. */
@@ -5493,7 +5493,7 @@ let z = class extends M {
       this.config.doors.map((n, i) => ({ door: n, index: i })),
       (n) => this.remaining(n.door),
       (n) => this.lastRing(n.door)
-    ), t = this.config.doors.length === 0 ? c`<div class="empty">Noch keine Türen konfiguriert – im Karten-Editor hinzufügen.</div>` : this.layout === "rows" ? this.renderRows(e) : this.layout === "buttons" ? this.renderButtons(e) : this.layout === "bar" ? this.renderBar(e) : this.renderTiles(e);
+    ), t = this.config.doors.length === 0 ? c`<div class="empty">Noch keine Türen konfiguriert – im Karten-Editor hinzufügen.</div>` : this.doorLayout === "rows" ? this.renderRows(e) : this.doorLayout === "buttons" ? this.renderButtons(e) : this.doorLayout === "bar" ? this.renderBar(e) : this.renderTiles(e);
     return c`
       <ha-card style="--hold-ms:${this.holdTime()}ms">
         ${this.config.title ? c`<h2 class="title">${this.config.title}</h2>` : m} ${t}
@@ -5538,7 +5538,7 @@ let z = class extends M {
   /** The open control for a door: slider, hold / tap / dialog button. */
   renderAction(e, t, n = {}) {
     if (!this.operable(e)) return m;
-    const i = this.tone(e) === "unavailable", s = We(e, this.layout, n.place), r = n.size ?? "full", o = n.filled ? "filled" : "";
+    const i = this.tone(e) === "unavailable", s = We(e, this.doorLayout, n.place), r = n.size ?? "full", o = n.filled ? "filled" : "";
     if (s === "slide") {
       const u = `${n.place ?? "main"}-${t}`, p = this.drag?.id === u, l = p ? this.drag.x : 0, f = p ? 1 - l / this.drag.max : 1, v = this.feedbackClass(t);
       return c`<div
