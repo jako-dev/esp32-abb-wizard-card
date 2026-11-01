@@ -108,6 +108,22 @@ export const doorCardStyles = css`
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* Last ring on its own line, so nothing gets cut off next to the slider on phones. */
+  .ring-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--door-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    --mdc-icon-size: 13px;
+  }
+  .ring-info ha-icon {
+    flex: none;
+  }
   .badge {
     flex: none;
     display: inline-flex;

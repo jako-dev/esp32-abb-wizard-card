@@ -68,7 +68,9 @@ describe('abb-welcome-door-card', () => {
     const { root, card, sendMessagePromise } = await mount({ doors });
     await vi.waitFor(() => expect(sendMessagePromise).toHaveBeenCalled());
     await card.updateComplete;
-    expect(text(root)).toContain('Verriegelt · klingelte vor 5 min');
+    const first = root.querySelector('.tile')!;
+    expect(first.querySelector('.state')!.textContent).toBe('Verriegelt');
+    expect(first.querySelector('.ring-info')!.textContent!.trim()).toBe('vor 5 min');
     expect(text(root)).toContain('Zum Öffnen schieben');
   });
 
