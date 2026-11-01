@@ -70,7 +70,7 @@ describe('abb-welcome-door-card', () => {
     await card.updateComplete;
     const first = root.querySelector('.tile')!;
     expect(first.querySelector('.state')!.textContent).toBe('Verriegelt');
-    expect(first.querySelector('.ring-info')!.textContent!.trim()).toBe('vor 5 min');
+    expect(first.querySelector('.ring-info')!.textContent!.trim()).toBe('Geklingelt vor 5 min');
     expect(text(root)).toContain('Zum Öffnen schieben');
   });
 

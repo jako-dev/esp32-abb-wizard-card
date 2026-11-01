@@ -407,11 +407,11 @@ export class AbbWelcomeDoorCard extends LitElement {
     return parts.join(' · ');
   }
 
-  /** "vor 5 min", "gestern 16:22" – shown with a bell icon, so without the word "klingelte". */
+  /** "Geklingelt vor 5 min", "Geklingelt gestern 16:22" – shown on its own line below the state. */
   private ringInfo(door: DoorCardDoor): string | undefined {
-    if (this.remaining(door) > 0) return 'klingelt gerade';
+    if (this.remaining(door) > 0) return 'Klingelt gerade';
     const ring = this.lastRing(door);
-    return ring > 0 ? formatAgo(ring, this.now) : undefined;
+    return ring > 0 ? `Geklingelt ${formatAgo(ring, this.now)}` : undefined;
   }
 
   /** Label for the action, reflecting a running or finished command. */
@@ -483,7 +483,7 @@ export class AbbWelcomeDoorCard extends LitElement {
           ${door.lock ? html`<span class="state">${lockStatus(this.lockState(door), wordingFor(door)).label}</span>` : nothing}
           ${
             this.ringInfo(door)
-              ? html`<span class="ring-info">${icon('mdi:bell-outline')}${this.ringInfo(door)}</span>`
+              ? html`<span class="ring-info">${this.ringInfo(door)}</span>`
               : door.lock
                 ? nothing
                 : html`<span class="state">Klingel</span>`

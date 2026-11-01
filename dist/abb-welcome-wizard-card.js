@@ -600,7 +600,7 @@ const ui = {
   door: "Türsteuergerät",
   unknown: "Gerät"
 };
-function O(e, t) {
+function C(e, t) {
   const n = ui[lt(e, t)], i = k(e, t);
   return `${n} (${i})`;
 }
@@ -653,7 +653,7 @@ const pe = 8, pt = [
     default: !1,
     icon: "mdi:door-closed"
   }
-], Y = "baseline", B = (e) => `ring:${typeof e == "string" ? e : e.key}`, I = (e) => `open:${typeof e == "string" ? e : e.key}`;
+], Y = "baseline", O = (e) => `ring:${typeof e == "string" ? e : e.key}`, B = (e) => `open:${typeof e == "string" ? e : e.key}`;
 function Ce(e) {
   const t = e.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   return t === "" ? "tuer" : /^[0-9]/.test(t) ? `tuer_${t}` : t;
@@ -797,7 +797,7 @@ function _i(e, t) {
 function Ai(e, t, n = []) {
   const i = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map();
   for (const u of t.filter((p) => p.open))
-    for (const p of he(e, I(u)))
+    for (const p of he(e, B(u)))
       for (const l of p)
         fn(l) && $e(l.src, l.threeByte) && G(i, l.src), gn(l) && $e(l.dst, l.threeByte) && G(s, l.dst);
   const r = (u, p) => n.includes(u) !== n.includes(p) ? n.includes(u) ? -1 : 1 : u - p, o = ae(i, r) ?? ae(s, r);
@@ -831,7 +831,7 @@ function bn(e, t, n) {
   });
 }
 function Ti(e, t) {
-  const n = B(t), i = xi(t), s = he(e.steps, n), r = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
+  const n = O(t), i = xi(t), s = he(e.steps, n), r = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
   s.forEach((u, p) => {
     for (const l of u) {
       if (e.baseline.has(Se(l))) {
@@ -927,14 +927,14 @@ function Di(e, t, n) {
   }
 }
 function Ci(e, t) {
-  const n = I(t), i = Ye(t), s = he(e.steps, n);
+  const n = B(t), i = Ye(t), s = he(e.steps, n);
   if (s.length === 0)
     return bn(e, n, i), null;
   const r = (g) => {
     const w = /* @__PURE__ */ new Map();
     return s.forEach((_, v) => {
-      for (const F of _) {
-        const T = g(F);
+      for (const I of _) {
+        const T = g(I);
         if (!T) continue;
         const L = `${T.dst}|${T.type}|${T.data.join(",")}`, kt = w.get(L) ?? { frame: T, in: /* @__PURE__ */ new Set() };
         kt.in.add(v), w.set(L, kt);
@@ -1037,7 +1037,7 @@ function Bi(e, t) {
   }), f.threeByte = h;
   const y = { ...l }, g = De(e.dials, h);
   if (g.length > 0 && (y.dialCandidates = g, y.dialMatch = g.find((v) => v.address === l.address)?.reading ?? null, y.dialMatch === null)) {
-    const v = g.map((F) => `${k(F.address, h)} (${Ae[F.reading]})`).join(" oder ");
+    const v = g.map((I) => `${k(I.address, h)} (${Ae[I.reading]})`).join(" oder ");
     r.push({
       code: "indoor_mismatch",
       severity: "warning",
@@ -1047,7 +1047,7 @@ function Bi(e, t) {
   l.method === "frequency" && r.push({
     code: "indoor_by_frequency",
     severity: "info",
-    message: `Innenstation ${O(l.address, h)} nur anhand der Häufigkeit bestimmt (kein Öffnen-Frame aufgenommen).`
+    message: `Innenstation ${C(l.address, h)} nur anhand der Häufigkeit bestimmt (kein Öffnen-Frame aufgenommen).`
   }), f.indoor = y;
   const w = {
     session: e,
@@ -1069,12 +1069,12 @@ function Bi(e, t) {
   const _ = e.doors.filter((v) => v.open);
   for (const v of _) f.opens[v.key] = Ci(w, v);
   for (let v = 0; v < _.length; v++)
-    for (let F = v + 1; F < _.length; F++) {
-      const T = f.opens[_[v].key], L = f.opens[_[F].key];
+    for (let I = v + 1; I < _.length; I++) {
+      const T = f.opens[_[v].key], L = f.opens[_[I].key];
       T && L && T.destination === L.destination && T.messageType === L.messageType && K(T.data) === K(L.data) && r.push({
         code: "same_open_frame",
         severity: "warning",
-        message: `${Ye(_[v])} und ${Ye(_[F])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`
+        message: `${Ye(_[v])} und ${Ye(_[I])} senden denselben Frame – beide Schlösser würden dieselbe Tür öffnen. Meist war der Ruf beim Drücken der Schlüssel-Taste schon abgelaufen, sodass die Standard-Tür geöffnet wurde: Aufnahme verwerfen und direkt nach dem Klingeln wiederholen (oder jemanden klingeln lassen).`
       });
     }
   return f;
@@ -1116,7 +1116,7 @@ function Ri(e, t) {
         score: 1,
         reliable: !0,
         manual: !0
-      })), u.manual = !0, s = s.filter((p) => !(p.step === B(r) && Ii.has(p.code)))), o.outdoorAddress !== void 0 && (u.outdoorAddress = o.outdoorAddress, u.outdoorManual = !0), i.rings[r.key] = u;
+      })), u.manual = !0, s = s.filter((p) => !(p.step === O(r) && Ii.has(p.code)))), o.outdoorAddress !== void 0 && (u.outdoorAddress = o.outdoorAddress, u.outdoorManual = !0), i.rings[r.key] = u;
     }
     const a = r.open ? n.opens?.[r.key] : void 0;
     if (a) {
@@ -1131,7 +1131,7 @@ function Ri(e, t) {
         score: 1,
         manual: !0,
         ...u && d.confirmation ? { confirmation: d.confirmation } : {}
-      }, s = s.filter((p) => !(p.step === I(r) && Fi.has(p.code)));
+      }, s = s.filter((p) => !(p.step === B(r) && Fi.has(p.code)));
     }
   }
   return i.warnings = s, i;
@@ -1347,11 +1347,11 @@ function is(e) {
 }
 const Je = "abb-welcome-wizard-session", Qe = 3, ss = Object.freeze({ skipped: !1, captures: [] }), rs = {
   baseline: Y,
-  ring_gate: B("tor"),
-  ring_house: B("haustuer"),
-  ring_apartment: B("wohnung"),
-  open_gate: I("tor"),
-  open_house: I("haustuer")
+  ring_gate: O("tor"),
+  ring_house: O("haustuer"),
+  ring_apartment: O("wohnung"),
+  open_gate: B("tor"),
+  open_house: B("haustuer")
 };
 function Lt(e, t = pt, n = /* @__PURE__ */ new Date()) {
   const i = n.toISOString();
@@ -1368,14 +1368,14 @@ function Lt(e, t = pt, n = /* @__PURE__ */ new Date()) {
     exportSettings: {}
   };
 }
-function C(e, t) {
+function D(e, t) {
   return e.steps[t] ?? ss;
 }
 function ye(e, t) {
   return { ...e, updatedAt: t.toISOString() };
 }
 function gt(e, t, n, i) {
-  return ye({ ...e, steps: { ...e.steps, [t]: n(C(e, t)) } }, i);
+  return ye({ ...e, steps: { ...e.steps, [t]: n(D(e, t)) } }, i);
 }
 function os(e, t, n, i = /* @__PURE__ */ new Date()) {
   return gt(e, t, (s) => ({ skipped: !1, captures: [...s.captures, n] }), i);
@@ -1415,7 +1415,7 @@ function cs(e, t, n = /* @__PURE__ */ new Date()) {
 function ie(e, t, n = /* @__PURE__ */ new Date()) {
   const i = ve(t), s = /* @__PURE__ */ new Set([Y]);
   for (const l of i)
-    s.add(B(l)), l.open && s.add(I(l));
+    s.add(O(l)), l.open && s.add(B(l));
   const r = Object.fromEntries(Object.entries(e.steps).filter(([l]) => s.has(l))), o = new Set(i.map((l) => l.key)), a = new Set(i.filter((l) => l.open).map((l) => l.key)), { rings: d, opens: u } = e.overrides, p = bt({
     ...e.overrides,
     rings: d && Object.fromEntries(Object.entries(d).filter(([l]) => o.has(l))),
@@ -1424,15 +1424,15 @@ function ie(e, t, n = /* @__PURE__ */ new Date()) {
   return ye({ ...e, doors: i, steps: r, overrides: p }, n);
 }
 function Kt(e, t) {
-  return C(e, B(t)).captures.length + C(e, I(t)).captures.length;
+  return D(e, O(t)).captures.length + D(e, B(t)).captures.length;
 }
 function ls(e) {
   const t = e.doors.flatMap(
-    (i) => i.open && !i.default ? [B(i), I(i)] : [B(i)]
+    (i) => i.open && !i.default ? [O(i), B(i)] : [O(i)]
   );
   let n;
   for (const i of t)
-    for (const s of C(e, i).captures) {
+    for (const s of D(e, i).captures) {
       const r = Date.parse(s.endedAt);
       !Number.isNaN(r) && (n === void 0 || r > n) && (n = r);
     }
@@ -1527,7 +1527,7 @@ const Ut = 3, X = (e) => `„${e.name}“`;
 function gs(e, t) {
   const n = e.type === "floor";
   return {
-    id: B(e),
+    id: O(e),
     kind: "ring",
     door: e,
     title: `Klingeln: ${e.name}`,
@@ -1546,7 +1546,7 @@ function gs(e, t) {
 }
 function Wt(e) {
   const t = {
-    id: I(e),
+    id: B(e),
     kind: "open",
     door: e,
     title: `Öffnen: ${e.name}`,
@@ -2512,7 +2512,7 @@ function Es(e, t) {
 }
 function Ts(e, t, n) {
   let i = `Typ ${Pe(e.type)}`;
-  return e.src !== void 0 && e.dst !== void 0 ? i += `: ${O(e.src, n)} > ${O(e.dst, n)}` : e.src !== void 0 ? i += `, Quelle: ${O(e.src, n)}` : e.dst !== void 0 && (i += `, Ziel: ${O(e.dst, n)}`), e.data !== void 0 && (i += `, Data: ${e.data.map((s) => Pe(s)).join(" ")}`), `${i} (${e.occurrences}/${t} Aufnahmen)`;
+  return e.src !== void 0 && e.dst !== void 0 ? i += `: ${C(e.src, n)} > ${C(e.dst, n)}` : e.src !== void 0 ? i += `, Quelle: ${C(e.src, n)}` : e.dst !== void 0 && (i += `, Ziel: ${C(e.dst, n)}`), e.data !== void 0 && (i += `, Data: ${e.data.map((s) => Pe(s)).join(" ")}`), `${i} (${e.occurrences}/${t} Aufnahmen)`;
 }
 function U(e, t, n, i, s) {
   e.line(t, `- ${n}.template.publish:`), e.line(t + 4, `id: ${i}`), e.line(t + 4, `state: ${s}`);
@@ -2557,7 +2557,7 @@ function Os(e, t, n = {}) {
   }
   o && Bs(i, o), i.line(0, "remote_receiver:"), o ? Is(i) : i.comment(2, "pin, dump, filter, tolerance, idle, buffer_size ... aus der bestehenden Konfiguration"), i.line(2, "on_abbwelcome:"), i.line(4, "then:"), a && (i.comment(6, "Debug-Textsensor (id ggf. an eure Firmware anpassen)"), i.line(6, `- lambda: 'char buf[192]; x.format_to(buf, 192); id(${a}).publish_state(buf);'`));
   for (const h of l) {
-    const y = e.rings[h.door.key], g = y.outdoorAddress !== void 0 ? ` – ${O(y.outdoorAddress, r)}` : "";
+    const y = e.rings[h.door.key], g = y.outdoorAddress !== void 0 ? ` – ${C(y.outdoorAddress, r)}` : "";
     i.comment(6, `${h.name}${g}`), i.line(6, "- if:"), i.line(10, "condition:"), i.line(12, "or:");
     for (const w of y.selected)
       i.comment(14, Ts(w, y.captures, r)), i.line(14, `- lambda: ${Es(w, r)}`);
@@ -2598,7 +2598,7 @@ function Os(e, t, n = {}) {
         `${h.name}: abgeleitet aus der Bestätigung ${Pe(y.messageType | 128)} – unbestätigt, bitte testen`
       ), i.line(2, "- platform: template"), i.line(4, `name: ${ke(h.name)}`), i.line(4, `id: ${h.id}`), i.line(4, `icon: ${h.icon}`), i.line(4, "lock_action:"), U(i, 6, "lock", h.id, "LOCKED"), i.line(4, "unlock_action:"), i.line(6, "- remote_transmitter.transmit_abbwelcome:"), i.line(10, `source_address: ${k(s.address, r)} # Innenstation`), i.line(
         10,
-        `destination_address: ${k(y.destination, r)} # ${O(y.destination, r)}`
+        `destination_address: ${k(y.destination, r)} # ${C(y.destination, r)}`
       ), i.line(10, `three_byte_address: ${r}`), i.line(
         10,
         `message_type: ${oe(y.messageType)} # ${y.messageType === 14 ? "Schiebetür" : "Türöffner"}`
@@ -2684,7 +2684,7 @@ var Ns = Object.defineProperty, Ls = Object.getOwnPropertyDescriptor, A = (e, t,
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
   return i && s && Ns(t, n, s), s;
 };
-const fe = "abb-welcome-wizard-card", Hs = "0.9.1", Zt = 10, js = 40, Ks = 900 * 1e3, Us = {
+const fe = "abb-welcome-wizard-card", Hs = "0.9.2", Zt = 10, js = 40, Ks = 900 * 1e3, Us = {
   info: "mdi:information-outline",
   warning: "mdi:alert-outline",
   error: "mdi:alert-circle-outline"
@@ -2980,7 +2980,7 @@ let x = class extends M {
     const e = [
       { label: "Start", icon: "mdi:play", status: "" },
       ...this.steps.map((t) => {
-        const n = C(this.session, t.id), i = n.captures.length > 0 ? "done" : n.skipped ? "skipped" : "";
+        const n = D(this.session, t.id), i = n.captures.length > 0 ? "done" : n.skipped ? "skipped" : "";
         return { label: t.short, icon: i === "done" ? "mdi:check" : t.icon, status: i };
       }),
       { label: "Ergebnis", icon: "mdi:file-code-outline", status: "" }
@@ -3005,7 +3005,7 @@ let x = class extends M {
     `;
   }
   renderFooter() {
-    const e = this.currentStep, t = e ? C(this.session, e.id).captures.length > 0 : !1;
+    const e = this.currentStep, t = e ? D(this.session, e.id).captures.length > 0 : !1;
     return c`
       <div class="footer">
         <button
@@ -3294,7 +3294,7 @@ let x = class extends M {
   }
   // ---- Recording step ------------------------------------------------------------------------------
   renderStep(e) {
-    const n = C(this.session, e.id).captures.length;
+    const n = D(this.session, e.id).captures.length;
     return c`
       <h2><ha-icon icon=${e.icon}></ha-icon>${e.title}</h2>
       <ol class="todo">
@@ -3418,7 +3418,7 @@ let x = class extends M {
       </div>`;
   }
   renderCaptures(e) {
-    const t = C(this.session, e.id).captures;
+    const t = D(this.session, e.id).captures;
     return c`
       <div class="captures">
         <div class="actions">
@@ -3466,7 +3466,7 @@ let x = class extends M {
       return c`<div class="callout ok">
         <ha-icon icon="mdi:check-circle-outline"></ha-icon>
         <span
-          >${C(this.session, e.id).captures.flatMap((i) => i.lines).length} Frames als Baseline
+          >${D(this.session, e.id).captures.flatMap((i) => i.lines).length} Frames als Baseline
           markiert.</span
         >
       </div>`;
@@ -3479,7 +3479,7 @@ let x = class extends M {
             <ha-icon icon="mdi:alert-outline"></ha-icon>
             <span
               >Noch keine passenden Klingel-Frames für
-              ${O(t.indoor.address, t.threeByte)}.</span
+              ${C(t.indoor.address, t.threeByte)}.</span
             >
           </div>`;
     }
@@ -3822,7 +3822,7 @@ let x = class extends M {
       <div>
         <div class="row-head">
           <b>${e.name}</b>
-          ${d && n.outdoorAddress !== void 0 && !a ? c`<span class="muted small">${O(n.outdoorAddress, i)}</span>` : m}
+          ${d && n.outdoorAddress !== void 0 && !a ? c`<span class="muted small">${C(n.outdoorAddress, i)}</span>` : m}
           ${n.outdoorManual ? c`<span class="badge accent">manuell</span>` : m}
           ${d && !a ? this.editButton(
       `Außenstation ${e.door.name} bearbeiten`,
@@ -3938,7 +3938,7 @@ let x = class extends M {
     </div>`;
   }
   renderOpenResult(e, t) {
-    const n = t.opens[e.door.key], i = C(this.session, I(e.door)).captures.length > 0, s = this.editing?.kind === "open" && this.editing.door === e.door.key ? this.editing : void 0;
+    const n = t.opens[e.door.key], i = D(this.session, B(e.door)).captures.length > 0, s = this.editing?.kind === "open" && this.editing.door === e.door.key ? this.editing : void 0;
     return c`<div class="result-row">
       <ha-icon icon=${e.icon}></ha-icon>
       <div>
@@ -4149,7 +4149,7 @@ let x = class extends M {
             >` : m}
       <dl class="kv" style="margin:6px 0 0">
         <dt>Ziel</dt>
-        <dd>${O(e.destination, t)}</dd>
+        <dd>${C(e.destination, t)}</dd>
         <dt>Typ</dt>
         <dd>${R(e.messageType)} ${e.messageType === 14 ? "(Schiebetür)" : "(Türöffner)"}</dd>
         <dt>Türcode</dt>
@@ -4747,19 +4747,11 @@ const ir = rt`
   }
   /* Last ring on its own line, so nothing gets cut off next to the slider on phones. */
   .ring-info {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
     font-size: 12px;
     color: var(--door-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    --mdc-icon-size: 13px;
-  }
-  .ring-info ha-icon {
-    flex: none;
   }
   .badge {
     flex: none;
@@ -5316,7 +5308,7 @@ var sr = Object.defineProperty, rr = Object.getOwnPropertyDescriptor, E = (e, t,
     (o = e[r]) && (s = (i ? o(t, n, s) : o(s)) || s);
   return i && s && sr(t, n, s), s;
 };
-const or = 8e3, ar = 4e3, Ze = 6e3, dr = 168 * 3600 * 1e3, cr = 0.85, lr = 4, en = 2 * Math.PI * 48, D = (e) => c`<ha-icon icon=${e}></ha-icon>`, qe = {
+const or = 8e3, ar = 4e3, Ze = 6e3, dr = 168 * 3600 * 1e3, cr = 0.85, lr = 4, en = 2 * Math.PI * 48, F = (e) => c`<ha-icon icon=${e}></ha-icon>`, qe = {
   lock: { icon: "mdi:lock", label: "Abschließen", confirm: !1 },
   unlock: { icon: "mdi:lock-open-variant", label: "Aufschließen", confirm: !0 },
   open: { icon: "mdi:door-open", label: "Öffnen", confirm: !0 }
@@ -5536,11 +5528,11 @@ let z = class extends M {
     }
     return n.join(" · ");
   }
-  /** "vor 5 min", "gestern 16:22" – shown with a bell icon, so without the word "klingelte". */
+  /** "Geklingelt vor 5 min", "Geklingelt gestern 16:22" – shown on its own line below the state. */
   ringInfo(e) {
-    if (this.remaining(e) > 0) return "klingelt gerade";
+    if (this.remaining(e) > 0) return "Klingelt gerade";
     const t = this.lastRing(e);
-    return t > 0 ? Jt(t, this.now) : void 0;
+    return t > 0 ? `Geklingelt ${Jt(t, this.now)}` : void 0;
   }
   /** Label for the action, reflecting a running or finished command. */
   actionLabel(e, t) {
@@ -5586,15 +5578,15 @@ let z = class extends M {
     return c`<div class="head">
       <button class="head-main" @click=${() => this.moreInfo(e.lock ?? e.doorbell)}>
         <span class="ico tone-${t ? "ring" : this.tone(e)}"
-          >${D(this.doorIcon(e, t))}</span
+          >${F(this.doorIcon(e, t))}</span
         >
         <span class="txt" title=${this.stateLine(e)}>
           <span class="name">${e.name}</span>
           ${e.lock ? c`<span class="state">${Ve(this.lockState(e), xe(e)).label}</span>` : m}
-          ${this.ringInfo(e) ? c`<span class="ring-info">${D("mdi:bell-outline")}${this.ringInfo(e)}</span>` : e.lock ? m : c`<span class="state">Klingel</span>`}
+          ${this.ringInfo(e) ? c`<span class="ring-info">${this.ringInfo(e)}</span>` : e.lock ? m : c`<span class="state">Klingel</span>`}
         </span>
       </button>
-      ${t ? c`<span class="badge">${D("mdi:bell-ring")}${this.remaining(e)} s</span>` : m}
+      ${t ? c`<span class="badge">${F("mdi:bell-ring")}${this.remaining(e)} s</span>` : m}
       ${n ?? m}
     </div>`;
   }
@@ -5613,7 +5605,7 @@ let z = class extends M {
         ?disabled=${this.isBusy(t)}
         @click=${() => this.pressControl(t, e, s)}
       >
-        ${D(r.icon)}
+        ${F(r.icon)}
       </button>`;
     })}`;
   }
@@ -5664,7 +5656,7 @@ let z = class extends M {
         (h.key === "Enter" || h.key === " " || h.key === "ArrowRight") && (h.preventDefault(), this.openDoor(t, e));
       }}
         >
-          ${D(b === "done" ? "mdi:check" : b === "failed" ? "mdi:alert" : "mdi:chevron-double-right")}
+          ${F(b === "done" ? "mdi:check" : b === "failed" ? "mdi:alert" : "mdi:chevron-double-right")}
         </button>
       </div>`;
     }
@@ -5682,7 +5674,7 @@ let z = class extends M {
       @keyup=${"keyup" in a ? a.keyup : void 0}
       @click=${a.click}
     >
-      ${D(this.pending[t]?.phase === "done" ? "mdi:check" : "mdi:door-open")}
+      ${F(this.pending[t]?.phase === "done" ? "mdi:check" : "mdi:door-open")}
       <span>${this.actionLabel(t, d)}</span>
     </button>`;
   }
@@ -5744,12 +5736,12 @@ let z = class extends M {
                     <circle class="ring-fg" cx="52" cy="52" r="48" style="stroke-dasharray:${en};stroke-dashoffset:${en}"></circle>`}
                     </svg>
                     <span class="face"
-                      >${D(a === "done" ? "mdi:check" : t.icon ?? "mdi:key-variant")}</span
+                      >${F(a === "done" ? "mdi:check" : t.icon ?? "mdi:key-variant")}</span
                     >
                   </button>
                   <span class="keyhint"
                     >${this.actionLabel(n, s === "hold" ? "Gedrückt halten" : "Tippen zum Öffnen")}</span
-                  >` : c`<span class="face idle">${D(this.doorIcon(t, i))}</span>`}
+                  >` : c`<span class="face idle">${F(this.doorIcon(t, i))}</span>`}
           ${this.renderControls(t, n)} ${this.renderHint(t, n)}
         </div>`;
     })}
@@ -5767,7 +5759,7 @@ let z = class extends M {
     const n = this.pending[t]?.phase === "done";
     return c`<div class="hero ${n ? "done" : ""}" role="status">
       <div class="hero-top">
-        <span class="hero-ico">${D(n ? "mdi:check" : "mdi:bell-ring")}</span>
+        <span class="hero-ico">${F(n ? "mdi:check" : "mdi:bell-ring")}</span>
         <span class="txt">
           <span class="hero-title">${n ? `${e.name} geöffnet` : `Es klingelt: ${e.name}`}</span>
           <span class="hero-text"
@@ -5801,7 +5793,7 @@ let z = class extends M {
       @click=${r.click}
     >
       <span class="ico tone-${n ? "ring" : this.tone(e)}"
-        >${D(this.doorIcon(e, n))}</span
+        >${F(this.doorIcon(e, n))}</span
       >
       <span class="txt"><span class="name">${e.name}</span><span class="state">${o}</span></span>
     </button>`;
